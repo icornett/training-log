@@ -20,7 +20,7 @@ delete their user record and all associated workout and exercise data.
 # Version Info:
 
 - PostgreSQL: 9.6.22
-- Ruby: 2.6.3
+- Ruby: 4.0.4
 - Browser: Google Chrome Version 100.0.4896.88
 
 # How To Run The Application:

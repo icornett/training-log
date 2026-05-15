@@ -1,9 +1,7 @@
 require "sinatra"
 require "sinatra/content_for"
-require "tilt/erubis"
+require "tilt/erubi"
 require "bcrypt"
-
-require "pry"
 
 require_relative "database_access"
 

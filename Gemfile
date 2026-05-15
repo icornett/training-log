@@ -1,9 +1,19 @@
 source "https://rubygems.org"
 
-gem "sinatra", "~>1.4.7"
-gem "sinatra-contrib"
-gem "erubis"
-gem "webrick",  "~>1.7.0"
+ruby "4.0.4"
 
-gem "pg"
+gem "sinatra", "~> 4.2", ">= 4.2.1"
+gem "sinatra-contrib", "~> 4.2", ">= 4.2.1"
+gem "erubi"
+gem "json", ">= 2.19.2"
+gem "net-imap", ">= 0.6.4"
+gem "rackup"
+gem "puma"
+gem "webrick", "~> 1.9"
+
+gem "pg", "~> 1.6", ">= 1.6.3"
 gem "bcrypt"
+
+group :development do
+	gem "pry"
+end
