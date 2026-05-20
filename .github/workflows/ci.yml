@@ -161,8 +161,13 @@ jobs:
   publish:
     name: Publish to GHCR
     runs-on: ubuntu-latest
-    needs: [test-fast, test-e2e, lint-and-sast]
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    needs: [test-fast, test-e2e, lint-and-sast, version]
+    if: |
+      always() &&
+      needs.test-fast.result == 'success' &&
+      needs.test-e2e.result == 'success' &&
+      needs.lint-and-sast.result == 'success' &&
+      (needs.version.result == 'success' || startsWith(github.ref, 'refs/tags/v'))
     permissions:
       contents: read
       packages: write
@@ -182,11 +187,11 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            type=semver,pattern={{version}},value=${{ needs.version.outputs.new_tag }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.version.outputs.new_tag }}
+            type=semver,pattern={{major}},value=${{ needs.version.outputs.new_tag }},enable=${{ !startsWith(needs.version.outputs.new_tag, 'v0.') }}
             type=sha,format=long
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
