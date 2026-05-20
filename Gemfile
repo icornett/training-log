@@ -15,5 +15,23 @@ gem "pg", "~> 1.6", ">= 1.6.3"
 gem "bcrypt"
 
 group :development do
-	gem "pry"
+  gem "pry"
+  gem "sinatra-reloader"
+  gem "overcommit"
+end
+
+group :test do
+  gem "rspec"
+  gem "rack-test"
+  gem "capybara"
+  gem "database_cleaner-sequel"
+  gem "sequel"
+  gem "sqlite3"
+  gem "rubocop"
+  gem "rubocop-rspec"
+  gem "rubocop-performance"
+  gem "rubocop-sarif-formatter"
+  gem "brakeman"
+  gem "bundler-audit"
+  gem "erb_lint"
 end

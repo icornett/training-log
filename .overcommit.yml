@@ -1,0 +1,71 @@
+gemfile: Gemfile
+
+# All hooks run inside the devcontainer so tests can reach the Postgres service
+# and the full installed gem set. The compose file lives at the workspace root.
+# After editing this file, re-sign: bundle exec overcommit --sign
+
+PreCommit:
+  RuboCop:
+    enabled: true
+    on_warn: fail
+    command:
+      - docker
+      - compose
+      - -f
+      - ../.devcontainer/docker-compose.yml
+      - exec
+      - -T
+      - app
+      - bundle
+      - exec
+      - rubocop
+
+  ErbLint:
+    enabled: true
+    description: "Lint ERB templates"
+    command:
+      - docker
+      - compose
+      - -f
+      - ../.devcontainer/docker-compose.yml
+      - exec
+      - -T
+      - app
+      - bundle
+      - exec
+      - erb_lint
+    flags: ["--lint-all"]
+    run_on_applicable_files: false
+
+  Brakeman:
+    enabled: true
+    command:
+      - docker
+      - compose
+      - -f
+      - ../.devcontainer/docker-compose.yml
+      - exec
+      - -T
+      - app
+      - bundle
+      - exec
+      - brakeman
+    flags: ["--quiet", "--no-pager"]
+    run_on_applicable_files: false
+
+  RSpec:
+    enabled: true
+    description: "Run unit and integration tests"
+    command:
+      - docker
+      - compose
+      - -f
+      - ../.devcontainer/docker-compose.yml
+      - exec
+      - -T
+      - app
+      - bundle
+      - exec
+      - rspec
+    flags: ["spec/unit", "spec/integration"]
+    run_on_applicable_files: false

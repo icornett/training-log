@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Run this once after cloning to install git pre-commit hooks via the devcontainer.
+# Requires the devcontainer to be running:
+#   docker compose -f .devcontainer/docker-compose.yml up -d
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+COMPOSE_FILE="$SCRIPT_DIR/../../.devcontainer/docker-compose.yml"
+
+echo "Installing overcommit inside the devcontainer..."
+docker compose -f "$COMPOSE_FILE" exec app bundle exec overcommit --install
+docker compose -f "$COMPOSE_FILE" exec app bundle exec overcommit --sign
+echo "Done. Pre-commit hooks are active."
