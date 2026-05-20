@@ -30,6 +30,7 @@ group :test do
   gem "rubocop"
   gem "rubocop-rspec"
   gem "rubocop-performance"
+  gem 'code-scanning-rubocop', '~> 0.6.1'
   gem "brakeman"
   gem "bundler-audit"
   gem "erb_lint"
