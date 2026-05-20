@@ -27,12 +27,16 @@ jobs:
           ruby-version: "4.0.4"
           bundler-cache: true
 
-      - name: RuboCop
-        run: bundle exec rubocop --format github --format json --out rubocop.json --format RuboCop::Formatter::SARIFFormatter --out rubocop.sarif
+      - name: RuboCop JSON
+        run: bundle exec rubocop --format json --out rubocop.json
+        continue-on-error: true
+
+      - name: RuboCop SARIF
+        run: bundle exec rubocop --format RuboCop::Formatter::SARIFFormatter --out rubocop.sarif
         continue-on-error: true
 
       - name: Upload RuboCop SARIF
-        if: always()
+        if: always() && hashFiles('rubocop.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: rubocop.sarif
@@ -41,12 +45,16 @@ jobs:
       - name: ERB Lint
         run: bundle exec erb_lint --lint-all
 
-      - name: Brakeman SAST
-        run: bundle exec brakeman --quiet --no-pager --format github --format json --output brakeman.json --format sarif --output brakeman.sarif
+      - name: Brakeman JSON
+        run: bundle exec brakeman --quiet --no-pager --format json --output brakeman.json
+        continue-on-error: true
+
+      - name: Brakeman SARIF
+        run: bundle exec brakeman --quiet --no-pager --format sarif --output brakeman.sarif
         continue-on-error: true
 
       - name: Upload Brakeman SARIF
-        if: always()
+        if: always() && hashFiles('brakeman.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: brakeman.sarif
