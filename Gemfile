@@ -30,7 +30,6 @@ group :test do
   gem "rubocop"
   gem "rubocop-rspec"
   gem "rubocop-performance"
-  gem "rubocop-sarif-formatter"
   gem "brakeman"
   gem "bundler-audit"
   gem "erb_lint"

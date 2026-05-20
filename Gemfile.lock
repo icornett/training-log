@@ -19,7 +19,7 @@ GEM
       timeout
     nio4r (2.7.5)
     pg (1.6.3)
-    pg (1.6.3-aarch64-linux-musl)
+    pg (1.6.3-aarch64-linux)
     pry (0.16.0)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -56,7 +56,7 @@ GEM
     webrick (1.9.2)
 
 PLATFORMS
-  aarch64-linux-musl
+  aarch64-linux
   ruby
 
 DEPENDENCIES
