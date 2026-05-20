@@ -32,7 +32,7 @@ PreCommit:
     run_on_applicable_files: false
 
   RSpec:
-    enabled: false
+    enabled: true
     description: "Run unit and integration tests"
     command:
       - bundle
