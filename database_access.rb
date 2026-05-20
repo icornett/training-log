@@ -1,5 +1,8 @@
-require "pg"
+# frozen_string_literal: true
 
+require 'pg'
+
+# Manages database interactions for the training log application
 class DatabaseAccess
   def initialize
     @db = PG.connect(dbname: 'training_log')
@@ -11,7 +14,7 @@ class DatabaseAccess
         GROUP BY username;
     SQL
     usernames = query(sql)
-    map_values_in_one_column(usernames, "username")
+    map_values_in_one_column(usernames, 'username')
   end
 
   def find_user_id(username)
@@ -20,28 +23,28 @@ class DatabaseAccess
         WHERE username = $1;
     SQL
     user_id = query(sql, username)
-    map_values_in_one_column(user_id, "id").first
+    map_values_in_one_column(user_id, 'id').first
   end
 
   def object_nonexistent?(table, id)
     ids = unique_ids(table).map(&:to_i)
-    !(ids.include?(id))
+    !ids.include?(id)
   end
-  
+
   def count(column, tablename, end_clause)
     sql = "SELECT COUNT(#{column}) FROM #{tablename} #{end_clause}"
-    count = map_values_in_one_column(query(sql), "count")
+    count = map_values_in_one_column(query(sql), 'count')
     count.first.to_f
   end
 
   def max_workout_id
-    sql = "SELECT MAX(id) FROM workouts;"
-    max = map_values_in_one_column(query(sql), "max")
+    sql = 'SELECT MAX(id) FROM workouts;'
+    max = map_values_in_one_column(query(sql), 'max')
     max.first
   end
 
   def workout_details(workout_id)
-    suffix = "WHERE w.id = $1;"
+    suffix = 'WHERE w.id = $1;'
     data = query(formulate_workout_query(suffix), workout_id)
     map_workout_data(data).first
   end
@@ -67,33 +70,34 @@ class DatabaseAccess
   end
 
   def exercise_details(exercise_id)
-    sql = formulate_exercise_query("WHERE id = $1;")
+    sql = formulate_exercise_query('WHERE id = $1;')
     raw_data = query(sql, exercise_id)
     map_exercise_data(raw_data).first
   end
 
-  def valid_new_user?(name, pw)
-    ok_length = (name.size <= 25 && pw.size <= 25 && pw.size > 10)
-    !(unique_usernames.include?(name)) && ok_length
+  def valid_new_user?(name, password)
+    ok_length = name.size <= 25 && password.size <= 25 && password.size > 10
+    !unique_usernames.include?(name) && ok_length
   end
 
-  def valid_login_credentials?(username, pw)
-    sql = "SELECT password FROM users WHERE username = $1;"
+  def valid_login_credentials?(username, password)
+    sql = 'SELECT password FROM users WHERE username = $1;'
     db_pw = query(sql, username)
 
-    salted_pw = map_values_in_one_column(db_pw, "password").first
-    return nil if salted_pw.nil?
-    BCrypt::Password.new(salted_pw) == pw
+    salted_pw = map_values_in_one_column(db_pw, 'password').first
+    return false if salted_pw.nil?
+
+    BCrypt::Password.new(salted_pw) == password
   end
 
   def invalid_new_exercise_msg(desc, weights, workout_id)
-    if invalid_new_exercise?(desc, weights, workout_id)
-      full_invalid_exercise_msg
-    end
+    return unless invalid_new_exercise?(desc, weights, workout_id)
+
+    full_invalid_exercise_msg
   end
 
   def full_invalid_exercise_msg
-    <<~MSG 
+    <<~MSG
       Invalid exercise entry. Please ensure you have not already
       added this particular exercise description to your workout,
       that your description is between 5 and 40 characters, and
@@ -104,23 +108,22 @@ class DatabaseAccess
   end
 
   def invalid_exercise_edit_msg(desc, weights, workout_id)
-    if invalid_exercise_edit?(desc, weights, workout_id)
+    return unless invalid_exercise_edit?(desc, weights, workout_id)
 
-      fragment_to_remove = "you have not already\n" +
-      "added this particular exercise description to your workout,\nthat "
+    fragment_to_remove = "you have not already\n" \
+                         "added this particular exercise description to your workout,\nthat "
 
-      full_invalid_exercise_msg.gsub(fragment_to_remove, "")
-    end
+    full_invalid_exercise_msg.gsub(fragment_to_remove, '')
   end
 
   def invalid_new_exercise?(desc, weights, workout_id)
     duplicate_exercise?(desc, workout_id) ||
-    invalid_exercise_edit?(desc, weights, workout_id)
+      invalid_exercise_edit?(desc, weights, workout_id)
   end
 
-  def invalid_exercise_edit?(desc, weights, workout_id)
-    exercise_desc_bad_length?(desc) || 
-    exercise_weights_invalid?(weights)
+  def invalid_exercise_edit?(desc, weights, _workout_id)
+    exercise_desc_bad_length?(desc) ||
+      exercise_weights_invalid?(weights)
   end
 
   def exercise_desc_bad_length?(desc)
@@ -128,23 +131,23 @@ class DatabaseAccess
   end
 
   def exercise_weights_invalid?(weights)
-    nums_space = (0..9).to_a.map(&:to_s) << " "
-    allowed_units = ["lbs", "kgs", "bodyweight"]
+    nums_space = (0..9).to_a.map(&:to_s) << ' '
+    allowed_units = %w[lbs kgs bodyweight]
 
-    unit = weights.chars.select do |char|
-      !nums_space.include?(char)
+    unit = weights.chars.reject do |char|
+      nums_space.include?(char)
     end
-    unit = unit.join('').downcase
+    unit = unit.join.downcase
 
     weights.size > 10 || !allowed_units.include?(unit)
   end
 
   def duplicate_exercise?(description, workout_id)
-    scrubbed_desc = description.downcase.gsub(/\s+/, "")
+    scrubbed_desc = description.downcase.gsub(/\s+/, '')
     exercises = load_exercises(workout_id)
 
     existing_descs = exercises.map do |exercise|
-      exercise[:desc].downcase.gsub(/\s+/, "")
+      exercise[:desc].downcase.gsub(/\s+/, '')
     end
     existing_descs.include?(scrubbed_desc)
   end
@@ -174,24 +177,24 @@ class DatabaseAccess
   def valid_workout_details?(name, date, username, workout_id)
     return false if name.size > 15 || name.size < 4
 
-    suffix = workout_id ? "WHERE w.id != #{workout_id};" : ""
+    suffix = workout_id ? "WHERE w.id != #{workout_id};" : ''
     data = query(formulate_workout_query(suffix))
 
     match_arr = map_workout_data(data).select do |workout|
       workout[:date] == date &&
-      workout[:username] == username
+        workout[:username] == username
     end
     match_arr.empty?
   end
 
   def invalid_workout_msg(name, date, username, workout_id)
-    if !valid_workout_details?(name, date, username, workout_id)
-      <<~MSG
-        Invalid workout entry. You may only log 1 workout per day and
-        the name of the workout must be within 4 & 15 characters long.
-        Please try again.
-      MSG
-    end
+    return if valid_workout_details?(name, date, username, workout_id)
+
+    <<~MSG
+      Invalid workout entry. You may only log 1 workout per day and
+      the name of the workout must be within 4 & 15 characters long.
+      Please try again.
+    MSG
   end
 
   def add_workout!(name, date, user_id)
@@ -204,27 +207,27 @@ class DatabaseAccess
 
   def at_exercise_limit?(workout_id)
     end_clause = "WHERE workout_id = #{workout_id};"
-    count = count("workout_id", "exercises", end_clause)
+    count = count('workout_id', 'exercises', end_clause)
     count == 10
   end
 
   def add_exercise!(desc, sets, reps, weights, workout_id)
     sql = <<~SQL
       INSERT INTO exercises
-        (description, num_sets, num_reps, 
+        (description, num_sets, num_reps,
         weight_description, workout_id)
           VALUES ($1, $2, $3, $4, $5);
     SQL
     query(sql, desc, sets, reps, weights, workout_id)
   end
 
-  def add_user!(name, pw)
-    password = BCrypt::Password.create(pw)
+  def add_user!(name, password)
+    hashed_password = BCrypt::Password.create(password)
     sql = <<~SQL
       INSERT INTO users (username, password)
         VALUES ($1, $2);
     SQL
-    query(sql, name, password)
+    query(sql, name, hashed_password)
   end
 
   def delete_record!(id, table)
@@ -244,21 +247,20 @@ class DatabaseAccess
 
   def map_workout_data(query_return)
     query_return.map do |tuple|
-      { id: tuple["id"].to_i,
-        name: tuple["name"],
-        date: tuple["date"],
-        username: tuple["username"] }
+      { id: tuple['id'].to_i,
+        name: tuple['name'],
+        date: tuple['date'],
+        username: tuple['username'] }
     end
   end
 
   def map_exercise_data(query_return)
     query_return.map do |tuple|
-      { id: tuple["id"].to_i,
-        desc: tuple["description"],
-        num_sets: tuple["num_sets"],
-        num_reps: tuple["num_reps"],
-        weight_desc: tuple["weight_description"]
-      }
+      { id: tuple['id'].to_i,
+        desc: tuple['description'],
+        num_sets: tuple['num_sets'],
+        num_reps: tuple['num_reps'],
+        weight_desc: tuple['weight_description'] }
     end
   end
 
@@ -282,7 +284,6 @@ class DatabaseAccess
 
   def unique_ids(table)
     sql = query_for_ids(table)
-    map_values_in_one_column(query(sql), "id")
+    map_values_in_one_column(query(sql), 'id')
   end
 end
-

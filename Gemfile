@@ -26,10 +26,11 @@ group :test do
   gem "capybara"
   gem "database_cleaner-sequel"
   gem "sequel"
-  gem "sqlite3"
+  gem "sqlite3", "2.9.4"
   gem "rubocop"
   gem "rubocop-rspec"
   gem "rubocop-performance"
+  gem 'code-scanning-rubocop', '~> 0.6.1'
   gem "brakeman"
   gem "bundler-audit"
   gem "erb_lint"

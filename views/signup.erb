@@ -2,17 +2,17 @@
   <form action="/signup" method="post">
     <div>
       <label for="username">Enter a Username:
-        <input name="username" id="username" value="<%= params[:username]%>"/>
+        <input name="username" id="username" value="<%= params[:username] %>" autocomplete="off">
       </label>
     </div>
     <div>
       <label for="password">Enter a Password:
-        <input name="password" id="password" type="password"/>
+        <input name="password" id="password" type="password" autocomplete="off">
       </label>
     </div>
     <button class="enter" type="submit">Signup</button>
   </form>
-  
+
   <form action="/login" method="get">
     <button class="enter" type="submit">Already Have An Account? Login Here</button>
   </form>
