@@ -1,6 +1,6 @@
 <div class="box">
   <div class="details">
-    <h2>Workout #<%= @workout[:id]%> Details</h2>
+    <h2>Workout #<%= @workout[:id] %> Details</h2>
     <ul>
       <li><strong>Name: </strong><%= @workout[:name] %></li>
       <li><strong>User: </strong><%= @workout[:username] %></li>
@@ -11,7 +11,7 @@
         <form action="/training_log/<%= @page_number %>/workouts/<%= @workout[:id] %>/edit" method="get">
           <button class="button" type="submit">Edit Workout Details</button>
         </form>
-        <% if can_add_more_exercises %>
+        <% if can_add_more_exercises? %>
           <form action="/training_log/<%= @page_number %>/workouts/<%= @workout[:id] %>/exercises/new" method="get">
             <button class="button" type="submit">Add Exercise to Workout</button>
           </form>
@@ -63,9 +63,11 @@
         <% end %>
       </tbody>
     </table>
-  
+
     <form action="/training_log/<%= @page_number %>/workouts" method="get">
       <button class="enter" type="submit">Return to Training Log Page <%= @page_number %></button>
     </form>
   </div>
+</div>
+
 </div>

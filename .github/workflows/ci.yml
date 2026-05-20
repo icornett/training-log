@@ -32,7 +32,7 @@ jobs:
         continue-on-error: true
 
       - name: RuboCop SARIF
-        run: bundle exec rubocop --format RuboCop::Formatter::SARIFFormatter --out rubocop.sarif
+        run: bundle exec rubocop --require code_scanning/rubocop_formatter --format RuboCop::Formatter::SARIFFormatter --out rubocop.sarif
         continue-on-error: true
 
       - name: Upload RuboCop SARIF
@@ -43,14 +43,14 @@ jobs:
           category: rubocop
 
       - name: ERB Lint
-        run: bundle exec erb_lint --lint-all
+        run: bundle exec erb_lint views/**/*.erb
 
       - name: Brakeman JSON
-        run: bundle exec brakeman --quiet --no-pager --format json --output brakeman.json
+        run: bundle exec brakeman --quiet --no-pager --force --format json --output brakeman.json
         continue-on-error: true
 
       - name: Brakeman SARIF
-        run: bundle exec brakeman --quiet --no-pager --format sarif --output brakeman.sarif
+        run: bundle exec brakeman --quiet --no-pager --force --format sarif --output brakeman.sarif
         continue-on-error: true
 
       - name: Upload Brakeman SARIF

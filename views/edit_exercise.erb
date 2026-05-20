@@ -1,24 +1,24 @@
 <form action="/training_log/<%= @page_number %>/workouts/<%= @workout_id %>/exercises/<%= @exercise[:id] %>/edit" method="post">
   <div>
     <label for="exercise_description">Exercise Description:
-      <input name="exercise_desription" id="exercise_description" value="<%= @exercise[:desc]%>"/>
+      <input name="exercise_desription" id="exercise_description" value="<%= @exercise[:desc] %>" autocomplete="off">
     </label>
   </div>
   <div>
     <label for="number_sets">Number of Sets:
-      <input name="number_sets" id="number_sets" type="number"
-             min="1" max="10" value="<%= @exercise[:num_sets]%>"/>
+      <input name="number_sets" id="number_sets" type="number" autocomplete="off"
+             min="1" max="10" value="<%= @exercise[:num_sets] %>">
     </label>
   </div>
   <div>
     <label for="number_reps">Number of Reps:
-      <input name="number_reps" id="number_reps" type="number"
-             min="1" max="20" value="<%= @exercise[:num_reps]%>"/>
+      <input name="number_reps" id="number_reps" type="number" autocomplete="off"
+             min="1" max="20" value="<%= @exercise[:num_reps] %>">
     </label>
   </div>
   <div>
     <label for="weights_used">Weight Description:
-      <input name="weights_used" id="weights_used" value="<%= @exercise[:weight_desc]%>"/>
+      <input name="weights_used" id="weights_used" value="<%= @exercise[:weight_desc] %>" autocomplete="off">
     </label>
   </div>
   <button type="submit">Update Exercise</button>
