@@ -11,7 +11,7 @@
         <form action="/training_log/<%= @page_number %>/workouts/<%= @workout[:id] %>/edit" method="get">
           <button class="button" type="submit">Edit Workout Details</button>
         </form>
-        <% if can_add_more_exercises %>
+        <% if can_add_more_exercises? %>
           <form action="/training_log/<%= @page_number %>/workouts/<%= @workout[:id] %>/exercises/new" method="get">
             <button class="button" type="submit">Add Exercise to Workout</button>
           </form>

@@ -1,18 +1,20 @@
-require "sinatra"
-require "sinatra/content_for"
-require "tilt/erubi"
-require "bcrypt"
+# frozen_string_literal: true
 
-require_relative "database_access"
+require 'sinatra'
+require 'sinatra/content_for'
+require 'tilt/erubi'
+require 'bcrypt'
+
+require_relative 'database_access'
 
 configure do
   enable :sessions
-  set :erb, :escape_html => true
+  set :erb, escape_html: true
 end
 
 configure(:development) do
-  require "sinatra/reloader"
-  also_reload "database_access.rb"
+  require 'sinatra/reloader'
+  also_reload 'database_access.rb'
 end
 
 before do
@@ -31,7 +33,7 @@ helpers do
   end
 
   def max_number_pages
-    calculated_num = (@storage.count("id", "workouts", ";") / 10).ceil
+    calculated_num = (@storage.count('id', 'workouts', ';') / 10).ceil
     min_allowed = 1
     [calculated_num, min_allowed].max
   end
@@ -41,10 +43,10 @@ helpers do
   end
 
   def new_workouts_page_num
-    ((@storage.count("id", "workouts", ";") + 1) / 10).ceil
+    ((@storage.count('id', 'workouts', ';') + 1) / 10).ceil
   end
 
-  def can_add_more_exercises
+  def can_add_more_exercises?
     !@storage.at_exercise_limit?(@workout[:id])
   end
 end
@@ -54,91 +56,91 @@ def calc_offset(page_number)
 end
 
 def logged_out?
-  !(@storage.unique_usernames.include?(session[:username]))
+  !@storage.unique_usernames.include?(session[:username])
 end
 
 def logged_out_redirect_msg
-  if logged_out?
-    session[:message] = "Please login to access the Training Log App."
-    session[:route_once_logged_in] = request.fullpath
-    redirect "/login"
-  end
+  return unless logged_out?
+
+  session[:message] = 'Please login to access the Training Log App.'
+  session[:route_once_logged_in] = request.fullpath
+  redirect '/login'
 end
 
 def nonexistent_object_redirect(table, id, page_num)
-  if @storage.object_nonexistent?(table, id)
-    object_type = table.chop.capitalize
-    session[:message] = "#{object_type} ##{id} doesn't exist."
-    redirect "/training_log/#{page_num}/workouts"
-  end
+  return unless @storage.object_nonexistent?(table, id)
+
+  object_type = table.chop.capitalize
+  session[:message] = "#{object_type} ##{id} doesn't exist."
+  redirect "/training_log/#{page_num}/workouts"
 end
 
 def add_exercise_access_error(correct_user_indicator)
-  if !correct_user_indicator
-    "You may not add exercises to someone else's workout."
-  else
+  if correct_user_indicator
     "You've already logged 10 exercises for this workout."
+  else
+    "You may not add exercises to someone else's workout."
   end
 end
 
 def invalid_parameter_msg(url_params)
   valid_flag = valid_parameter?(url_params)
-  if !valid_flag
-    <<~MSG
-      At least one of your url parameters: #{url_params} is incorrect.
-      Please ensure that you only enter numbers when trying to access
-      a specific page number, workout, or exercise.
-    MSG
-  end
+  return if valid_flag
+
+  <<~MSG
+    At least one of your url parameters: #{url_params} is incorrect.
+    Please ensure that you only enter numbers when trying to access
+    a specific page number, workout, or exercise.
+  MSG
 end
 
-def valid_parameter?(url_parameters) 
+def valid_parameter?(url_parameters)
   url_parameters.all? do |string_param|
-    string_param.count("0-9") == string_param.size
+    string_param.count('0-9') == string_param.size
   end
 end
 
 def invalid_param_redirect(*url_parameters)
   invalid_msg = invalid_parameter_msg(url_parameters)
-  if invalid_msg
-    session[:message] = invalid_msg
-    redirect "/training_log/1/workouts"
-  end
+  return unless invalid_msg
+
+  session[:message] = invalid_msg
+  redirect '/training_log/1/workouts'
 end
 
-get "/login" do
-  erb :login  
+get '/login' do
+  erb :login
 end
 
-get "/signup" do
+get '/signup' do
   erb :signup
 end
 
-post "/login" do
+post '/login' do
   username = params[:username].strip
   pw = params[:password]
-  
+
   if @storage.valid_login_credentials?(username, pw)
     session[:username] = username
 
     route = session.delete(:route_once_logged_in)
-    url = route ? route : "/training_log/1/workouts"
+    url = route || '/training_log/1/workouts'
     redirect url
   else
-    session[:message] = "Incorrect login credentials. Please try again."
+    session[:message] = 'Incorrect login credentials. Please try again.'
     status 422
     erb :login
   end
 end
 
-post "/signup" do
+post '/signup' do
   username = params[:username].strip
   pw = params[:password]
 
   if @storage.valid_new_user?(username, pw)
     @storage.add_user!(username, pw)
     session[:username] = username
-    redirect "/"
+    redirect '/'
   else
     session[:message] = <<~MSG
       Usernames & passwords cannot exceed 25 characters,
@@ -149,13 +151,13 @@ post "/signup" do
   end
 end
 
-get "/training_log" do
+get '/training_log' do
   logged_out_redirect_msg
 
-  redirect "/training_log/1/workouts"
+  redirect '/training_log/1/workouts'
 end
 
-get "/training_log/:page_number/workouts" do
+get '/training_log/:page_number/workouts' do
   logged_out_redirect_msg
 
   invalid_param_redirect(params[:page_number])
@@ -171,22 +173,22 @@ get "/training_log/:page_number/workouts" do
   erb :workouts
 end
 
-get "/" do
+get '/' do
   logged_out_redirect_msg
 
-  redirect "/training_log/1/workouts"
+  redirect '/training_log/1/workouts'
 end
 
-get "/training_log/:page_number/workouts/new" do
+get '/training_log/:page_number/workouts/new' do
   logged_out_redirect_msg
 
   @page_number = params[:page_number]
   invalid_param_redirect(@page_number)
-  
+
   erb :new_workout
 end
 
-post "/training_log/:page_number/workouts/new_workout_id" do
+post '/training_log/:page_number/workouts/new_workout_id' do
   @page_number = params[:page_number]
   name = params[:workout_name]
   date = params[:workout_date]
@@ -201,13 +203,13 @@ post "/training_log/:page_number/workouts/new_workout_id" do
   else
     @storage.add_workout!(name, date, user_id)
     @new_workout_id = @storage.max_workout_id
-    
+
     session[:message] = "You've successfully created a new workout."
     redirect "/training_log/#{@page_number}/workouts/#{@new_workout_id}"
   end
 end
 
-get "/training_log/:page_number/workouts/:workout_id/exercises/new" do
+get '/training_log/:page_number/workouts/:workout_id/exercises/new' do
   logged_out_redirect_msg
 
   @page_number = params[:page_number]
@@ -215,8 +217,8 @@ get "/training_log/:page_number/workouts/:workout_id/exercises/new" do
 
   @workout_id = params[:workout_id].to_i
   @workout = @storage.workout_details(@workout_id)
-  
-  add_more_flag = !(@storage.at_exercise_limit?(@workout_id))
+
+  add_more_flag = !@storage.at_exercise_limit?(@workout_id)
   correct_user_flag = allow_editing?(@workout[:username])
 
   error = add_exercise_access_error(correct_user_flag)
@@ -229,15 +231,17 @@ get "/training_log/:page_number/workouts/:workout_id/exercises/new" do
   end
 end
 
-post "/training_log/:page_number/workouts/:workout_id/exercises/new" do
+post '/training_log/:page_number/workouts/:workout_id/exercises/new' do
   @page_number = params[:page_number]
   @workout_id = params[:workout_id].to_i
 
   desc_prepped = params[:exercise_desc].gsub(/[[:punct:]]/, '')
   weights_prepped = params[:weights_used].downcase
 
-  desc, sets = desc_prepped, params[:number_sets]
-  reps, weights = params[:number_sets], weights_prepped
+  desc = desc_prepped
+  sets = params[:number_sets]
+  reps = params[:number_reps]
+  weights = weights_prepped
 
   error = @storage.invalid_new_exercise_msg(desc, weights, @workout_id)
 
@@ -250,32 +254,32 @@ post "/training_log/:page_number/workouts/:workout_id/exercises/new" do
     redirect "/training_log/#{@page_number}/workouts/#{@workout_id}"
   end
 end
-  
-get "/training_log/:page_number/workouts/:workout_id" do
+
+get '/training_log/:page_number/workouts/:workout_id' do
   logged_out_redirect_msg
 
   @page_number = params[:page_number]
   invalid_param_redirect(@page_number, params[:workout_id])
 
   @workout_id = params[:workout_id].to_i
-  nonexistent_object_redirect("workouts", @workout_id, @page_number)
-  
+  nonexistent_object_redirect('workouts', @workout_id, @page_number)
+
   @workout = @storage.workout_details(@workout_id)
   @exercises = @storage.load_exercises(@workout_id)
 
   erb :individual_workout
 end
 
-get "/training_log/:page_number/workouts/:workout_id/edit" do
+get '/training_log/:page_number/workouts/:workout_id/edit' do
   logged_out_redirect_msg
-  
+
   @page_number = params[:page_number]
   invalid_param_redirect(@page_number, params[:workout_id])
 
   @workout_id = params[:workout_id].to_i
   @workout = @storage.workout_details(@workout_id)
 
-  nonexistent_object_redirect("workouts", @workout_id, @page_number)
+  nonexistent_object_redirect('workouts', @workout_id, @page_number)
 
   if allow_editing?(@workout[:username])
     erb :edit_workout
@@ -289,7 +293,7 @@ get "/training_log/:page_number/workouts/:workout_id/edit" do
   end
 end
 
-get "/training_log/:page_number/workouts/:workout_id/exercises/:exercise_id/edit" do
+get '/training_log/:page_number/workouts/:workout_id/exercises/:exercise_id/edit' do
   logged_out_redirect_msg
 
   @page_number = params[:page_number]
@@ -298,8 +302,8 @@ get "/training_log/:page_number/workouts/:workout_id/exercises/:exercise_id/edit
   @workout_id = params[:workout_id].to_i
   @exercise_id = params[:exercise_id].to_i
   @workout = @storage.workout_details(@workout_id)
-  
-  nonexistent_object_redirect("exercises", @exercise_id, @page_number)
+
+  nonexistent_object_redirect('exercises', @exercise_id, @page_number)
 
   if allow_editing?(@workout[:username])
     @exercise = @storage.exercise_details(@exercise_id)
@@ -314,18 +318,19 @@ get "/training_log/:page_number/workouts/:workout_id/exercises/:exercise_id/edit
   end
 end
 
-post "/training_log/:page_number/workouts/new/" do
+post '/training_log/:page_number/workouts/new/' do
   @workout_name = params[:workout_name].strip
-  redirect "/"
+  redirect '/'
 end
 
-post "/training_log/:page_number/workouts/:workout_id/edit" do
+post '/training_log/:page_number/workouts/:workout_id/edit' do
   @workout_id = params[:workout_id].to_i
   @page_number = params[:page_number]
 
-  name, date = params[:workout_name], params[:workout_date]
+  name = params[:workout_name]
+  date = params[:workout_date]
   username = session[:username]
-  
+
   error = @storage.invalid_workout_msg(name, date, username, @workout_id)
 
   if error
@@ -338,17 +343,17 @@ post "/training_log/:page_number/workouts/:workout_id/edit" do
   end
 end
 
-post "/training_log/:page_number/workouts/:workout_id/delete" do
+post '/training_log/:page_number/workouts/:workout_id/delete' do
   @page_number = params[:page_number]
   @workout_id = params[:workout_id]
-  
-  @storage.delete_record!(@workout_id, "workouts")
+
+  @storage.delete_record!(@workout_id, 'workouts')
   session[:message] = "You successfully deleted workout ##{@workout_id}."
 
   redirect "/training_log/#{max_number_pages}/workouts"
 end
 
-post "/training_log/:page_number/workouts/:workout_id/exercises/:exercise_id/edit" do
+post '/training_log/:page_number/workouts/:workout_id/exercises/:exercise_id/edit' do
   @page_number = params[:page_number]
   @workout_id = params[:workout_id]
 
@@ -369,29 +374,28 @@ post "/training_log/:page_number/workouts/:workout_id/exercises/:exercise_id/edi
   end
 end
 
-post "/training_log/:page_number/workouts/:workout_id/exercises/:exercise_id/delete" do
+post '/training_log/:page_number/workouts/:workout_id/exercises/:exercise_id/delete' do
   @page_number = params[:page_number]
   @workout_id = params[:workout_id]
   @exercise_id = params[:exercise_id]
   @exercise = @storage.exercise_details(@exercise_id)
-  
-  
-  @storage.delete_record!(@exercise_id, "exercises")
+
+  @storage.delete_record!(@exercise_id, 'exercises')
   session[:message] = "You removed #{@exercise[:desc]} from this workout."
   redirect "/training_log/#{@page_number}/workouts/#{@workout_id}"
 end
 
-post "/logout" do
+post '/logout' do
   session.delete(:username)
-  session[:message] = "You have successfully logged out."
-  redirect "/login"
+  session[:message] = 'You have successfully logged out.'
+  redirect '/login'
 end
 
-post "/delete_account" do
+post '/delete_account' do
   username = session.delete(:username)
   user_id = @storage.find_user_id(username)
-  @storage.delete_record!(user_id, "users")
+  @storage.delete_record!(user_id, 'users')
 
   session[:message] = "All account data for '#{username}' has been deleted."
-  redirect "/signup"
+  redirect '/signup'
 end

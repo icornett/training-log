@@ -32,7 +32,7 @@ jobs:
         continue-on-error: true
 
       - name: RuboCop SARIF
-        run: bundle exec rubocop --format RuboCop::Formatter::SARIFFormatter --out rubocop.sarif
+        run: bundle exec rubocop --require code_scanning/rubocop_formatter --format RuboCop::Formatter::SARIFFormatter --out rubocop.sarif
         continue-on-error: true
 
       - name: Upload RuboCop SARIF
