@@ -65,3 +65,10 @@ Explain conventional commit format and branch strategies:
 - Feature branches: feature/<descriptive-name>
 - Always stage all changes before committing: `git add .`
 - Push to the correct branch: `git push origin <branch-name>`
+
+## Recent Learnings
+- Ruby/Bundler environment: This repo requires Ruby 4.0.4 and Bundler 4.x. If local shell defaults to system Ruby, prefer `rbenv` and ensure shims are on PATH before running hooks or bundle commands.
+- Lockfile compatibility: If bundler commands fail with "You must use Bundler 4 or greater with this lockfile", install the required version in the active Ruby (`gem install bundler -v 4.0.11`) and run via `rbenv exec` or with rbenv shims.
+- Database connectivity in containers: Do not rely on local PostgreSQL socket defaults in production containers. Prefer `DATABASE_URL` for runtime configuration.
+- Azure PostgreSQL: Use TLS for Azure-hosted Postgres connections (for example, include `?sslmode=require` in `DATABASE_URL` or set SSL mode env vars explicitly).
+- Maintainability and linting: Keep large service objects modular. Extracting focused modules (connection config, query helpers, validation logic) helps satisfy class-length lint rules without changing behavior.
