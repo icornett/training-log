@@ -16,6 +16,14 @@
 - Systematic Debugging: Use test failures as guides
 - Validation Before Commit: All tests pass, no lint errors
 
+## Sinatra Development Rules
+- This project uses Ruby with Sinatra, not Ruby on Rails. Do not suggest Rails-specific gems, ActiveSupport extensions, or ActionPack helpers unless explicitly requested.
+- Favor Sinatra-native routing conventions (for example, `get '/path' do ... end`) over Rails-style controllers unless modular Sinatra style is explicitly requested.
+- Use explicit Rack middleware or helper-based composition for authentication, validation, and session concerns (for example, `Rack::Protection`, `Warden`).
+- Follow standard Ruby style conventions: 2-space indentation, snake_case methods, and guard clauses where they improve readability.
+- For views, default to ERB templates using Sinatra syntax (for example, `erb :index`) unless another template engine is explicitly requested.
+- Keep routes thin. Move business logic into POROs/service objects (for this repo, existing dedicated Ruby files are acceptable even when `/lib` or `/models` are not present).
+
 ## Testing Scope
 This project uses unit tests, integration tests, and UI end-to-end tests:
 - Backend: Native Ruby testing
