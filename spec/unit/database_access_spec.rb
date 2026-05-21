@@ -14,6 +14,47 @@ RSpec.describe DatabaseAccess do
   end
 
   # ---------------------------------------------------------------------------
+  # #initialize connection config
+  # ---------------------------------------------------------------------------
+  describe '#initialize' do
+    it 'uses DATABASE_URL when provided' do
+      ENV['DATABASE_URL'] = 'postgres://postgres:secret@db.example.com/training_log'
+
+      described_class.new
+
+      expect(PG).to have_received(:connect).with('postgres://postgres:secret@db.example.com/training_log')
+    ensure
+      ENV.delete('DATABASE_URL')
+    end
+
+    it 'falls back to DB_* and PG* variables when DATABASE_URL is absent' do
+      ENV.delete('DATABASE_URL')
+      ENV['DB_NAME'] = 'training_log_prod'
+      ENV['DB_HOST'] = 'myserver.postgres.database.azure.com'
+      ENV['DB_PORT'] = '5432'
+      ENV['DB_USER'] = 'app_user'
+      ENV['DB_PASSWORD'] = 'topsecret'
+
+      described_class.new
+
+      expect(PG).to have_received(:connect).with(
+        dbname: 'training_log_prod',
+        host: 'myserver.postgres.database.azure.com',
+        port: '5432',
+        user: 'app_user',
+        password: 'topsecret',
+        sslmode: 'require'
+      )
+    ensure
+      ENV.delete('DB_NAME')
+      ENV.delete('DB_HOST')
+      ENV.delete('DB_PORT')
+      ENV.delete('DB_USER')
+      ENV.delete('DB_PASSWORD')
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # #valid_new_user?
   # ---------------------------------------------------------------------------
   describe '#valid_new_user?' do
