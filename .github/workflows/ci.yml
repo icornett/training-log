@@ -7,126 +7,38 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: icornett/training-log
-
 jobs:
-  lint-and-sast:
-    name: Lint & SAST
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "4.0.4"
-          bundler-cache: true
-
-      - name: RuboCop JSON
-        run: bundle exec rubocop --format json --out rubocop.json
-        continue-on-error: true
-
-      - name: RuboCop SARIF
-        run: bundle exec rubocop --require code_scanning/rubocop_formatter --format RuboCop::Formatter::SARIFFormatter --out rubocop.sarif
-        continue-on-error: true
-
-      - name: Upload RuboCop SARIF
-        if: always() && hashFiles('rubocop.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: rubocop.sarif
-          category: rubocop
-
-      - name: ERB Lint
-        run: bundle exec erb_lint views/**/*.erb
-
-      - name: Brakeman JSON
-        run: bundle exec brakeman --quiet --no-pager --force --format json --output brakeman.json
-        continue-on-error: true
-
-      - name: Brakeman SARIF
-        run: bundle exec brakeman --quiet --no-pager --force --format sarif --output brakeman.sarif
-        continue-on-error: true
-
-      - name: Upload Brakeman SARIF
-        if: always() && hashFiles('brakeman.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: brakeman.sarif
-          category: brakeman
-
-      - name: bundler-audit CVE scan
-        run: bundle exec bundle-audit check --update
-
-      - name: Upload lint/SAST reports
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: sast-reports
-          path: |
-            rubocop.json
-            brakeman.json
-
-  test-fast:
-    name: Unit & Integration Tests
+  validate:
+    name: Validate TypeScript App
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
-          ruby-version: "4.0.4"
-          bundler-cache: true
+          node-version: '22'
+          cache: 'npm'
 
-      - name: Run unit and integration tests
-        run: bundle exec rspec spec/unit spec/integration
+      - name: Install dependencies
+        run: npm ci
 
-  test-e2e:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: training_log_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
+      - name: Typecheck
+        run: npm run typecheck
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "4.0.4"
-          bundler-cache: true
+      - name: API tests
+        run: npm run test:api
 
-      - name: Apply schema
-        env:
-          PGPASSWORD: postgres
-        run: psql -h localhost -U postgres -d training_log_test < schema.sql
+      - name: Frontend tests
+        run: npm run test:web
 
-      - name: Run E2E tests
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost/training_log_test
-        run: bundle exec rspec spec/e2e
+      - name: Build
+        run: npm run build
 
   version:
     name: Auto Semver Tag
     runs-on: ubuntu-latest
-    needs: [test-fast, lint-and-sast]
+    needs: [validate]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write
@@ -145,58 +57,3 @@ jobs:
           default_bump: patch
           tag_prefix: v
 
-  docker-build:
-    name: Docker Build (smoke test)
-    runs-on: ubuntu-latest
-    needs: [test-fast, lint-and-sast]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: false
-
-  publish:
-    name: Publish to GHCR
-    runs-on: ubuntu-latest
-    needs: [test-fast, test-e2e, lint-and-sast, version]
-    if: |
-      always() &&
-      needs.test-fast.result == 'success' &&
-      needs.test-e2e.result == 'success' &&
-      needs.lint-and-sast.result == 'success' &&
-      (needs.version.result == 'success' || startsWith(github.ref, 'refs/tags/v'))
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern={{version}},value=${{ needs.version.outputs.new_tag }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.version.outputs.new_tag }}
-            type=semver,pattern={{major}},value=${{ needs.version.outputs.new_tag }},enable=${{ !startsWith(needs.version.outputs.new_tag, 'v0.') }}
-            type=sha,format=long
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}

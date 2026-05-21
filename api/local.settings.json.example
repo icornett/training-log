@@ -1,0 +1,10 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "DATABASE_URL": "postgresql://USER:PASSWORD@HOST:5432/training_log?sslmode=require&connection_limit=2&pgbouncer=true",
+    "SESSION_SECRET": "replace-with-a-long-random-secret",
+    "NODE_ENV": "development"
+  }
+}

@@ -1,0 +1,251 @@
+:root {
+  --base-bg: #f2ecdf;
+  --panel: #fffaf0;
+  --ink: #222;
+  --ink-soft: #47443e;
+  --accent: #28666e;
+  --accent-strong: #16424a;
+  --line: #d8cdbb;
+  --danger: #ab2f3c;
+  --headline: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Instrument Sans", "Gill Sans", "Trebuchet MS", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--body);
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 15% 20%, #f8e2c9 0%, transparent 40%),
+    radial-gradient(circle at 85% 10%, #c4e8dc 0%, transparent 35%),
+    var(--base-bg);
+  min-height: 100vh;
+}
+
+a {
+  color: var(--accent-strong);
+  text-decoration-thickness: 0.09rem;
+}
+
+.app-bg {
+  min-height: 100vh;
+}
+
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
+  border-bottom: 2px solid var(--line);
+  backdrop-filter: blur(6px);
+}
+
+.brand {
+  font-family: var(--headline);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nav-identity {
+  font-weight: 600;
+}
+
+.page-shell {
+  max-width: 980px;
+  margin: 2rem auto;
+  padding: 0 1rem 2rem;
+  animation: float-in 320ms ease-out;
+}
+
+.card {
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(40, 30, 10, 0.08);
+  padding: 1.2rem;
+}
+
+.auth-card {
+  max-width: 480px;
+}
+
+h1,
+h2 {
+  font-family: var(--headline);
+  margin-top: 0;
+}
+
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.secondary-link {
+  font-weight: 600;
+}
+
+.stack-form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+input,
+button {
+  font: inherit;
+}
+
+input {
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #bdb4a5;
+  background: #fff;
+}
+
+button {
+  width: fit-content;
+  padding: 0.55rem 0.8rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--accent-strong);
+}
+
+.ghost-button {
+  background: transparent;
+  color: var(--accent-strong);
+  border: 1px solid var(--line);
+}
+
+.ghost-button:hover {
+  background: rgba(40, 102, 110, 0.08);
+}
+
+.danger-button {
+  color: var(--danger);
+}
+
+.danger-button:hover {
+  background: rgba(171, 47, 60, 0.08);
+}
+
+.error-text {
+  color: var(--danger);
+  margin: 0.2rem 0;
+}
+
+.success-text {
+  color: var(--accent-strong);
+  margin: 0.2rem 0;
+}
+
+.workouts-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0 1rem;
+}
+
+.workouts-table th,
+.workouts-table td {
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  padding: 0.6rem 0.45rem;
+}
+
+.exercise-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.exercise-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  border-left: 3px solid var(--accent);
+  padding-left: 0.6rem;
+}
+
+.exercise-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.row-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.panel-block {
+  border-top: 1px solid var(--line);
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.compact-form {
+  max-width: 420px;
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+@keyframes float-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .top-nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.7rem;
+  }
+
+  .workouts-table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .pager {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+}

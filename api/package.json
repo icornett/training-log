@@ -1,0 +1,10 @@
+{
+  "name": "training-log-api",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "func start --port 7071"
+  }
+}
