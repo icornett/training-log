@@ -1,0 +1,56 @@
+{
+  "name": "training-log-react",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "prepare": "simple-git-hooks",
+    "dev": "vite",
+    "dev:web": "vite",
+    "dev:api:build": "tsc -p api/tsconfig.json --watch",
+    "dev:api:start": "wait-on api/dist/index.js && npm --prefix api run start",
+    "dev:full": "concurrently -k -n api-build,api,web -c yellow,cyan,magenta \"npm run dev:api:build\" \"npm run dev:api:start\" \"npm run dev:web\"",
+    "typecheck:web": "tsc -p tsconfig.json",
+    "typecheck:api": "tsc -p api/tsconfig.json",
+    "typecheck": "npm run typecheck:web && npm run typecheck:api",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "build:api": "tsc -p api/tsconfig.json",
+    "test:api": "NODE_OPTIONS=--experimental-vm-modules jest --config jest.config.cjs --runInBand",
+    "test:web": "vitest run",
+    "precommit": "npm run typecheck && npm run test:api && npm run test:web"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.6.0",
+    "bcryptjs": "^2.4.3",
+    "cookie": "^1.0.2",
+    "pg": "^8.13.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.1",
+    "@types/pg": "^8.11.10",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "concurrently": "^9.1.2",
+    "jest": "^29.7.0",
+    "jsdom": "^25.0.1",
+    "simple-git-hooks": "^2.11.1",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vitest": "^2.1.8",
+    "wait-on": "^8.0.1"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npm run precommit"
+  }
+}

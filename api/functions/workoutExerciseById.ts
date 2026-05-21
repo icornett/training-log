@@ -1,0 +1,71 @@
+import { app, type HttpRequest } from '@azure/functions'
+
+import { getSessionUser } from '../shared/auth.js'
+import { getNumericPathParam, json, parseJsonBody } from '../shared/http.js'
+import { deleteExercise, getExerciseForWorkout, getWorkoutDetails, updateExercise } from '../shared/repository.js'
+import { invalidExerciseEditMessage, requireExistingUser, requireWorkoutOwnership } from '../shared/validation.js'
+
+interface UpdateExerciseBody {
+  description?: string
+  numSets?: number
+  numReps?: number
+  weightDescription?: string
+}
+
+app.http('workoutExerciseById', {
+  methods: ['PUT', 'DELETE'],
+  authLevel: 'anonymous',
+  route: 'workouts/{workoutId}/exercises/{exerciseId}',
+  handler: async (request: HttpRequest) => {
+    const user = getSessionUser(request)
+    if (!user || !(await requireExistingUser(user.username))) {
+      return json(401, { error: 'Please login to access the Training Log App.' })
+    }
+
+    const workoutId = getNumericPathParam(request, 'workoutId')
+    const exerciseId = getNumericPathParam(request, 'exerciseId')
+
+    if (!workoutId || !exerciseId) {
+      return json(400, {
+        error:
+          'At least one of your url parameters is incorrect. Please ensure numeric values are used for pages and ids.',
+      })
+    }
+
+    const workout = await getWorkoutDetails(workoutId)
+    if (!workout) {
+      return json(404, { error: `Workout #${workoutId} doesn't exist.` })
+    }
+
+    const exercise = await getExerciseForWorkout(workoutId, exerciseId)
+    if (!exercise) {
+      return json(404, { error: `Exercise #${exerciseId} doesn't exist.` })
+    }
+
+    const ownership = await requireWorkoutOwnership(workoutId, user.username)
+    if (!ownership.ok) {
+      return json(403, {
+        error: 'You are not allowed to edit another user\'s workout. You may only view this workout & its exercises.',
+      })
+    }
+
+    if (request.method === 'DELETE') {
+      await deleteExercise(exerciseId)
+      return json(200, { message: `You removed ${exercise.description} from this workout.` })
+    }
+
+    const body = await parseJsonBody<UpdateExerciseBody>(request)
+    const description = body.description ?? ''
+    const numSets = Number(body.numSets ?? 0)
+    const numReps = Number(body.numReps ?? 0)
+    const weightDescription = body.weightDescription ?? ''
+
+    const invalidMsg = invalidExerciseEditMessage(description, weightDescription)
+    if (invalidMsg) {
+      return json(422, { error: invalidMsg })
+    }
+
+    await updateExercise(exerciseId, description, numSets, numReps, weightDescription)
+    return json(200, { message: `You've successfully updated exercise #${exerciseId}` })
+  },
+})

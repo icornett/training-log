@@ -1,0 +1,8 @@
+import './functions/account.js'
+import './functions/login.js'
+import './functions/logout.js'
+import './functions/signup.js'
+import './functions/workoutById.js'
+import './functions/workoutExerciseById.js'
+import './functions/workoutExercises.js'
+import './functions/workouts.js'
