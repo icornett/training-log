@@ -1,6 +1,7 @@
-import { Navigate, createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 
 import { AppShell } from './components/AppShell'
+import { AuthLandingPage } from './pages/AuthLandingPage'
 import { LoginPage } from './pages/LoginPage'
 import { NewWorkoutPage } from './pages/NewWorkoutPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -13,7 +14,7 @@ export const router = createBrowserRouter([
     path: '/',
     element: <AppShell />,
     children: [
-      { index: true, element: <Navigate to="/training_log/1/workouts" replace /> },
+      { index: true, element: <AuthLandingPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'signup', element: <SignupPage /> },
       { path: 'training_log/:pageNumber/workouts', element: <WorkoutsPage /> },

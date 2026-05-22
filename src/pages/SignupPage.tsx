@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../context/AuthContext'
@@ -6,10 +6,16 @@ import { api } from '../services/api'
 
 export const SignupPage = (): JSX.Element => {
   const navigate = useNavigate()
-  const { refresh } = useAuth()
+  const { currentUser, refresh } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/training_log/1/workouts', { replace: true })
+    }
+  }, [currentUser, navigate])
 
   const submit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()

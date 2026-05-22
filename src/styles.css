@@ -1,12 +1,13 @@
 :root {
-  --base-bg: #f2ecdf;
-  --panel: #fffaf0;
-  --ink: #222;
-  --ink-soft: #47443e;
-  --accent: #28666e;
-  --accent-strong: #16424a;
-  --line: #d8cdbb;
-  --danger: #ab2f3c;
+  --base-bg: #eef3f8;
+  --panel: #f7f9fc;
+  --ink: #001325;
+  --ink-soft: #163a5f;
+  --accent: #002244;
+  --accent-strong: #00172f;
+  --line: #a5acaf;
+  --danger: #a71930;
+  --seahawks-green: #69be28;
   --headline: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
   --body: "Instrument Sans", "Gill Sans", "Trebuchet MS", sans-serif;
 }
@@ -20,8 +21,8 @@ body {
   font-family: var(--body);
   color: var(--ink);
   background:
-    radial-gradient(circle at 15% 20%, #f8e2c9 0%, transparent 40%),
-    radial-gradient(circle at 85% 10%, #c4e8dc 0%, transparent 35%),
+    radial-gradient(circle at 15% 20%, #d5e6ff 0%, transparent 40%),
+    radial-gradient(circle at 85% 10%, #c9efb0 0%, transparent 35%),
     var(--base-bg);
   min-height: 100vh;
 }
@@ -40,7 +41,7 @@ a {
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.2rem;
-  border-bottom: 2px solid var(--line);
+  border-bottom: 2px solid var(--seahawks-green);
   backdrop-filter: blur(6px);
 }
 
@@ -50,6 +51,7 @@ a {
   font-weight: 700;
   letter-spacing: 0.02em;
   text-decoration: none;
+  color: var(--accent);
 }
 
 .nav-links {
@@ -139,7 +141,7 @@ button:hover {
 }
 
 .ghost-button:hover {
-  background: rgba(40, 102, 110, 0.08);
+  background: rgba(0, 34, 68, 0.08);
 }
 
 .danger-button {
@@ -156,7 +158,7 @@ button:hover {
 }
 
 .success-text {
-  color: var(--accent-strong);
+  color: #2f6f14;
   margin: 0.2rem 0;
 }
 
@@ -185,7 +187,7 @@ button:hover {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--seahawks-green);
   padding-left: 0.6rem;
 }
 
@@ -201,6 +203,21 @@ button:hover {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.cta-link {
+  display: inline-block;
+  padding: 0.55rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cta-link:hover {
+  background: var(--accent-strong);
 }
 
 .panel-block {
