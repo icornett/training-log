@@ -1,10 +1,10 @@
 import {
+  countWorkoutsByUsername,
+  getWorkoutDetailsForUser,
+  listWorkoutsByUsername,
   normalizedExerciseDescriptionsByWorkout,
   uniqueUsernames,
   userExists,
-  listWorkouts,
-  countWorkouts,
-  getWorkoutDetails,
 } from './repository.js'
 
 export const validNewUser = async (username: string, password: string): Promise<boolean> => {
@@ -20,35 +20,58 @@ export const validNewUser = async (username: string, password: string): Promise<
 export const invalidWorkoutMessage = async (
   name: string,
   date: string,
+  numSets: number,
+  numReps: number,
+  weightDescription: string,
   username: string,
   workoutId: number | null,
 ): Promise<string | null> => {
-  const valid = await validWorkoutDetails(name, date, username, workoutId)
+  const valid = await validWorkoutDetails(
+    name,
+    date,
+    numSets,
+    numReps,
+    weightDescription,
+    username,
+    workoutId,
+  )
   if (valid) {
     return null
   }
 
   return (
     'Invalid workout entry. You may only log 1 workout per day and the name of the workout ' +
-    'must be within 4 & 15 characters long. Please try again.'
+    'must be within 4 & 15 characters long. Sets and reps must be positive numbers, and weight ' +
+    "must use 'kgs', 'lbs', or 'bodyweight'. Please try again."
   )
 }
 
 const validWorkoutDetails = async (
   name: string,
   date: string,
+  numSets: number,
+  numReps: number,
+  weightDescription: string,
   username: string,
   workoutId: number | null,
 ): Promise<boolean> => {
-  if (name.length > 15 || name.length < 4) {
+  if (
+    name.length > 15 ||
+    name.length < 4 ||
+    !Number.isInteger(numSets) ||
+    numSets <= 0 ||
+    !Number.isInteger(numReps) ||
+    numReps <= 0 ||
+    exerciseWeightsInvalid(weightDescription)
+  ) {
     return false
   }
 
-  const totalCount = await countWorkouts()
+  const totalCount = await countWorkoutsByUsername(username)
   const all: Array<{ id: number; name: string; date: string; username: string }> = []
 
   for (let offset = 0; offset < totalCount; offset += 10) {
-    const page = await listWorkouts(offset)
+    const page = await listWorkoutsByUsername(username, offset)
     all.push(...page)
   }
 
@@ -135,10 +158,10 @@ export const requireWorkoutOwnership = async (
   workoutId: number,
   username: string,
 ): Promise<{ ok: boolean; workoutName?: string }> => {
-  const workout = await getWorkoutDetails(workoutId)
+  const workout = await getWorkoutDetailsForUser(workoutId, username)
   if (!workout) {
     return { ok: false }
   }
 
-  return { ok: workout.username === username, workoutName: workout.name }
+  return { ok: true, workoutName: workout.name }
 }

@@ -7,6 +7,9 @@ export interface WorkoutRow {
   name: string
   date: string
   username: string
+  numSets: number
+  numReps: number
+  weightDescription: string
 }
 
 export interface ExerciseRow {
@@ -22,6 +25,9 @@ export interface WorkoutDetails {
   name: string
   date: string
   username: string
+  numSets: number
+  numReps: number
+  weightDescription: string
   exercises: Array<{
     id: number
     description: string

@@ -19,6 +19,9 @@ export const WorkoutDetailPage = (): JSX.Element => {
   const [isEditingWorkout, setIsEditingWorkout] = useState(false)
   const [workoutName, setWorkoutName] = useState('')
   const [workoutDate, setWorkoutDate] = useState('')
+  const [workoutSets, setWorkoutSets] = useState('3')
+  const [workoutReps, setWorkoutReps] = useState('8')
+  const [workoutWeight, setWorkoutWeight] = useState('bodyweight')
   const [exerciseDescription, setExerciseDescription] = useState('')
   const [exerciseSets, setExerciseSets] = useState('3')
   const [exerciseReps, setExerciseReps] = useState('8')
@@ -38,6 +41,9 @@ export const WorkoutDetailPage = (): JSX.Element => {
           setWorkout(result)
           setWorkoutName(result?.name ?? '')
           setWorkoutDate(result?.date ?? '')
+          setWorkoutSets(String(result?.numSets ?? 3))
+          setWorkoutReps(String(result?.numReps ?? 8))
+          setWorkoutWeight(result?.weightDescription ?? 'bodyweight')
         }
       } catch (err) {
         if (!disposed) {
@@ -77,7 +83,14 @@ export const WorkoutDetailPage = (): JSX.Element => {
     event.preventDefault()
 
     try {
-      const updated = await api.updateWorkout({ id, name: workoutName, date: workoutDate })
+      const updated = await api.updateWorkout({
+        id,
+        name: workoutName,
+        date: workoutDate,
+        numSets: Number(workoutSets),
+        numReps: Number(workoutReps),
+        weightDescription: workoutWeight.trim().toLowerCase(),
+      })
       setWorkout(updated)
       setMessage('Workout updated.')
       setError(null)
@@ -177,6 +190,9 @@ export const WorkoutDetailPage = (): JSX.Element => {
       <p>
         {workout.date} · {workout.username}
       </p>
+      <p>
+        {workout.numSets} sets · {workout.numReps} reps · {workout.weightDescription}
+      </p>
 
       {message ? <p className="success-text">{message}</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
@@ -210,6 +226,31 @@ export const WorkoutDetailPage = (): JSX.Element => {
                 type="date"
                 value={workoutDate}
                 onChange={(event) => setWorkoutDate(event.target.value)}
+                required
+              />
+              <label htmlFor="workout-sets-edit">Sets</label>
+              <input
+                id="workout-sets-edit"
+                type="number"
+                min="1"
+                value={workoutSets}
+                onChange={(event) => setWorkoutSets(event.target.value)}
+                required
+              />
+              <label htmlFor="workout-reps-edit">Reps</label>
+              <input
+                id="workout-reps-edit"
+                type="number"
+                min="1"
+                value={workoutReps}
+                onChange={(event) => setWorkoutReps(event.target.value)}
+                required
+              />
+              <label htmlFor="workout-weight-edit">Weight</label>
+              <input
+                id="workout-weight-edit"
+                value={workoutWeight}
+                onChange={(event) => setWorkoutWeight(event.target.value)}
                 required
               />
               <button type="submit">Save Workout</button>

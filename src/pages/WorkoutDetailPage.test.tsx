@@ -28,6 +28,9 @@ const workoutFixture: WorkoutDetails = {
   name: 'Upper Body',
   date: '2026-05-15',
   username: 'Jane Doe',
+  numSets: 4,
+  numReps: 8,
+  weightDescription: '95 lbs',
   exercises: [
     {
       id: 11,
@@ -81,6 +84,9 @@ describe('WorkoutDetailPage', () => {
         id: 1,
         name: 'Upper Strength',
         date: '2026-05-15',
+        numSets: 4,
+        numReps: 8,
+        weightDescription: '95 lbs',
       })
     })
     expect(await screen.findByText('Workout updated.')).toBeInTheDocument()

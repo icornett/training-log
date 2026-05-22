@@ -2,12 +2,15 @@ import { app, type HttpRequest } from '@azure/functions'
 
 import { getSessionUser } from '../shared/auth.js'
 import { getNumericPathParam, json, parseJsonBody } from '../shared/http.js'
-import { deleteWorkout, getWorkoutWithExercises, updateWorkout } from '../shared/repository.js'
+import { deleteWorkout, getWorkoutWithExercisesForUser, updateWorkout, workoutExists } from '../shared/repository.js'
 import { invalidWorkoutMessage, requireExistingUser, requireWorkoutOwnership } from '../shared/validation.js'
 
 interface UpdateWorkoutBody {
   name?: string
   date?: string
+  numSets?: number
+  numReps?: number
+  weightDescription?: string
 }
 
 app.http('workoutById', {
@@ -28,8 +31,13 @@ app.http('workoutById', {
       })
     }
 
-    const workout = await getWorkoutWithExercises(workoutId)
+    const workout = await getWorkoutWithExercisesForUser(workoutId, user.username)
     if (!workout) {
+      if (await workoutExists(workoutId)) {
+        return json(403, {
+          error: 'You are not allowed to edit another user\'s workout. You may only view this workout & its exercises.',
+        })
+      }
       return json(404, { error: `Workout #${workoutId} doesn't exist.` })
     }
 
@@ -52,13 +60,24 @@ app.http('workoutById', {
     const body = await parseJsonBody<UpdateWorkoutBody>(request)
     const name = body.name?.trim() ?? ''
     const date = body.date ?? ''
+    const numSets = Number(body.numSets)
+    const numReps = Number(body.numReps)
+    const weightDescription = body.weightDescription?.trim().toLowerCase() ?? ''
 
-    const invalidMsg = await invalidWorkoutMessage(name, date, user.username, workoutId)
+    const invalidMsg = await invalidWorkoutMessage(
+      name,
+      date,
+      numSets,
+      numReps,
+      weightDescription,
+      user.username,
+      workoutId,
+    )
     if (invalidMsg) {
       return json(422, { error: invalidMsg })
     }
 
-    await updateWorkout(workoutId, name, date)
+    await updateWorkout(workoutId, name, date, numSets, numReps, weightDescription)
     return json(200, { message: `You've successfully updated workout ${workoutId}` })
   },
 })

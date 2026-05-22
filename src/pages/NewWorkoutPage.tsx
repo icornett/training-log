@@ -10,6 +10,9 @@ export const NewWorkoutPage = (): JSX.Element => {
 
   const [name, setName] = useState('')
   const [date, setDate] = useState('')
+  const [numSets, setNumSets] = useState('3')
+  const [numReps, setNumReps] = useState('8')
+  const [weightDescription, setWeightDescription] = useState('bodyweight')
   const [error, setError] = useState<string | null>(null)
 
   const submit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
@@ -17,12 +20,18 @@ export const NewWorkoutPage = (): JSX.Element => {
     setError(null)
 
     if (name.trim().length === 0 || date.trim().length === 0) {
-      setError('Please enter a workout name and date.')
+      setError('Please enter workout name and date details.')
       return
     }
 
     try {
-      const created = await api.createWorkout({ name: name.trim(), date })
+      const created = await api.createWorkout({
+        name: name.trim(),
+        date,
+        numSets: Number(numSets),
+        numReps: Number(numReps),
+        weightDescription: weightDescription.trim().toLowerCase(),
+      })
       navigate(`/training_log/${page}/workouts/${created.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create workout.')
@@ -38,6 +47,34 @@ export const NewWorkoutPage = (): JSX.Element => {
 
         <label htmlFor="workout-date">Workout Date</label>
         <input id="workout-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
+
+        <label htmlFor="workout-sets">Sets</label>
+        <input
+          id="workout-sets"
+          type="number"
+          min="1"
+          value={numSets}
+          onChange={(event) => setNumSets(event.target.value)}
+          required
+        />
+
+        <label htmlFor="workout-reps">Reps</label>
+        <input
+          id="workout-reps"
+          type="number"
+          min="1"
+          value={numReps}
+          onChange={(event) => setNumReps(event.target.value)}
+          required
+        />
+
+        <label htmlFor="workout-weight">Weight</label>
+        <input
+          id="workout-weight"
+          value={weightDescription}
+          onChange={(event) => setWeightDescription(event.target.value)}
+          required
+        />
 
         {error ? <p className="error-text">{error}</p> : null}
         <button type="submit">Create Workout</button>

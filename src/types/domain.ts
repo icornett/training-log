@@ -12,6 +12,9 @@ export interface WorkoutListItem {
   name: string
   date: string
   username: string
+  numSets: number
+  numReps: number
+  weightDescription: string
 }
 
 export interface Exercise {
@@ -27,18 +30,27 @@ export interface WorkoutDetails {
   name: string
   date: string
   username: string
+  numSets: number
+  numReps: number
+  weightDescription: string
   exercises: Exercise[]
 }
 
 export interface WorkoutCreateInput {
   name: string
   date: string
+  numSets: number
+  numReps: number
+  weightDescription: string
 }
 
 export interface WorkoutUpdateInput {
   id: number
   name: string
   date: string
+  numSets: number
+  numReps: number
+  weightDescription: string
 }
 
 export interface ExerciseInput {

@@ -106,6 +106,9 @@ export const api = {
         name: item.name,
         date: item.date,
         username: item.username,
+        numSets: item.numSets,
+        numReps: item.numReps,
+        weightDescription: item.weightDescription,
       })),
       totalPages: response.totalPages,
     }
@@ -130,7 +133,13 @@ export const api = {
     await request<{ message: string }>(`/api/workouts/${payload.id}`, {
       method: 'PUT',
       headers: jsonHeaders,
-      body: JSON.stringify({ name: payload.name, date: payload.date }),
+      body: JSON.stringify({
+        name: payload.name,
+        date: payload.date,
+        numSets: payload.numSets,
+        numReps: payload.numReps,
+        weightDescription: payload.weightDescription,
+      }),
     })
 
     return await request<WorkoutDetails>(`/api/workouts/${payload.id}`)

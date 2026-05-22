@@ -73,7 +73,9 @@ export const WorkoutsPage = (): JSX.Element => {
             <tr>
               <th>Workout</th>
               <th>Date</th>
-              <th>User</th>
+              <th>Sets</th>
+              <th>Reps</th>
+              <th>Weight</th>
               <th>Details</th>
             </tr>
           </thead>
@@ -82,7 +84,9 @@ export const WorkoutsPage = (): JSX.Element => {
               <tr key={item.id}>
                 <td>{item.name}</td>
                 <td>{item.date}</td>
-                <td>{item.username}</td>
+                <td>{item.numSets}</td>
+                <td>{item.numReps}</td>
+                <td>{item.weightDescription}</td>
                 <td>
                   <Link to={`/training_log/${page}/workouts/${item.id}`}>View Workout</Link>
                 </td>

@@ -2,7 +2,7 @@ import { app, type HttpRequest } from '@azure/functions'
 
 import { getSessionUser } from '../shared/auth.js'
 import { getNumericPathParam, json, parseJsonBody } from '../shared/http.js'
-import { deleteExercise, getExerciseForWorkout, getWorkoutDetails, updateExercise } from '../shared/repository.js'
+import { deleteExercise, getExerciseForWorkout, updateExercise, workoutExists } from '../shared/repository.js'
 import { invalidExerciseEditMessage, requireExistingUser, requireWorkoutOwnership } from '../shared/validation.js'
 
 interface UpdateExerciseBody {
@@ -32,8 +32,7 @@ app.http('workoutExerciseById', {
       })
     }
 
-    const workout = await getWorkoutDetails(workoutId)
-    if (!workout) {
+    if (!(await workoutExists(workoutId))) {
       return json(404, { error: `Workout #${workoutId} doesn't exist.` })
     }
 

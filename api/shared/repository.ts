@@ -33,34 +33,76 @@ export const validLoginCredentials = async (username: string, password: string):
   return bcrypt.compare(password, result.rows[0].password)
 }
 
-export const countWorkouts = async (): Promise<number> => {
-  const result = await query<{ count: string }>('SELECT COUNT(id) FROM workouts;')
+export const countWorkoutsByUsername = async (username: string): Promise<number> => {
+  const result = await query<{ count: string }>(
+    `
+      SELECT COUNT(w.id)
+      FROM workouts w
+      JOIN users u ON w.user_id = u.id
+      WHERE u.username = $1;
+    `,
+    [username],
+  )
+
   return Number(result.rows[0].count)
 }
 
-export const listWorkouts = async (offset: number): Promise<WorkoutRow[]> => {
+export const listWorkoutsByUsername = async (username: string, offset: number): Promise<WorkoutRow[]> => {
   const sql = `
-    SELECT w.id, w.name, w.date::text AS date, u.username
+    SELECT
+      w.id,
+      w.name,
+      w.date::text AS date,
+      u.username,
+      w.num_sets AS "numSets",
+      w.num_reps AS "numReps",
+      w.weight_description AS "weightDescription"
     FROM workouts w
     JOIN users u ON w.user_id = u.id
-    ORDER BY u.username, w.date DESC
-    LIMIT 10 OFFSET $1;
+    WHERE u.username = $1
+    ORDER BY w.date DESC
+    LIMIT 10 OFFSET $2;
   `
 
-  const result = await query<WorkoutRow>(sql, [offset])
-  return result.rows.map((row: WorkoutRow) => ({ ...row, id: Number(row.id) }))
+  const result = await query<WorkoutRow>(sql, [username, offset])
+  return result.rows.map((row: WorkoutRow) => ({
+    ...row,
+    id: Number(row.id),
+    numSets: Number(row.numSets),
+    numReps: Number(row.numReps),
+  }))
 }
 
-export const getWorkoutDetails = async (workoutId: number): Promise<WorkoutRow | null> => {
+export const getWorkoutDetailsForUser = async (
+  workoutId: number,
+  username: string,
+): Promise<WorkoutRow | null> => {
   const sql = `
-    SELECT w.id, w.name, w.date::text AS date, u.username
+    SELECT
+      w.id,
+      w.name,
+      w.date::text AS date,
+      u.username,
+      w.num_sets AS "numSets",
+      w.num_reps AS "numReps",
+      w.weight_description AS "weightDescription"
     FROM workouts w
     JOIN users u ON w.user_id = u.id
-    WHERE w.id = $1;
+    WHERE w.id = $1 AND u.username = $2;
   `
 
-  const result = await query<WorkoutRow>(sql, [workoutId])
-  return result.rows.length > 0 ? { ...result.rows[0], id: Number(result.rows[0].id) } : null
+  const result = await query<WorkoutRow>(sql, [workoutId, username])
+  if (result.rows.length === 0) {
+    return null
+  }
+
+  const workout = result.rows[0]
+  return {
+    ...workout,
+    id: Number(workout.id),
+    numSets: Number(workout.numSets),
+    numReps: Number(workout.numReps),
+  }
 }
 
 export const listExercises = async (workoutId: number): Promise<ExerciseRow[]> => {
@@ -80,8 +122,11 @@ export const listExercises = async (workoutId: number): Promise<ExerciseRow[]> =
   }))
 }
 
-export const getWorkoutWithExercises = async (workoutId: number): Promise<WorkoutDetails | null> => {
-  const workout = await getWorkoutDetails(workoutId)
+export const getWorkoutWithExercisesForUser = async (
+  workoutId: number,
+  username: string,
+): Promise<WorkoutDetails | null> => {
+  const workout = await getWorkoutDetailsForUser(workoutId, username)
   if (!workout) {
     return null
   }
@@ -93,6 +138,9 @@ export const getWorkoutWithExercises = async (workoutId: number): Promise<Workou
     name: workout.name,
     date: workout.date,
     username: workout.username,
+    numSets: workout.numSets,
+    numReps: workout.numReps,
+    weightDescription: workout.weightDescription,
     exercises: exercises.map((exercise) => ({
       id: exercise.id,
       description: exercise.description,
@@ -103,17 +151,34 @@ export const getWorkoutWithExercises = async (workoutId: number): Promise<Workou
   }
 }
 
-export const addWorkout = async (name: string, date: string, userId: number): Promise<number> => {
+export const addWorkout = async (
+  name: string,
+  date: string,
+  numSets: number,
+  numReps: number,
+  weightDescription: string,
+  userId: number,
+): Promise<number> => {
   const result = await query<{ id: number }>(
-    'INSERT INTO workouts (name, "date", user_id) VALUES ($1, $2, $3) RETURNING id;',
-    [name, date, userId],
+    'INSERT INTO workouts (name, "date", num_sets, num_reps, weight_description, user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;',
+    [name, date, numSets, numReps, weightDescription, userId],
   )
 
   return Number(result.rows[0].id)
 }
 
-export const updateWorkout = async (id: number, name: string, date: string): Promise<void> => {
-  await query('UPDATE workouts SET name = $1, "date" = $2 WHERE id = $3;', [name, date, id])
+export const updateWorkout = async (
+  id: number,
+  name: string,
+  date: string,
+  numSets: number,
+  numReps: number,
+  weightDescription: string,
+): Promise<void> => {
+  await query(
+    'UPDATE workouts SET name = $1, "date" = $2, num_sets = $3, num_reps = $4, weight_description = $5 WHERE id = $6;',
+    [name, date, numSets, numReps, weightDescription, id],
+  )
 }
 
 export const deleteWorkout = async (id: number): Promise<void> => {
@@ -207,7 +272,8 @@ export const normalizedExerciseDescriptionsByWorkout = async (workoutId: number)
 }
 
 export const workoutExists = async (workoutId: number): Promise<boolean> => {
-  return (await getWorkoutDetails(workoutId)) !== null
+  const result = await query<{ id: number }>('SELECT id FROM workouts WHERE id = $1;', [workoutId])
+  return result.rows.length > 0
 }
 
 export const exerciseExists = async (exerciseId: number): Promise<boolean> => {

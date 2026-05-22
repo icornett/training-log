@@ -2,12 +2,15 @@ import { app, type HttpRequest } from '@azure/functions'
 
 import { getSessionUser } from '../shared/auth.js'
 import { json, parseJsonBody } from '../shared/http.js'
-import { addWorkout, countWorkouts, findUserIdByUsername, listWorkouts } from '../shared/repository.js'
+import { addWorkout, countWorkoutsByUsername, findUserIdByUsername, listWorkoutsByUsername } from '../shared/repository.js'
 import { invalidWorkoutMessage, requireExistingUser } from '../shared/validation.js'
 
 interface CreateWorkoutBody {
   name?: string
   date?: string
+  numSets?: number
+  numReps?: number
+  weightDescription?: string
 }
 
 app.http('workouts', {
@@ -30,11 +33,11 @@ app.http('workouts', {
       }
 
       const page = Number(rawPage)
-      const totalWorkouts = await countWorkouts()
+      const totalWorkouts = await countWorkoutsByUsername(user.username)
       const totalPages = Math.max(1, Math.ceil(totalWorkouts / 10))
       const clampedPage = Math.min(Math.max(page, 1), totalPages)
       const offset = (clampedPage - 1) * 10
-      const items = await listWorkouts(offset)
+      const items = await listWorkoutsByUsername(user.username, offset)
 
       return json(200, { items, totalPages, page: clampedPage })
     }
@@ -42,8 +45,11 @@ app.http('workouts', {
     const body = await parseJsonBody<CreateWorkoutBody>(request)
     const name = body.name?.trim() ?? ''
     const date = body.date ?? ''
+    const numSets = Number(body.numSets)
+    const numReps = Number(body.numReps)
+    const weightDescription = body.weightDescription?.trim().toLowerCase() ?? ''
 
-    const invalidMsg = await invalidWorkoutMessage(name, date, user.username, null)
+    const invalidMsg = await invalidWorkoutMessage(name, date, numSets, numReps, weightDescription, user.username, null)
     if (invalidMsg) {
       return json(422, { error: invalidMsg })
     }
@@ -53,7 +59,7 @@ app.http('workouts', {
       return json(401, { error: 'Please login to access the Training Log App.' })
     }
 
-    const newWorkoutId = await addWorkout(name, date, userId)
+    const newWorkoutId = await addWorkout(name, date, numSets, numReps, weightDescription, userId)
 
     return json(201, {
       id: newWorkoutId,
