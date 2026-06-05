@@ -210,3 +210,14 @@ WHERE NOT EXISTS (
   WHERE e.workout_id = w.id
     AND lower(e.description) = lower(se.description)
 );
+
+-- Expand exercise flexibility
+ALTER TABLE exercises ALTER COLUMN description TYPE varchar(100);
+ALTER TABLE exercises ALTER COLUMN weight_description DROP NOT NULL;
+ALTER TABLE exercises ALTER COLUMN weight_description TYPE varchar(100);
+ALTER TABLE exercises ALTER COLUMN num_sets DROP NOT NULL;
+ALTER TABLE exercises ALTER COLUMN num_reps DROP NOT NULL;
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS exercise_type varchar(20) NOT NULL DEFAULT 'strength';
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS duration_minutes numeric(5,1);
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS speed_mph numeric(4,1);
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS notes varchar(200);

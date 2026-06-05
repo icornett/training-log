@@ -84,15 +84,16 @@ export const invalidNewExerciseMessage = async (
   description: string,
   weights: string,
   workoutId: number,
+  exerciseType: string,
 ): Promise<string | null> => {
-  const invalid = await invalidNewExercise(description, weights, workoutId)
+  const invalid = await invalidNewExercise(description, weights, workoutId, exerciseType)
   if (!invalid) {
     return null
   }
 
   return (
     'Invalid exercise entry. Please ensure you have not already added this particular exercise ' +
-    "description to your workout, that your description is between 5 and 40 characters, and " +
+    "description to your workout, that your description is between 5 and 100 characters, and " +
     "that the weight description provides a number and either 'kgs' or 'lbs' as the unit, or " +
     "'bodyweight', if no additional weight was used."
   )
@@ -101,14 +102,15 @@ export const invalidNewExerciseMessage = async (
 export const invalidExerciseEditMessage = (
   description: string,
   weights: string,
+  exerciseType: string,
 ): string | null => {
-  const invalid = invalidExerciseEdit(description, weights)
+  const invalid = invalidExerciseEdit(description, weights, exerciseType)
   if (!invalid) {
     return null
   }
 
   return (
-    'Invalid exercise entry. Please ensure that your description is between 5 and 40 characters, ' +
+    'Invalid exercise entry. Please ensure that your description is between 5 and 100 characters, ' +
     "and that the weight description provides a number and either 'kgs' or 'lbs' as the unit, " +
     "or 'bodyweight', if no additional weight was used."
   )
@@ -118,30 +120,47 @@ const invalidNewExercise = async (
   description: string,
   weights: string,
   workoutId: number,
+  exerciseType: string,
 ): Promise<boolean> => {
   const duplicate = await duplicateExercise(description, workoutId)
-  return duplicate || invalidExerciseEdit(description, weights)
+  return duplicate || invalidExerciseEdit(description, weights, exerciseType)
 }
 
-const invalidExerciseEdit = (description: string, weights: string): boolean => {
+const invalidExerciseEdit = (description: string, weights: string, exerciseType: string): boolean => {
+  // For cardio, don't validate weights
+  if (exerciseType === 'cardio') {
+    return exerciseDescriptionBadLength(description)
+  }
+  // For strength, validate both description and weights
   return exerciseDescriptionBadLength(description) || exerciseWeightsInvalid(weights)
 }
 
 const exerciseDescriptionBadLength = (description: string): boolean => {
-  return description.length > 40 || description.length < 5
+  return description.length > 100 || description.length < 5
 }
 
 const exerciseWeightsInvalid = (weights: string): boolean => {
-  const numsSpace = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' '])
-  const allowed = new Set(['lbs', 'kgs', 'bodyweight'])
+  // Allow bodyweight exactly
+  if (weights.toLowerCase() === 'bodyweight') {
+    return false
+  }
 
+  // Check length
+  if (weights.length > 100) {
+    return true
+  }
+
+  // Extract unit by filtering out numbers, spaces, commas, and periods
+  const allowedChars = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ', ',', '.'])
   const unit = weights
     .split('')
-    .filter((char) => !numsSpace.has(char))
+    .filter((char) => !allowedChars.has(char))
     .join('')
     .toLowerCase()
 
-  return weights.length > 10 || !allowed.has(unit)
+  // Check if unit is valid
+  const allowedUnits = new Set(['lbs', 'kgs'])
+  return !allowedUnits.has(unit)
 }
 
 const duplicateExercise = async (description: string, workoutId: number): Promise<boolean> => {

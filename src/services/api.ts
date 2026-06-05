@@ -136,9 +136,6 @@ export const api = {
       body: JSON.stringify({
         name: payload.name,
         date: payload.date,
-        numSets: payload.numSets,
-        numReps: payload.numReps,
-        weightDescription: payload.weightDescription,
       }),
     })
 
@@ -169,9 +166,13 @@ export const api = {
         headers: jsonHeaders,
         body: JSON.stringify({
           description: payload.description,
+          exerciseType: payload.exerciseType,
           numSets: payload.numSets,
           numReps: payload.numReps,
           weightDescription: payload.weightDescription,
+          durationMinutes: payload.durationMinutes,
+          speedMph: payload.speedMph,
+          notes: payload.notes,
         }),
       },
     )

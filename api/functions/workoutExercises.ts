@@ -7,9 +7,13 @@ import { invalidNewExerciseMessage, requireExistingUser, requireWorkoutOwnership
 
 interface CreateExerciseBody {
   description?: string
+  exerciseType?: string
   numSets?: number
   numReps?: number
   weightDescription?: string
+  durationMinutes?: number
+  speedMph?: number
+  notes?: string
 }
 
 app.http('workoutExercises', {
@@ -45,16 +49,30 @@ app.http('workoutExercises', {
 
     const body = await parseJsonBody<CreateExerciseBody>(request)
     const description = (body.description ?? '').replace(/[\p{P}\p{S}]/gu, '')
-    const numSets = Number(body.numSets ?? 0)
-    const numReps = Number(body.numReps ?? 0)
-    const weightDescription = (body.weightDescription ?? '').toLowerCase()
+    const exerciseType = body.exerciseType ?? 'strength'
+    const numSets = body.numSets !== undefined ? Number(body.numSets) : null
+    const numReps = body.numReps !== undefined ? Number(body.numReps) : null
+    const weightDescription = body.weightDescription ? body.weightDescription.toLowerCase() : null
+    const durationMinutes = body.durationMinutes !== undefined ? Number(body.durationMinutes) : null
+    const speedMph = body.speedMph !== undefined ? Number(body.speedMph) : null
+    const notes = body.notes ?? null
 
-    const invalidMsg = await invalidNewExerciseMessage(description, weightDescription, workoutId)
+    const invalidMsg = await invalidNewExerciseMessage(description, weightDescription ?? '', workoutId, exerciseType)
     if (invalidMsg) {
       return json(422, { error: invalidMsg })
     }
 
-    const newExerciseId = await addExercise(workoutId, description, numSets, numReps, weightDescription)
+    const newExerciseId = await addExercise(
+      workoutId,
+      description,
+      numSets,
+      numReps,
+      weightDescription,
+      exerciseType,
+      durationMinutes,
+      speedMph,
+      notes,
+    )
 
     return json(201, {
       id: newExerciseId,

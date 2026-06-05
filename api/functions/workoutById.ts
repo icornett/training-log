@@ -8,9 +8,6 @@ import { invalidWorkoutMessage, requireExistingUser, requireWorkoutOwnership } f
 interface UpdateWorkoutBody {
   name?: string
   date?: string
-  numSets?: number
-  numReps?: number
-  weightDescription?: string
 }
 
 app.http('workoutById', {
@@ -60,9 +57,9 @@ app.http('workoutById', {
     const body = await parseJsonBody<UpdateWorkoutBody>(request)
     const name = body.name?.trim() ?? ''
     const date = body.date ?? ''
-    const numSets = Number(body.numSets)
-    const numReps = Number(body.numReps)
-    const weightDescription = body.weightDescription?.trim().toLowerCase() ?? ''
+    const numSets = 0
+    const numReps = 0
+    const weightDescription = ''
 
     const invalidMsg = await invalidWorkoutMessage(
       name,

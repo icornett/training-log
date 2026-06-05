@@ -1,15 +1,27 @@
 import { invalidExerciseEditMessage } from './validation.js'
 
 describe('invalidExerciseEditMessage', () => {
-  it('returns null for a valid exercise edit payload', () => {
-    expect(invalidExerciseEditMessage('Bench Press', '65 lbs')).toBeNull()
+  it('returns null for a valid strength exercise edit payload', () => {
+    expect(invalidExerciseEditMessage('Bench Press', '65 lbs', 'strength')).toBeNull()
+  })
+
+  it('returns null for a valid strength exercise with comma-separated weights', () => {
+    expect(invalidExerciseEditMessage('Bicep Curls', '25, 20, 15 lbs', 'strength')).toBeNull()
+  })
+
+  it('returns null for a valid cardio exercise without weight validation', () => {
+    expect(invalidExerciseEditMessage('Treadmill Run', '', 'cardio')).toBeNull()
   })
 
   it('returns an error when the description is too short', () => {
-    expect(invalidExerciseEditMessage('Row', '65 lbs')).toContain('Invalid exercise entry.')
+    expect(invalidExerciseEditMessage('Row', '65 lbs', 'strength')).toContain('Invalid exercise entry.')
   })
 
-  it('returns an error when the weight description uses an unsupported unit', () => {
-    expect(invalidExerciseEditMessage('Bench Press', '65 stones')).toContain('Invalid exercise entry.')
+  it('returns an error when the weight description uses an unsupported unit for strength', () => {
+    expect(invalidExerciseEditMessage('Bench Press', '65 stones', 'strength')).toContain('Invalid exercise entry.')
+  })
+
+  it('returns null for bodyweight exercises', () => {
+    expect(invalidExerciseEditMessage('Pull Ups', 'bodyweight', 'strength')).toBeNull()
   })
 })

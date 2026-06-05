@@ -19,13 +19,14 @@ export const WorkoutDetailPage = (): JSX.Element => {
   const [isEditingWorkout, setIsEditingWorkout] = useState(false)
   const [workoutName, setWorkoutName] = useState('')
   const [workoutDate, setWorkoutDate] = useState('')
-  const [workoutSets, setWorkoutSets] = useState('3')
-  const [workoutReps, setWorkoutReps] = useState('8')
-  const [workoutWeight, setWorkoutWeight] = useState('bodyweight')
   const [exerciseDescription, setExerciseDescription] = useState('')
+  const [exerciseType, setExerciseType] = useState<'strength' | 'cardio'>('strength')
   const [exerciseSets, setExerciseSets] = useState('3')
   const [exerciseReps, setExerciseReps] = useState('8')
   const [exerciseWeight, setExerciseWeight] = useState('bodyweight')
+  const [exerciseDuration, setExerciseDuration] = useState('')
+  const [exerciseSpeed, setExerciseSpeed] = useState('')
+  const [exerciseNotes, setExerciseNotes] = useState('')
   const [editingExerciseId, setEditingExerciseId] = useState<number | null>(null)
 
   useEffect(() => {
@@ -41,9 +42,6 @@ export const WorkoutDetailPage = (): JSX.Element => {
           setWorkout(result)
           setWorkoutName(result?.name ?? '')
           setWorkoutDate(result?.date ?? '')
-          setWorkoutSets(String(result?.numSets ?? 3))
-          setWorkoutReps(String(result?.numReps ?? 8))
-          setWorkoutWeight(result?.weightDescription ?? 'bodyweight')
         }
       } catch (err) {
         if (!disposed) {
@@ -73,9 +71,13 @@ export const WorkoutDetailPage = (): JSX.Element => {
 
   const resetExerciseForm = (): void => {
     setExerciseDescription('')
+    setExerciseType('strength')
     setExerciseSets('3')
     setExerciseReps('8')
     setExerciseWeight('bodyweight')
+    setExerciseDuration('')
+    setExerciseSpeed('')
+    setExerciseNotes('')
     setEditingExerciseId(null)
   }
 
@@ -87,9 +89,6 @@ export const WorkoutDetailPage = (): JSX.Element => {
         id,
         name: workoutName,
         date: workoutDate,
-        numSets: Number(workoutSets),
-        numReps: Number(workoutReps),
-        weightDescription: workoutWeight.trim().toLowerCase(),
       })
       setWorkout(updated)
       setMessage('Workout updated.')
@@ -115,9 +114,13 @@ export const WorkoutDetailPage = (): JSX.Element => {
     try {
       const payload = {
         description: exerciseDescription,
-        numSets: Number(exerciseSets),
-        numReps: Number(exerciseReps),
-        weightDescription: exerciseWeight,
+        exerciseType,
+        numSets: exerciseType === 'strength' ? Number(exerciseSets) : undefined,
+        numReps: exerciseType === 'strength' ? Number(exerciseReps) : undefined,
+        weightDescription: exerciseType === 'strength' ? exerciseWeight : undefined,
+        durationMinutes: exerciseType === 'cardio' ? Number(exerciseDuration) : undefined,
+        speedMph: exerciseType === 'cardio' ? Number(exerciseSpeed) : undefined,
+        notes: exerciseNotes || '',
       }
 
       const updatedWorkout =
@@ -137,9 +140,13 @@ export const WorkoutDetailPage = (): JSX.Element => {
   const startEditingExercise = (exercise: WorkoutDetails['exercises'][number]): void => {
     setEditingExerciseId(exercise.id)
     setExerciseDescription(exercise.description)
-    setExerciseSets(String(exercise.numSets))
-    setExerciseReps(String(exercise.numReps))
-    setExerciseWeight(exercise.weightDescription)
+    setExerciseType(exercise.exerciseType as 'strength' | 'cardio')
+    setExerciseSets(String(exercise.numSets ?? 3))
+    setExerciseReps(String(exercise.numReps ?? 8))
+    setExerciseWeight(exercise.weightDescription ?? 'bodyweight')
+    setExerciseDuration(String(exercise.durationMinutes ?? ''))
+    setExerciseSpeed(String(exercise.speedMph ?? ''))
+    setExerciseNotes(exercise.notes ?? '')
   }
 
   const handleDeleteExercise = async (exerciseId: number): Promise<void> => {
@@ -190,9 +197,6 @@ export const WorkoutDetailPage = (): JSX.Element => {
       <p>
         {workout.date} · {workout.username}
       </p>
-      <p>
-        {workout.numSets} sets · {workout.numReps} reps · {workout.weightDescription}
-      </p>
 
       {message ? <p className="success-text">{message}</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
@@ -228,31 +232,6 @@ export const WorkoutDetailPage = (): JSX.Element => {
                 onChange={(event) => setWorkoutDate(event.target.value)}
                 required
               />
-              <label htmlFor="workout-sets-edit">Sets</label>
-              <input
-                id="workout-sets-edit"
-                type="number"
-                min="1"
-                value={workoutSets}
-                onChange={(event) => setWorkoutSets(event.target.value)}
-                required
-              />
-              <label htmlFor="workout-reps-edit">Reps</label>
-              <input
-                id="workout-reps-edit"
-                type="number"
-                min="1"
-                value={workoutReps}
-                onChange={(event) => setWorkoutReps(event.target.value)}
-                required
-              />
-              <label htmlFor="workout-weight-edit">Weight</label>
-              <input
-                id="workout-weight-edit"
-                value={workoutWeight}
-                onChange={(event) => setWorkoutWeight(event.target.value)}
-                required
-              />
               <button type="submit">Save Workout</button>
             </form>
           ) : null}
@@ -269,7 +248,12 @@ export const WorkoutDetailPage = (): JSX.Element => {
                 <div>
                   <strong>{exercise.description}</strong>
                   <span>
-                    {exercise.numSets} sets · {exercise.numReps} reps · {exercise.weightDescription}
+                    {exercise.exerciseType === 'strength' && exercise.numSets && exercise.numReps
+                      ? `${exercise.numSets} sets × ${exercise.numReps} reps${exercise.weightDescription ? ` · ${exercise.weightDescription}` : ''}`
+                      : exercise.exerciseType === 'cardio' && exercise.durationMinutes && exercise.speedMph
+                        ? `${exercise.durationMinutes} min @ ${exercise.speedMph} mph`
+                        : ''}
+                    {exercise.notes ? ` · ${exercise.notes}` : ''}
                   </span>
                 </div>
                 {isOwner ? (
@@ -310,31 +294,79 @@ export const WorkoutDetailPage = (): JSX.Element => {
               onChange={(event) => setExerciseDescription(event.target.value)}
               required
             />
-            <label htmlFor="exercise-sets">Sets</label>
+            
+            <label htmlFor="exercise-type">Exercise Type</label>
+            <select
+              id="exercise-type"
+              value={exerciseType}
+              onChange={(event) => setExerciseType(event.target.value as 'strength' | 'cardio')}
+            >
+              <option value="strength">Strength</option>
+              <option value="cardio">Cardio</option>
+            </select>
+
+            {exerciseType === 'strength' ? (
+              <>
+                <label htmlFor="exercise-sets">Sets</label>
+                <input
+                  id="exercise-sets"
+                  type="number"
+                  min="1"
+                  value={exerciseSets}
+                  onChange={(event) => setExerciseSets(event.target.value)}
+                  required
+                />
+                <label htmlFor="exercise-reps">Reps</label>
+                <input
+                  id="exercise-reps"
+                  type="number"
+                  min="1"
+                  value={exerciseReps}
+                  onChange={(event) => setExerciseReps(event.target.value)}
+                  required
+                />
+                <label htmlFor="exercise-weight">Weight</label>
+                <input
+                  id="exercise-weight"
+                  value={exerciseWeight}
+                  onChange={(event) => setExerciseWeight(event.target.value)}
+                  placeholder="e.g. 65 lbs, 25, 20, 15 lbs, bodyweight"
+                  required
+                />
+              </>
+            ) : (
+              <>
+                <label htmlFor="exercise-duration">Duration (minutes)</label>
+                <input
+                  id="exercise-duration"
+                  type="number"
+                  step="0.5"
+                  min="0.5"
+                  value={exerciseDuration}
+                  onChange={(event) => setExerciseDuration(event.target.value)}
+                  required
+                />
+                <label htmlFor="exercise-speed">Speed (mph)</label>
+                <input
+                  id="exercise-speed"
+                  type="number"
+                  step="0.1"
+                  min="0.1"
+                  value={exerciseSpeed}
+                  onChange={(event) => setExerciseSpeed(event.target.value)}
+                  required
+                />
+              </>
+            )}
+
+            <label htmlFor="exercise-notes">Notes (optional)</label>
             <input
-              id="exercise-sets"
-              type="number"
-              min="1"
-              value={exerciseSets}
-              onChange={(event) => setExerciseSets(event.target.value)}
-              required
+              id="exercise-notes"
+              value={exerciseNotes}
+              onChange={(event) => setExerciseNotes(event.target.value)}
+              placeholder="e.g. explosive power, incline 5%"
             />
-            <label htmlFor="exercise-reps">Reps</label>
-            <input
-              id="exercise-reps"
-              type="number"
-              min="1"
-              value={exerciseReps}
-              onChange={(event) => setExerciseReps(event.target.value)}
-              required
-            />
-            <label htmlFor="exercise-weight">Weight</label>
-            <input
-              id="exercise-weight"
-              value={exerciseWeight}
-              onChange={(event) => setExerciseWeight(event.target.value)}
-              required
-            />
+            
             <button type="submit">{editingExerciseId === null ? 'Add Exercise' : 'Save Exercise'}</button>
           </form>
         </section>

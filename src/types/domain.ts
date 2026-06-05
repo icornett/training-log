@@ -20,9 +20,13 @@ export interface WorkoutListItem {
 export interface Exercise {
   id: number
   description: string
-  numSets: number
-  numReps: number
-  weightDescription: string
+  exerciseType: 'strength' | 'cardio'
+  numSets: number | null
+  numReps: number | null
+  weightDescription: string | null
+  durationMinutes: number | null
+  speedMph: number | null
+  notes: string | null
 }
 
 export interface WorkoutDetails {
@@ -39,25 +43,23 @@ export interface WorkoutDetails {
 export interface WorkoutCreateInput {
   name: string
   date: string
-  numSets: number
-  numReps: number
-  weightDescription: string
 }
 
 export interface WorkoutUpdateInput {
   id: number
   name: string
   date: string
-  numSets: number
-  numReps: number
-  weightDescription: string
 }
 
 export interface ExerciseInput {
   description: string
-  numSets: number
-  numReps: number
-  weightDescription: string
+  exerciseType: 'strength' | 'cardio'
+  numSets?: number
+  numReps?: number
+  weightDescription?: string
+  durationMinutes?: number
+  speedMph?: number
+  notes?: string
 }
 
 export interface ExerciseUpdateInput extends ExerciseInput {
