@@ -7,7 +7,7 @@ Training Log is now a TypeScript application with a React frontend and an Azure 
 - Frontend: React + TypeScript + React Router + Vite
 - API: Azure Functions (Node/TypeScript)
 - Database: PostgreSQL
-- Tests: Jest for API logic, Vitest + React Testing Library for frontend UI
+- Tests: Jest for API logic, Vitest + React Testing Library for frontend UI, Playwright for mobile E2E smoke tests
 
 ## Features
 
@@ -33,6 +33,7 @@ Useful commands:
 - Frontend + API typecheck: `npm run typecheck`
 - API tests: `npm run test:api`
 - Frontend tests: `npm run test:web`
+- Mobile E2E smoke tests (iOS + Android emulation): `npm run test:e2e:mobile`
 - Production build: `npm run build`
 
 ## Database Setup

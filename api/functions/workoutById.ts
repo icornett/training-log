@@ -57,9 +57,9 @@ app.http('workoutById', {
     const body = await parseJsonBody<UpdateWorkoutBody>(request)
     const name = body.name?.trim() ?? ''
     const date = body.date ?? ''
-    const numSets = 0
-    const numReps = 0
-    const weightDescription = ''
+    const numSets = 1
+    const numReps = 1
+    const weightDescription = 'bodyweight'
 
     const invalidMsg = await invalidWorkoutMessage(
       name,
