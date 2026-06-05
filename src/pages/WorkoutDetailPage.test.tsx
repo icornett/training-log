@@ -35,9 +35,13 @@ const workoutFixture: WorkoutDetails = {
     {
       id: 11,
       description: 'Bench Press',
+      exerciseType: 'strength',
       numSets: 3,
       numReps: 8,
       weightDescription: '65 lbs',
+      durationMinutes: null,
+      speedMph: null,
+      notes: null,
     },
   ],
 }
@@ -84,9 +88,6 @@ describe('WorkoutDetailPage', () => {
         id: 1,
         name: 'Upper Strength',
         date: '2026-05-15',
-        numSets: 4,
-        numReps: 8,
-        weightDescription: '95 lbs',
       })
     })
     expect(await screen.findByText('Workout updated.')).toBeInTheDocument()
@@ -100,9 +101,13 @@ describe('WorkoutDetailPage', () => {
         {
           id: 12,
           description: 'Pull Ups',
+          exerciseType: 'strength',
           numSets: 4,
           numReps: 10,
           weightDescription: 'bodyweight',
+          durationMinutes: null,
+          speedMph: null,
+          notes: null,
         },
       ],
     }
@@ -125,9 +130,13 @@ describe('WorkoutDetailPage', () => {
     await waitFor(() => {
       expect(api.createExercise).toHaveBeenCalledWith(1, {
         description: 'Pull Ups',
+        exerciseType: 'strength',
         numSets: 4,
         numReps: 10,
         weightDescription: 'bodyweight',
+        durationMinutes: undefined,
+        speedMph: undefined,
+        notes: '',
       })
     })
     expect(await screen.findByText('Exercise added.')).toBeInTheDocument()

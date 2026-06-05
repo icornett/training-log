@@ -107,7 +107,8 @@ export const getWorkoutDetailsForUser = async (
 
 export const listExercises = async (workoutId: number): Promise<ExerciseRow[]> => {
   const sql = `
-    SELECT id, description, num_sets, num_reps, weight_description
+    SELECT id, description, num_sets, num_reps, weight_description, 
+           exercise_type, duration_minutes, speed_mph, notes
     FROM exercises
     WHERE workout_id = $1
     ORDER BY description;
@@ -117,8 +118,10 @@ export const listExercises = async (workoutId: number): Promise<ExerciseRow[]> =
   return result.rows.map((row: ExerciseRow) => ({
     ...row,
     id: Number(row.id),
-    num_sets: Number(row.num_sets),
-    num_reps: Number(row.num_reps),
+    num_sets: row.num_sets !== null ? Number(row.num_sets) : null,
+    num_reps: row.num_reps !== null ? Number(row.num_reps) : null,
+    duration_minutes: row.duration_minutes !== null ? Number(row.duration_minutes) : null,
+    speed_mph: row.speed_mph !== null ? Number(row.speed_mph) : null,
   }))
 }
 
@@ -147,6 +150,10 @@ export const getWorkoutWithExercisesForUser = async (
       numSets: exercise.num_sets,
       numReps: exercise.num_reps,
       weightDescription: exercise.weight_description,
+      exerciseType: exercise.exercise_type,
+      durationMinutes: exercise.duration_minutes,
+      speedMph: exercise.speed_mph,
+      notes: exercise.notes,
     })),
   }
 }
@@ -176,8 +183,8 @@ export const updateWorkout = async (
   weightDescription: string,
 ): Promise<void> => {
   await query(
-    'UPDATE workouts SET name = $1, "date" = $2, num_sets = $3, num_reps = $4, weight_description = $5 WHERE id = $6;',
-    [name, date, numSets, numReps, weightDescription, id],
+    'UPDATE workouts SET name = $1, "date" = $2 WHERE id = $3;',
+    [name, date, id],
   )
 }
 
@@ -187,7 +194,8 @@ export const deleteWorkout = async (id: number): Promise<void> => {
 
 export const getExerciseById = async (exerciseId: number): Promise<ExerciseRow | null> => {
   const sql = `
-    SELECT id, description, num_sets, num_reps, weight_description
+    SELECT id, description, num_sets, num_reps, weight_description,
+           exercise_type, duration_minutes, speed_mph, notes
     FROM exercises
     WHERE id = $1;
   `
@@ -200,7 +208,8 @@ export const getExerciseForWorkout = async (
   exerciseId: number,
 ): Promise<ExerciseRow | null> => {
   const sql = `
-    SELECT id, description, num_sets, num_reps, weight_description
+    SELECT id, description, num_sets, num_reps, weight_description,
+           exercise_type, duration_minutes, speed_mph, notes
     FROM exercises
     WHERE workout_id = $1 AND id = $2;
   `
@@ -212,37 +221,56 @@ export const getExerciseForWorkout = async (
 export const addExercise = async (
   workoutId: number,
   description: string,
-  numSets: number,
-  numReps: number,
-  weightDescription: string,
+  numSets: number | null,
+  numReps: number | null,
+  weightDescription: string | null,
+  exerciseType: string,
+  durationMinutes: number | null,
+  speedMph: number | null,
+  notes: string | null,
 ): Promise<number> => {
   const sql = `
-    INSERT INTO exercises (description, num_sets, num_reps, weight_description, workout_id)
-    VALUES ($1, $2, $3, $4, $5)
+    INSERT INTO exercises (description, num_sets, num_reps, weight_description, workout_id,
+                           exercise_type, duration_minutes, speed_mph, notes)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     RETURNING id;
   `
 
-  const result = await query<{ id: number }>(sql, [description, numSets, numReps, weightDescription, workoutId])
+  const result = await query<{ id: number }>(sql, [
+    description, numSets, numReps, weightDescription, workoutId,
+    exerciseType, durationMinutes, speedMph, notes
+  ])
   return Number(result.rows[0].id)
 }
 
 export const updateExercise = async (
   exerciseId: number,
   description: string,
-  numSets: number,
-  numReps: number,
-  weightDescription: string,
+  numSets: number | null,
+  numReps: number | null,
+  weightDescription: string | null,
+  exerciseType: string,
+  durationMinutes: number | null,
+  speedMph: number | null,
+  notes: string | null,
 ): Promise<void> => {
   const sql = `
     UPDATE exercises
     SET description = $1,
         num_sets = $2,
         num_reps = $3,
-        weight_description = $4
-    WHERE id = $5;
+        weight_description = $4,
+        exercise_type = $5,
+        duration_minutes = $6,
+        speed_mph = $7,
+        notes = $8
+    WHERE id = $9;
   `
 
-  await query(sql, [description, numSets, numReps, weightDescription, exerciseId])
+  await query(sql, [
+    description, numSets, numReps, weightDescription,
+    exerciseType, durationMinutes, speedMph, notes, exerciseId
+  ])
 }
 
 export const deleteExercise = async (exerciseId: number): Promise<void> => {

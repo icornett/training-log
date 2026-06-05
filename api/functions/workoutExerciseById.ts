@@ -7,9 +7,13 @@ import { invalidExerciseEditMessage, requireExistingUser, requireWorkoutOwnershi
 
 interface UpdateExerciseBody {
   description?: string
+  exerciseType?: string
   numSets?: number
   numReps?: number
   weightDescription?: string
+  durationMinutes?: number
+  speedMph?: number
+  notes?: string
 }
 
 app.http('workoutExerciseById', {
@@ -55,16 +59,30 @@ app.http('workoutExerciseById', {
 
     const body = await parseJsonBody<UpdateExerciseBody>(request)
     const description = body.description ?? ''
-    const numSets = Number(body.numSets ?? 0)
-    const numReps = Number(body.numReps ?? 0)
-    const weightDescription = body.weightDescription ?? ''
+    const exerciseType = body.exerciseType ?? exercise.exercise_type
+    const numSets = body.numSets !== undefined ? Number(body.numSets) : exercise.num_sets
+    const numReps = body.numReps !== undefined ? Number(body.numReps) : exercise.num_reps
+    const weightDescription = body.weightDescription !== undefined ? body.weightDescription : exercise.weight_description
+    const durationMinutes = body.durationMinutes !== undefined ? Number(body.durationMinutes) : exercise.duration_minutes
+    const speedMph = body.speedMph !== undefined ? Number(body.speedMph) : exercise.speed_mph
+    const notes = body.notes !== undefined ? body.notes : exercise.notes
 
-    const invalidMsg = invalidExerciseEditMessage(description, weightDescription)
+    const invalidMsg = invalidExerciseEditMessage(description, weightDescription ?? '', exerciseType)
     if (invalidMsg) {
       return json(422, { error: invalidMsg })
     }
 
-    await updateExercise(exerciseId, description, numSets, numReps, weightDescription)
+    await updateExercise(
+      exerciseId,
+      description,
+      numSets,
+      numReps,
+      weightDescription,
+      exerciseType,
+      durationMinutes,
+      speedMph,
+      notes,
+    )
     return json(200, { message: `You've successfully updated exercise #${exerciseId}` })
   },
 })

@@ -8,9 +8,6 @@ import { invalidWorkoutMessage, requireExistingUser } from '../shared/validation
 interface CreateWorkoutBody {
   name?: string
   date?: string
-  numSets?: number
-  numReps?: number
-  weightDescription?: string
 }
 
 app.http('workouts', {
@@ -45,9 +42,9 @@ app.http('workouts', {
     const body = await parseJsonBody<CreateWorkoutBody>(request)
     const name = body.name?.trim() ?? ''
     const date = body.date ?? ''
-    const numSets = Number(body.numSets)
-    const numReps = Number(body.numReps)
-    const weightDescription = body.weightDescription?.trim().toLowerCase() ?? ''
+    const numSets = 0
+    const numReps = 0
+    const weightDescription = ''
 
     const invalidMsg = await invalidWorkoutMessage(name, date, numSets, numReps, weightDescription, user.username, null)
     if (invalidMsg) {
