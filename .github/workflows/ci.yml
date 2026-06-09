@@ -85,3 +85,22 @@ jobs:
           default_bump: patch
           tag_prefix: v
 
+  notify-deploy:
+    name: Trigger ae-bootcamp-demo Deployment
+    runs-on: ubuntu-latest
+    needs: [version]
+    if: needs.version.outputs.new_tag != ''
+    steps:
+      - name: Check out deployment repo
+        uses: actions/checkout@v4
+        with:
+          repository: icornett/ae-bootcamp-demo
+          ref: main
+          token: ${{ secrets.AE_BOOTCAMP_DISPATCH_TOKEN }}
+
+      - name: Trigger deployment workflow via main branch push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: deploy training-log ${{ needs.version.outputs.new_tag }}"
+          git push origin HEAD:main
