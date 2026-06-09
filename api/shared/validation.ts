@@ -20,50 +20,27 @@ export const validNewUser = async (username: string, password: string): Promise<
 export const invalidWorkoutMessage = async (
   name: string,
   date: string,
-  numSets: number,
-  numReps: number,
-  weightDescription: string,
   username: string,
   workoutId: number | null,
 ): Promise<string | null> => {
-  const valid = await validWorkoutDetails(
-    name,
-    date,
-    numSets,
-    numReps,
-    weightDescription,
-    username,
-    workoutId,
-  )
+  const valid = await validWorkoutDetails(name, date, username, workoutId)
   if (valid) {
     return null
   }
 
   return (
     'Invalid workout entry. You may only log 1 workout per day and the name of the workout ' +
-    'must be within 4 & 15 characters long. Sets and reps must be positive numbers, and weight ' +
-    "must use 'kgs', 'lbs', or 'bodyweight'. Please try again."
+    'must be within 4 & 15 characters long. Please try again.'
   )
 }
 
 const validWorkoutDetails = async (
   name: string,
   date: string,
-  numSets: number,
-  numReps: number,
-  weightDescription: string,
   username: string,
   workoutId: number | null,
 ): Promise<boolean> => {
-  if (
-    name.length > 15 ||
-    name.length < 4 ||
-    !Number.isInteger(numSets) ||
-    numSets <= 0 ||
-    !Number.isInteger(numReps) ||
-    numReps <= 0 ||
-    exerciseWeightsInvalid(weightDescription)
-  ) {
+  if (name.length > 15 || name.length < 4) {
     return false
   }
 

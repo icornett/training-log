@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="38" failures="0" errors="0" time="1.742">
+    <testsuite name="src/pages/AuthLandingPage.test.tsx" timestamp="2026-06-09T17:26:58.919Z" hostname="J3YQ3QYFCC" tests="2" failures="0" errors="0" skipped="0" time="0.042870583">
+        <testcase classname="src/pages/AuthLandingPage.test.tsx" name="AuthLandingPage &gt; renders login and sign up options for unauthenticated users" time="0.040127416">
+            <system-err>
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/pages/AuthLandingPage.test.tsx" name="AuthLandingPage &gt; redirects authenticated users to workouts" time="0.002126792">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/pages/LoginPage.test.tsx" timestamp="2026-06-09T17:26:58.919Z" hostname="J3YQ3QYFCC" tests="3" failures="0" errors="0" skipped="0" time="0.189450833">
+        <testcase classname="src/pages/LoginPage.test.tsx" name="LoginPage &gt; logs in and navigates to workouts" time="0.121001458">
+            <system-err>
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/pages/LoginPage.test.tsx" name="LoginPage &gt; shows API error on failed login" time="0.066352291">
+        </testcase>
+        <testcase classname="src/pages/LoginPage.test.tsx" name="LoginPage &gt; redirects authenticated users" time="0.001534417">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/pages/NewWorkoutPage.test.tsx" timestamp="2026-06-09T17:26:58.920Z" hostname="J3YQ3QYFCC" tests="4" failures="0" errors="0" skipped="0" time="0.193757667">
+        <testcase classname="src/pages/NewWorkoutPage.test.tsx" name="NewWorkoutPage &gt; renders workout name and date fields with a Continue to Exercises button" time="0.042671042">
+            <system-err>
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/pages/NewWorkoutPage.test.tsx" name="NewWorkoutPage &gt; shows a validation error when name is empty" time="0.051896833">
+        </testcase>
+        <testcase classname="src/pages/NewWorkoutPage.test.tsx" name="NewWorkoutPage &gt; shows a validation error when date is empty" time="0.037312">
+        </testcase>
+        <testcase classname="src/pages/NewWorkoutPage.test.tsx" name="NewWorkoutPage &gt; saves to localStorage and navigates to /pending without calling the API" time="0.061270375">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/pages/SignupPage.test.tsx" timestamp="2026-06-09T17:26:58.920Z" hostname="J3YQ3QYFCC" tests="2" failures="0" errors="0" skipped="0" time="0.220076375">
+        <testcase classname="src/pages/SignupPage.test.tsx" name="SignupPage &gt; signs up and navigates to workouts" time="0.136936208">
+            <system-err>
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/pages/SignupPage.test.tsx" name="SignupPage &gt; shows API error on failed signup" time="0.082561709">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/pages/WorkoutDetailPage.test.tsx" timestamp="2026-06-09T17:26:58.920Z" hostname="J3YQ3QYFCC" tests="14" failures="0" errors="0" skipped="0" time="0.648033916">
+        <testcase classname="src/pages/WorkoutDetailPage.test.tsx" name="WorkoutDetailPage &gt; submits workout edits for the owner" time="0.146592166">
+            <system-err>
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/pages/WorkoutDetailPage.test.tsx" name="WorkoutDetailPage &gt; creates a new exercise for the owner" time="0.127434458">
+        </testcase>
+        <testcase classname="src/pages/WorkoutDetailPage.test.tsx" name="WorkoutDetailPage &gt; deletes the workout and navigates to the list" time="0.01978375">
+        </testcase>
+        <testcase classname="src/pages/WorkoutDetailPage.test.tsx" name="WorkoutDetailPage &gt; shows an error when workout deletion fails" time="0.017797375">
+        </testcase>
+        <testcase classname="src/pages/WorkoutDetailPage.test.tsx" name="WorkoutDetailPage &gt; populates the exercise form when clicking Edit on an exercise" time="0.023500042">
+        </testcase>
+        <testcase classname="src/pages/WorkoutDetailPage.test.tsx" name="WorkoutDetailPage &gt; resets the exercise form when Cancel Edit is clicked" time="0.03389775">
+        </testcase>
+        <testcase classname="src/pages/WorkoutDetailPage.test.tsx" name="WorkoutDetailPage &gt; updates an existing exercise after clicking Edit" time="0.085171375">
+        </testcase>
+        <testcase classname="src/pages/WorkoutDetailPage.test.tsx" name="WorkoutDetailPage &gt; deletes an exercise from the workout" time="0.0199525">
+        </testcase>
+        <testcase classname="src/pages/WorkoutDetailPage.test.tsx" name="WorkoutDetailPage &gt; shows an error when exercise deletion fails" time="0.01800575">
+        </testcase>
+        <testcase classname="src/pages/WorkoutDetailPage.test.tsx" name="WorkoutDetailPage &gt; resets the form when deleting the exercise currently being edited" time="0.034711292">
+        </testcase>
+        <testcase classname="src/pages/WorkoutDetailPage.test.tsx" name="WorkoutDetailPage &gt; submits a cardio exercise with duration and speed" time="0.077830583">
+        </testcase>
+        <testcase classname="src/pages/WorkoutDetailPage.test.tsx" name="WorkoutDetailPage — pending mode &gt; redirects to /new when no pending workout is in localStorage" time="0.002414458">
+        </testcase>
+        <testcase classname="src/pages/WorkoutDetailPage.test.tsx" name="WorkoutDetailPage — pending mode &gt; shows workout name and exercise form when localStorage has pending data" time="0.006061458">
+        </testcase>
+        <testcase classname="src/pages/WorkoutDetailPage.test.tsx" name="WorkoutDetailPage — pending mode &gt; calls createWorkoutWithExercise and navigates to the saved workout on first exercise submit" time="0.034108334">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/pages/WorkoutsPage.test.tsx" timestamp="2026-06-09T17:26:58.921Z" hostname="J3YQ3QYFCC" tests="3" failures="0" errors="0" skipped="0" time="0.05774925">
+        <testcase classname="src/pages/WorkoutsPage.test.tsx" name="WorkoutsPage &gt; renders workout list from API" time="0.048201">
+            <system-err>
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/pages/WorkoutsPage.test.tsx" name="WorkoutsPage &gt; renders empty state when there are no workouts" time="0.005656166">
+        </testcase>
+        <testcase classname="src/pages/WorkoutsPage.test.tsx" name="WorkoutsPage &gt; redirects invalid page param to page 1" time="0.003328084">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/services/api.test.ts" timestamp="2026-06-09T17:26:58.921Z" hostname="J3YQ3QYFCC" tests="10" failures="0" errors="0" skipped="0" time="0.008221542">
+        <testcase classname="src/services/api.test.ts" name="api service &gt; validates login payload before calling API" time="0.001678083">
+        </testcase>
+        <testcase classname="src/services/api.test.ts" name="api service &gt; calls login endpoint for valid payload" time="0.003157291">
+        </testcase>
+        <testcase classname="src/services/api.test.ts" name="api service &gt; returns null for 401 current user lookup" time="0.000408833">
+        </testcase>
+        <testcase classname="src/services/api.test.ts" name="api service &gt; throws non-401 errors for current user lookup" time="0.00019425">
+        </testcase>
+        <testcase classname="src/services/api.test.ts" name="api service &gt; maps workout list response" time="0.000371333">
+        </testcase>
+        <testcase classname="src/services/api.test.ts" name="api service &gt; creates workout then fetches details" time="0.000307">
+        </testcase>
+        <testcase classname="src/services/api.test.ts" name="api service &gt; updates workout then fetches details" time="0.000238917">
+        </testcase>
+        <testcase classname="src/services/api.test.ts" name="api service &gt; creates exercise then fetches workout details" time="0.000529542">
+        </testcase>
+        <testcase classname="src/services/api.test.ts" name="api service &gt; updates exercise then fetches workout details" time="0.000394417">
+        </testcase>
+        <testcase classname="src/services/api.test.ts" name="api service &gt; deletes exercise then fetches workout details" time="0.000304125">
+        </testcase>
+    </testsuite>
+</testsuites>

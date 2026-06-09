@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs'
 
-import { query } from './db.js'
+import { query, withTransaction } from './db.js'
 import type { ExerciseRow, WorkoutDetails, WorkoutRow } from './types.js'
 
 export const uniqueUsernames = async (): Promise<string[]> => {
@@ -174,18 +174,53 @@ export const addWorkout = async (
   return Number(result.rows[0].id)
 }
 
-export const updateWorkout = async (
-  id: number,
-  name: string,
-  date: string,
-  numSets: number,
-  numReps: number,
-  weightDescription: string,
-): Promise<void> => {
-  await query(
-    'UPDATE workouts SET name = $1, "date" = $2 WHERE id = $3;',
-    [name, date, id],
-  )
+export const updateWorkout = async (id: number, name: string, date: string): Promise<void> => {
+  await query('UPDATE workouts SET name = $1, "date" = $2 WHERE id = $3;', [name, date, id])
+}
+
+export const addWorkoutWithExercise = async (
+  userId: number,
+  workoutName: string,
+  workoutDate: string,
+  exercise: {
+    description: string
+    numSets: number | null
+    numReps: number | null
+    weightDescription: string | null
+    exerciseType: string
+    durationMinutes: number | null
+    speedMph: number | null
+    notes: string | null
+  },
+): Promise<{ workoutId: number; exerciseId: number }> => {
+  return withTransaction(async (client) => {
+    const workoutResult = await client.query<{ id: number }>(
+      `INSERT INTO workouts (name, "date", num_sets, num_reps, weight_description, user_id)
+       VALUES ($1, $2, 0, 0, 'bodyweight', $3) RETURNING id`,
+      [workoutName, workoutDate, userId],
+    )
+    const workoutId = Number(workoutResult.rows[0].id)
+
+    const exerciseResult = await client.query<{ id: number }>(
+      `INSERT INTO exercises (description, num_sets, num_reps, weight_description, workout_id,
+                              exercise_type, duration_minutes, speed_mph, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+      [
+        exercise.description,
+        exercise.numSets,
+        exercise.numReps,
+        exercise.weightDescription,
+        workoutId,
+        exercise.exerciseType,
+        exercise.durationMinutes,
+        exercise.speedMph,
+        exercise.notes,
+      ],
+    )
+    const exerciseId = Number(exerciseResult.rows[0].id)
+
+    return { workoutId, exerciseId }
+  })
 }
 
 export const deleteWorkout = async (id: number): Promise<void> => {
