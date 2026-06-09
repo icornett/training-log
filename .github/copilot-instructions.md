@@ -18,7 +18,7 @@
 - **Routing:** React Router — handles all client-side navigation
 - **Backend:** Azure Functions (minimized) — only for server-side operations
 - **Database:** Azure Database for PostgreSQL Flexible Server (serverless)
-- **DB Client:** `pg` Pool with raw SQL (no ORM)
+- **DB Client:** `pg` Pool with Drizzle ORM (query builder)
 - **Language:** TypeScript throughout — frontend and Azure Functions
 - **Styling:** [Add your choice: Tailwind CSS / CSS Modules / Styled Components]
 - **State Management:** [Add your choice: Context API / Zustand / Redux Toolkit]
