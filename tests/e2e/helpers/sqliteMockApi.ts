@@ -160,6 +160,65 @@ export const setupSqliteMockApi = async (page: Page, options: MockApiOptions = {
       return
     }
 
+    if (method === 'POST' && url.pathname === '/api/workouts/with-first-exercise') {
+      if (!(await requireSession())) {
+        return
+      }
+
+      const name = String(body.name ?? '').trim()
+      const date = String(body.date ?? '')
+      const exercise = (body.exercise ?? {}) as Record<string, unknown>
+
+      if (name.length < 4 || name.length > 15) {
+        await json(422, { error: 'Invalid workout entry.' })
+        return
+      }
+
+      const duplicateResult = db.exec(
+        `SELECT id FROM workouts WHERE username = '${esc(sessionUser ?? '')}' AND date = '${esc(date)}' LIMIT 1;`,
+      )[0] ?? null
+      if (asRows(duplicateResult).length > 0) {
+        await json(422, { error: 'Invalid workout entry.' })
+        return
+      }
+
+      const maxWorkoutIdResult = db.exec('SELECT COALESCE(MAX(id), 0) AS maxId FROM workouts;')[0] ?? null
+      const maxWorkoutId = Number(asRows<{ maxId: number }>(maxWorkoutIdResult)[0]?.maxId ?? 0)
+      const workoutId = maxWorkoutId + 1
+
+      db.run(
+        `INSERT INTO workouts (id, name, date, username, num_sets, num_reps, weight_description)
+         VALUES (${workoutId}, '${esc(name)}', '${esc(date)}', '${esc(sessionUser ?? '')}', 1, 1, 'bodyweight');`,
+      )
+
+      const maxExerciseIdResult = db.exec('SELECT COALESCE(MAX(id), 0) AS maxId FROM exercises;')[0] ?? null
+      const maxExerciseId = Number(asRows<{ maxId: number }>(maxExerciseIdResult)[0]?.maxId ?? 0)
+      const exerciseId = maxExerciseId + 1
+
+      const exerciseType = String(exercise.exerciseType ?? 'strength')
+      const numSets = exercise.numSets !== undefined ? Number(exercise.numSets) : null
+      const numReps = exercise.numReps !== undefined ? Number(exercise.numReps) : null
+      const weightDescription =
+        exercise.weightDescription !== undefined ? String(exercise.weightDescription) : null
+      const durationMinutes = exercise.durationMinutes !== undefined ? Number(exercise.durationMinutes) : null
+      const speedMph = exercise.speedMph !== undefined ? Number(exercise.speedMph) : null
+      const notes = exercise.notes !== undefined ? String(exercise.notes) : null
+
+      db.run(
+        `INSERT INTO exercises (id, workout_id, description, exercise_type, num_sets, num_reps, weight_description, duration_minutes, speed_mph, notes)
+         VALUES (${exerciseId}, ${workoutId}, '${esc(String(exercise.description ?? ''))}', '${esc(exerciseType)}',
+           ${numSets === null ? 'NULL' : numSets}, ${numReps === null ? 'NULL' : numReps},
+           ${weightDescription === null ? 'NULL' : `'${esc(weightDescription)}'`},
+           ${durationMinutes === null ? 'NULL' : durationMinutes},
+           ${speedMph === null ? 'NULL' : speedMph},
+           ${notes === null ? 'NULL' : `'${esc(notes)}'`});`,
+      )
+
+      const createdWorkout = toWorkoutDetails(db, workoutId)
+      await json(201, createdWorkout)
+      return
+    }
+
     if (url.pathname === '/api/account') {
       if (method === 'GET') {
         if (!sessionUser) {
