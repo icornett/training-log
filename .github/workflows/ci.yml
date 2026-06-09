@@ -32,11 +32,33 @@ jobs:
       - name: Frontend tests
         run: npm run test:web:ci
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Mobile e2e tests
+        run: npm run test:e2e:mobile
+
       - name: Publish test results
         if: always()
         uses: mikepenz/action-junit-report@v4
         with:
           report_paths: 'test-results/*.xml'
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+
+      - name: Upload Playwright test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: test-results/
+          if-no-files-found: ignore
 
       - name: Build
         run: npm run build

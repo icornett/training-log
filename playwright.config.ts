@@ -5,10 +5,22 @@ const baseURL = process.env.BASE_URL ?? 'http://127.0.0.1:4173'
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 30_000,
+  expect: {
+    timeout: process.env.CI ? 10_000 : 5_000,
+  },
   retries: process.env.CI ? 2 : 0,
+  reporter: process.env.CI
+    ? [
+        ['list'],
+        ['junit', { outputFile: 'test-results/e2e-junit.xml' }],
+        ['html', { open: 'never' }],
+      ]
+    : 'html',
   use: {
     baseURL,
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
+    video: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
   projects: [
     {
