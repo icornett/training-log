@@ -15,12 +15,13 @@ export interface WorkoutRow {
 export interface ExerciseRow {
   id: number
   description: string
-  num_sets: number | null
-  num_reps: number | null
-  weight_description: string | null
-  exercise_type: string
-  duration_minutes: number | null
-  speed_mph: number | null
+  numSets: number | null
+  numReps: number | null
+  weightDescription: string | null
+  workoutId: number
+  exerciseType: string
+  durationMinutes: number | null
+  speedMph: number | null
   notes: string | null
 }
 

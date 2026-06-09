@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Pagination } from '../components/Pagination'
 import { api } from '../services/api'
 import type { WorkoutListItem } from '../types/domain'
+import { formatWorkoutDate } from '../utils/date'
 
 export const WorkoutsPage = (): JSX.Element => {
   const navigate = useNavigate()
@@ -80,7 +81,7 @@ export const WorkoutsPage = (): JSX.Element => {
             {items.map((item) => (
               <tr key={item.id}>
                 <td>{item.name}</td>
-                <td>{item.date}</td>
+                <td>{formatWorkoutDate(item.date)}</td>
                 <td>
                   <Link to={`/training_log/${page}/workouts/${item.id}`}>View Workout</Link>
                 </td>

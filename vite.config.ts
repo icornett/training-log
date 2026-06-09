@@ -7,6 +7,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        runtimeCaching: [
+          { urlPattern: /^\/api\//, handler: 'NetworkOnly' },
+        ],
+      },
       manifest: {
         name: 'Training Log',
         short_name: 'Training Log',

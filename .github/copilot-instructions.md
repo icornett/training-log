@@ -1,12 +1,9 @@
 # GitHub Copilot Instructions - training-log
 
 ## Project Context
-- Full-stack training-log application migrating from Ruby/Sinatra backend to
-  React frontend hosted on Azure Static Web Apps
-- Backend API replaced by Azure Functions + Azure Database for PostgreSQL
-  Flexible Server (serverless) with Prisma ORM
+- Backend API powered by Azure Functions + Azure Database for PostgreSQL
+  Flexible Server (serverless) with Drizzle ORM (query builder) + `pg` Pool
 - Focus on iterative, feedback-driven development
-- Current phase: Sinatra-to-serverless migration with React frontend build-out
 
 ## Documentation References
 - docs/project-overview.md — Architecture, tech stack, and structure
@@ -21,7 +18,7 @@
 - **Routing:** React Router — handles all client-side navigation
 - **Backend:** Azure Functions (minimized) — only for server-side operations
 - **Database:** Azure Database for PostgreSQL Flexible Server (serverless)
-- **ORM:** Prisma
+- **DB Client:** `pg` Pool with Drizzle ORM (query builder)
 - **Language:** TypeScript throughout — frontend and Azure Functions
 - **Styling:** [Add your choice: Tailwind CSS / CSS Modules / Styled Components]
 - **State Management:** [Add your choice: Context API / Zustand / Redux Toolkit]
@@ -34,7 +31,7 @@
 - Incremental Changes: Small, testable modifications
 - Systematic Debugging: Use test failures as guides
 - Validation Before Commit: All tests pass, no lint errors
-- All schema changes must include a Prisma migration
+- All schema changes must be applied via SQL migration scripts
 - TypeScript strict mode enabled — no use of `any` without explicit justification
 
 ---
@@ -76,117 +73,88 @@ Only create an Azure Function when the operation:
 
 ---
 
-## Sinatra to React / Azure Functions Migration Map
-
-Use this map when converting existing Sinatra routes. Classify each route as
-**React Router** (client-side only) or **Azure Function** (requires server-side
-execution) before writing any new code.
-
-```
-# Sinatra route       → React Router equivalent
-get '/'               → } />
-get '/users'          → } />
-get '/users/:id'      → } />
-get '/about'          → } />
-
-# Sinatra route       → Azure Function + PostgreSQL
-post '/users'         → /api/users (POST) → Prisma create
-put '/users/:id'      → /api/users/:id (PUT) → Prisma update
-delete '/users/:id'   → /api/users/:id (DELETE) → Prisma delete
-get '/users'          → /api/users (GET) → Prisma findMany (if auth required)
-get '/reports/export' → /api/reports/export (requires secret or raw SQL)
-```
-
-### Migration Checklist per Route
+## Route Classification Checklist
 - [ ] Classify as React Router or Azure Function using the criteria above
 - [ ] If React Router: create page component and add route to the router
-- [ ] If Azure Function: create handler in `/api`, add Prisma query in `shared/db.ts`
+- [ ] If Azure Function: create handler in `/api`, add query in `api/shared/repository.ts`
 - [ ] Write tests before implementing (TDD)
 - [ ] Update `staticwebapp.config.json` if new route protection rules are needed
-- [ ] Verify no Sinatra business logic has been lost — check helpers and before-filters
 
 ---
 
 ## Azure PostgreSQL Flexible Server (Serverless) Best Practices
 
 ### Connection Management
-- **Never instantiate Prisma Client directly in a function handler** — cold starts
-  and concurrent invocations will exhaust the PostgreSQL connection pool
-- Use a **singleton Prisma Client** shared across function invocations within the
-  same instance
-- Set `connection_limit` in the Prisma datasource URL to a low value (e.g., `1` or `2`)
+- Use a **shared `pg` Pool** instantiated once per module — never create a new Pool
+  per function invocation (exhausts connections on cold starts)
 - Use **pgBouncer** connection pooling (available in Azure PostgreSQL Flexible Server)
   and set `pgbouncer=true` in the connection string
 - Always include `?sslmode=require` in `DATABASE_URL` for Azure-hosted connections
 
-### Prisma Client Singleton Pattern
-```
-// api/shared/db.ts
-import { PrismaClient } from '@prisma/client'
+### pg Pool Pattern (`api/shared/db.ts`)
+```typescript
+import { Pool } from 'pg'
+import { drizzle } from 'drizzle-orm/node-postgres'
+import * as schema from './schema.js'
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
-
-export const prisma =
-  globalForPrisma.prisma ?? new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error'] : ['error'],
-  })
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+export const db = drizzle(pool, { schema })
 ```
 
 ### Connection String Configuration
 ```
 # .env (never commit this file)
-DATABASE_URL="postgresql://user:password@host:5432/dbname?sslmode=require&connection_limit=2&pgbouncer=true"
+DATABASE_URL="postgresql://user:password@host:5432/dbname?sslmode=require&pgbouncer=true"
 ```
 
 ### Schema and Migrations
-- Define all database schema in `prisma/schema.prisma`
-- Use **Prisma Migrate** for all schema changes — never alter the database manually
-- Run migrations as part of the **CI/CD pipeline**, not at function startup
-- Use **descriptive migration names** (e.g., `add_user_preferences_table`)
-- Always commit the `prisma/migrations` directory to source control
-- Use `prisma db pull` to introspect the existing PostgreSQL schema when migrating
-  from the Sinatra app, then clean up the generated schema
+- Schema is defined in `api/shared/schema.ts` using Drizzle table definitions
+- All schema changes must be applied via SQL migration scripts in `schema.sql`
+- Use `npx drizzle-kit introspect` to regenerate the Drizzle schema from the DB
+- Never alter the database manually in production
 
-### Query Best Practices
-- Always use **typed Prisma queries** — avoid raw SQL unless necessary
-- Use `select` to return **only the fields needed** — never return full records
-  containing sensitive fields to the client
-- Use **pagination** (`take` and `skip` or cursor-based) for all list queries
-- Use Prisma **transactions** for operations that must succeed or fail together
-- Use raw SQL with `prisma.$queryRaw` only for complex queries Prisma cannot express,
-  and always use **tagged template literals** to prevent SQL injection
+### Query Best Practices (Drizzle ORM)
+- Use `db.select({ ... }).from(table)` with explicit field lists — never return
+  full rows containing sensitive fields to the client
+- Use `.limit()` and `.offset()` for all list queries (pagination)
+- Use `db.transaction(async (tx) => { ... })` for operations that must
+  succeed or fail together
+- Prefer Drizzle query builder over raw SQL for type safety and composability
 
-```
+```typescript
 // Good — typed, minimal fields, paginated
-const users = await prisma.user.findMany({
-  select: { id: true, name: true, email: true },
-  where: { active: true },
-  orderBy: { createdAt: 'desc' },
-  take: 20,
-  skip: page * 20,
-})
+const rows = await db
+  .select({ id: users.id, name: users.username })
+  .from(users)
+  .where(eq(users.active, true))
+  .orderBy(desc(users.createdAt))
+  .limit(20)
+  .offset(page * 20)
 
 // Good — transaction
-const result = await prisma.$transaction([
-  prisma.order.create({ data: orderData }),
-  prisma.inventory.update({
-    where: { id: itemId },
-    data: { stock: { decrement: 1 } },
-  }),
-])
+const result = await db.transaction(async (tx) => {
+  const [order] = await tx.insert(orders).values(orderData).returning({ id: orders.id })
+  await tx.update(inventory).set({ stock: sql`${inventory.stock} - 1` }).where(eq(inventory.id, itemId))
+  return order
+})
 
-// Avoid — returning full record with sensitive fields
-const user = await prisma.user.findUnique({ where: { id } })
-return user
+// Avoid — selecting full row with sensitive fields
+const user = await db.select().from(users).where(eq(users.id, id)).limit(1)
+return user[0]
 ```
+
+### Date / Timezone Policy
+- `date` columns in PostgreSQL are timezone-agnostic; Drizzle returns them as
+  ISO `"YYYY-MM-DD"` strings (`{ mode: 'string' }`)
+- Future `timestamp` columns **must** use `timestamptz` (stored UTC)
+- On the client, always use `formatWorkoutDate(isoDate)` from `src/utils/date.ts`
+  to parse dates as local calendar dates — never use `new Date(isoDateString)`
+  directly (parses as UTC midnight, shows wrong day in non-UTC timezones)
 
 ### Security
 - Store `DATABASE_URL` in **Azure Static Web Apps environment variables** or
   **Azure Key Vault** — never in source code or client bundle
-- Always validate and sanitize inputs in the Azure Function **before** passing
-  them to Prisma
+- Always validate and sanitize inputs in the Azure Function **before** querying
 - Use **row-level filtering** based on the authenticated user's identity —
   never trust client-supplied user IDs for authorization
 - Restrict the PostgreSQL role used by the app to minimum required privileges
@@ -339,45 +307,29 @@ test('navigates to user detail on row click', async () => {
 ```
 
 ### Azure Function and Database Testing
-- **Always mock Prisma** in unit and integration tests — never connect to a real
-  database in automated tests
-- Use `jest.mock` or a Prisma mock library such as `prisma-mock` or `jest-mock-extended`
+- **Mock repository functions** in unit and integration tests — never connect to a
+  real database in automated tests
+- Use `jest.mock('./shared/repository.js', () => ({ findAll: jest.fn(), ... }))` to
+  mock the entire repository module
 - Test the **function handler behavior** (status codes, response shape, error handling)
-  separately from the **Prisma query logic**
-- Use a dedicated **test database** with Prisma Migrate for end-to-end tests only,
-  and reset it between test runs with `prisma migrate reset`
+  separately from the **repository/Drizzle query logic**
+- Repository functions are the seam for mocking — handlers import from `repository.ts`,
+  tests mock that module
 
-```
-// api/users/index.test.ts
-import { prisma } from '../shared/db'
+```typescript
+// api/functions/workouts.test.ts
+import * as repo from '../shared/repository.js'
 
-jest.mock('../shared/db', () => ({
-  prisma: {
-    user: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      create: jest.fn(),
-    },
-  },
-}))
+jest.mock('../shared/repository.js')
 
-test('returns paginated users', async () => {
-  const mockUsers = [{ id: '1', name: 'Jane Doe', email: 'jane@example.com' }]
-  ;(prisma.user.findMany as jest.Mock).mockResolvedValue(mockUsers)
+test('returns paginated workouts', async () => {
+  const mockWorkouts = [{ id: 1, name: 'Legs', date: '2024-01-03', username: 'jane' }]
+  jest.mocked(repo.listWorkoutsByUsername).mockResolvedValue(mockWorkouts)
   const context = createMockContext()
-  const request = createMockRequest({ method: 'GET', query: { page: '0' } })
+  const request = createMockRequest({ method: 'GET' })
   await handler(context, request)
   expect(context.res.status).toBe(200)
-  expect(context.res.body).toEqual(mockUsers)
-})
-
-test('returns 404 when user is not found', async () => {
-  ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(null)
-  const context = createMockContext()
-  const request = createMockRequest({ method: 'GET', params: { id: '999' } })
-  await handler(context, request)
-  expect(context.res.status).toBe(404)
-  expect(context.res.body).toEqual({ error: 'User not found' })
+  expect(context.res.body).toEqual(mockWorkouts)
 })
 ```
 
@@ -394,7 +346,7 @@ test('returns 404 when user is not found', async () => {
 ### Coverage Guidelines
 - Aim for **meaningful coverage**, not 100% line coverage
 - Prioritize coverage of:
-  - Prisma query logic and data transformation (high coverage)
+  - Repository function logic and data transformation (high coverage)
   - User-facing component interactions (high coverage)
   - Edge cases and error states (always test these)
   - Happy path flows (always test these)
@@ -460,7 +412,7 @@ GitHub CLI commands for workflow automation (available to all modes):
 - TypeScript strict mode enabled throughout — frontend and Azure Functions
 - No use of `any` without a comment explaining why it cannot be avoided
 - All new features must include tests before merging
-- All schema changes must include a Prisma migration
+- All schema changes must be applied via SQL migration scripts
 - Keep Azure Functions modular — extract focused modules for connection config,
   query helpers, and validation logic
 
@@ -471,10 +423,17 @@ GitHub CLI commands for workflow automation (available to all modes):
   defaults in production containers. Prefer `DATABASE_URL` for runtime configuration.
 - Azure PostgreSQL: Always include `?sslmode=require` in `DATABASE_URL` for
   Azure-hosted Postgres connections.
-- Prisma in serverless: Use the singleton pattern for Prisma Client to avoid
-  exhausting the PostgreSQL connection pool across Azure Function invocations.
+- Drizzle in serverless: Use a shared `pg.Pool` instantiated once per module and
+  wrap it with `drizzle(pool, { schema })`. Never create a new Pool per invocation.
 - pgBouncer: Enable pgBouncer in the Azure PostgreSQL connection string
-  (`pgbouncer=true`) and set `connection_limit` to 1 or 2 for serverless workloads.
+  (`pgbouncer=true`) for serverless workloads.
+- Drizzle camelCase: Drizzle infers JS property names in camelCase from the column
+  name in the schema definition (e.g., `integer('num_sets')` → property `numSets`).
+  Interfaces that consume Drizzle results must use camelCase keys.
+- Timezone off-by-one: `new Date('YYYY-MM-DD')` parses as UTC midnight. Always use
+  `new Date(year, month-1, day)` for local-time date display on the client.
+- ESM extensions: `api/` uses NodeNext module resolution — all relative imports
+  must include the `.js` extension even for `.ts` source files.
 - Maintainability and linting: Keep Azure Functions modular. Extracting focused
   modules (connection config, query helpers, validation logic) helps satisfy
   class-length lint rules without changing behavior.

@@ -17,7 +17,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '25'
           cache: 'npm'
 
       - name: Install dependencies
@@ -27,10 +27,16 @@ jobs:
         run: npm run typecheck
 
       - name: API tests
-        run: npm run test:api
+        run: npm run test:api:ci
 
       - name: Frontend tests
-        run: npm run test:web
+        run: npm run test:web:ci
+
+      - name: Publish test results
+        if: always()
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: 'test-results/*.xml'
 
       - name: Build
         run: npm run build

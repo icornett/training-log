@@ -187,4 +187,15 @@ export const api = {
 
     return await request<WorkoutDetails>(`/api/workouts/${workoutId}`)
   },
+
+  async createWorkoutWithExercise(
+    workout: WorkoutCreateInput,
+    exercise: ExerciseInput,
+  ): Promise<WorkoutDetails> {
+    return await request<WorkoutDetails>('/api/workouts/with-first-exercise', {
+      method: 'POST',
+      headers: jsonHeaders,
+      body: JSON.stringify({ ...workout, exercise }),
+    })
+  },
 }

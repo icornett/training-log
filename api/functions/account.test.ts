@@ -39,4 +39,18 @@ describe('createAccountHandler', () => {
       'Set-Cookie': 'training_log_session=;',
     })
   })
+
+  it('returns 401 when user is not authenticated', async () => {
+    const handler = createAccountHandler({
+      getUser: () => null,
+      requireUser: async () => true,
+      deleteUser: async () => undefined,
+      clearCookie: () => '',
+    })
+
+    const request = { method: 'GET' } as HttpRequest
+    const response = await handler(request)
+
+    expect(response.status).toBe(401)
+  })
 })

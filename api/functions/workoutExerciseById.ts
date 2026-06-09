@@ -59,12 +59,12 @@ app.http('workoutExerciseById', {
 
     const body = await parseJsonBody<UpdateExerciseBody>(request)
     const description = body.description ?? ''
-    const exerciseType = body.exerciseType ?? exercise.exercise_type
-    const numSets = body.numSets !== undefined ? Number(body.numSets) : exercise.num_sets
-    const numReps = body.numReps !== undefined ? Number(body.numReps) : exercise.num_reps
-    const weightDescription = body.weightDescription !== undefined ? body.weightDescription : exercise.weight_description
-    const durationMinutes = body.durationMinutes !== undefined ? Number(body.durationMinutes) : exercise.duration_minutes
-    const speedMph = body.speedMph !== undefined ? Number(body.speedMph) : exercise.speed_mph
+    const exerciseType = body.exerciseType ?? exercise.exerciseType
+    const numSets = body.numSets !== undefined ? Number(body.numSets) : exercise.numSets
+    const numReps = body.numReps !== undefined ? Number(body.numReps) : exercise.numReps
+    const weightDescription = body.weightDescription !== undefined ? body.weightDescription : exercise.weightDescription
+    const durationMinutes = body.durationMinutes !== undefined ? Number(body.durationMinutes) : exercise.durationMinutes
+    const speedMph = body.speedMph !== undefined ? Number(body.speedMph) : exercise.speedMph
     const notes = body.notes !== undefined ? body.notes : exercise.notes
 
     const invalidMsg = invalidExerciseEditMessage(description, weightDescription ?? '', exerciseType)

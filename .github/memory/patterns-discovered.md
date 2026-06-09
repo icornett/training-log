@@ -19,8 +19,8 @@ Use this file to record recurring implementation and debugging patterns discover
 - Context: Service or view-model initialization where collections are rendered or iterated.
 - Problem: Initializing lists as null causes conditional clutter and runtime errors when code assumes enumerable behavior.
 - Solution: Initialize collection properties as empty arrays by default; treat null as exceptional only.
-- Example: Use `items = []` instead of `items = nil` so downstream render logic can iterate safely.
-- Related Files: workouts.rb, views/workouts.erb
+- Example: Use `items = []` instead of `null` so downstream render logic can iterate safely.
+- Related Files: WorkoutsPage.tsx, api/functions/workouts.ts
 
 ---
 

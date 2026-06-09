@@ -57,24 +57,13 @@ app.http('workoutById', {
     const body = await parseJsonBody<UpdateWorkoutBody>(request)
     const name = body.name?.trim() ?? ''
     const date = body.date ?? ''
-    const numSets = 1
-    const numReps = 1
-    const weightDescription = 'bodyweight'
 
-    const invalidMsg = await invalidWorkoutMessage(
-      name,
-      date,
-      numSets,
-      numReps,
-      weightDescription,
-      user.username,
-      workoutId,
-    )
+    const invalidMsg = await invalidWorkoutMessage(name, date, user.username, workoutId)
     if (invalidMsg) {
       return json(422, { error: invalidMsg })
     }
 
-    await updateWorkout(workoutId, name, date, numSets, numReps, weightDescription)
+    await updateWorkout(workoutId, name, date)
     return json(200, { message: `You've successfully updated workout ${workoutId}` })
   },
 })
