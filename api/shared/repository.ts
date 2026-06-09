@@ -219,7 +219,15 @@ export const getExerciseForWorkout = async (
     .from(exercises)
     .where(and(eq(exercises.workoutId, workoutId), eq(exercises.id, exerciseId)))
     .limit(1)
-  return rows.length > 0 ? rows[0] : null
+
+  const row = rows.length > 0 ? rows[0] : null
+  if (!row) return null
+
+  return {
+    ...row,
+    durationMinutes: row.durationMinutes !== null ? Number(row.durationMinutes) : null,
+    speedMph: row.speedMph !== null ? Number(row.speedMph) : null,
+  }
 }
 
 export const addExercise = async (
