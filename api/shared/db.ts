@@ -1,4 +1,7 @@
+import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool, type PoolClient, type QueryResult, type QueryResultRow } from 'pg'
+
+import * as schema from './schema.js'
 
 const envFirst = (...keys: string[]): string | undefined => {
   for (const key of keys) {
@@ -57,3 +60,7 @@ export const withTransaction = async <T>(fn: (client: PoolClient) => Promise<T>)
     client.release()
   }
 }
+
+// Drizzle ORM instance — use this for all new queries.
+// Raw `query` is kept for backward compatibility during the migration period.
+export const db = drizzle(pool, { schema })

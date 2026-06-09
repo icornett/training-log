@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
 import type { WorkoutDetails } from '../types/domain'
+import { formatWorkoutDate } from '../utils/date'
 
 export const WorkoutDetailPage = (): JSX.Element | null => {
   const navigate = useNavigate()
@@ -336,7 +337,7 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
         </Link>
       </div>
       <p>
-        {workout.date} · {workout.username}
+        {formatWorkoutDate(workout.date)} · {workout.username}
       </p>
 
       {message ? <p className="success-text">{message}</p> : null}
