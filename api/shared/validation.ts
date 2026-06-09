@@ -44,6 +44,11 @@ const validWorkoutDetails = async (
     return false
   }
 
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+  if (!dateRegex.test(date) || isNaN(Date.parse(date))) {
+    return false
+  }
+
   const totalCount = await countWorkoutsByUsername(username)
   const all: Array<{ id: number; name: string; date: string; username: string }> = []
 
