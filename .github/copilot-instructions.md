@@ -1,9 +1,8 @@
 # GitHub Copilot Instructions - training-log
 
 ## Project Context
-- Full-stack training-log application with a React frontend hosted on Azure Static Web Apps
 - Backend API powered by Azure Functions + Azure Database for PostgreSQL
-  Flexible Server (serverless) with raw SQL via `pg` Pool
+  Flexible Server (serverless) with Drizzle ORM (query builder) + `pg` Pool
 - Focus on iterative, feedback-driven development
 
 ## Documentation References
