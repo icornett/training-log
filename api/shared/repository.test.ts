@@ -1,0 +1,45 @@
+import { describe, expect, it, jest, beforeEach } from '@jest/globals'
+
+const orderBy = jest.fn()
+const where = jest.fn(() => ({ orderBy }))
+const from = jest.fn(() => ({ where }))
+const select = jest.fn(() => ({ from }))
+
+jest.unstable_mockModule('./db.js', () => ({
+  db: { select },
+}))
+
+const { listExercises } = await import('./repository.js')
+
+describe('listExercises', () => {
+  beforeEach(() => {
+    orderBy.mockReset()
+    where.mockClear()
+    from.mockClear()
+    select.mockClear()
+  })
+
+  it('returns numeric exercise fields as numbers when the driver yields strings', async () => {
+    orderBy.mockResolvedValue([
+      {
+        id: 10,
+        description: 'Run',
+        numSets: null,
+        numReps: null,
+        weightDescription: null,
+        workoutId: 4,
+        exerciseType: 'cardio',
+        durationMinutes: '30.5',
+        speedMph: '6.2',
+        notes: null,
+      },
+    ])
+
+    await expect(listExercises(4)).resolves.toEqual([
+      expect.objectContaining({
+        durationMinutes: 30.5,
+        speedMph: 6.2,
+      }),
+    ])
+  })
+})

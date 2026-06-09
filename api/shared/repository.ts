@@ -5,6 +5,17 @@ import { db } from './db.js'
 import { exercises, users, workouts } from './schema.js'
 import type { ExerciseRow, WorkoutDetails, WorkoutRow } from './types.js'
 
+const normalizeExerciseRow = (
+  row: Omit<ExerciseRow, 'durationMinutes' | 'speedMph'> & {
+    durationMinutes: number | string | null
+    speedMph: number | string | null
+  },
+): ExerciseRow => ({
+  ...row,
+  durationMinutes: row.durationMinutes === null ? null : Number(row.durationMinutes),
+  speedMph: row.speedMph === null ? null : Number(row.speedMph),
+})
+
 export const uniqueUsernames = async (): Promise<string[]> => {
   const rows = await db.select({ username: users.username }).from(users)
   return rows.map((r) => r.username)
@@ -90,11 +101,12 @@ export const getWorkoutDetailsForUser = async (
 }
 
 export const listExercises = async (workoutId: number): Promise<ExerciseRow[]> => {
-  return db
+  const rows = await db
     .select()
     .from(exercises)
     .where(eq(exercises.workoutId, workoutId))
     .orderBy(exercises.description)
+  return rows.map(normalizeExerciseRow)
 }
 
 export const getWorkoutWithExercisesForUser = async (
