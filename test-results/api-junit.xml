@@ -1,61 +1,61 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="25" failures="0" errors="0" time="0.646">
-  <testsuite name="createWorkoutWithExerciseHandler" errors="0" failures="0" skipped="0" timestamp="2026-06-09T17:26:29" time="0.171" tests="7">
-    <testcase classname="createWorkoutWithExerciseHandler returns 401 when user is not authenticated" name="createWorkoutWithExerciseHandler returns 401 when user is not authenticated" time="0.001">
+<testsuites name="jest tests" tests="25" failures="0" errors="0" time="1.358">
+  <testsuite name="createWorkoutWithExerciseHandler" errors="0" failures="0" skipped="0" timestamp="2026-06-09T18:01:42" time="0.499" tests="7">
+    <testcase classname="createWorkoutWithExerciseHandler returns 401 when user is not authenticated" name="createWorkoutWithExerciseHandler returns 401 when user is not authenticated" time="0.002">
     </testcase>
     <testcase classname="createWorkoutWithExerciseHandler returns 401 when user is not found in the database" name="createWorkoutWithExerciseHandler returns 401 when user is not found in the database" time="0">
     </testcase>
-    <testcase classname="createWorkoutWithExerciseHandler returns 422 when workout validation fails" name="createWorkoutWithExerciseHandler returns 422 when workout validation fails" time="0.001">
+    <testcase classname="createWorkoutWithExerciseHandler returns 422 when workout validation fails" name="createWorkoutWithExerciseHandler returns 422 when workout validation fails" time="0.002">
     </testcase>
     <testcase classname="createWorkoutWithExerciseHandler returns 422 when exercise validation fails" name="createWorkoutWithExerciseHandler returns 422 when exercise validation fails" time="0">
     </testcase>
-    <testcase classname="createWorkoutWithExerciseHandler returns 201 with full workout details on success" name="createWorkoutWithExerciseHandler returns 201 with full workout details on success" time="0.001">
+    <testcase classname="createWorkoutWithExerciseHandler returns 201 with full workout details on success" name="createWorkoutWithExerciseHandler returns 201 with full workout details on success" time="0">
     </testcase>
     <testcase classname="createWorkoutWithExerciseHandler returns 500 when workout cannot be fetched after creation" name="createWorkoutWithExerciseHandler returns 500 when workout cannot be fetched after creation" time="0">
     </testcase>
     <testcase classname="createWorkoutWithExerciseHandler returns 401 when user id cannot be resolved after validation" name="createWorkoutWithExerciseHandler returns 401 when user id cannot be resolved after validation" time="0">
     </testcase>
   </testsuite>
-  <testsuite name="createAccountHandler" errors="0" failures="0" skipped="0" timestamp="2026-06-09T17:26:29" time="0.083" tests="3">
-    <testcase classname="createAccountHandler returns current user for GET requests" name="createAccountHandler returns current user for GET requests" time="0.001">
+  <testsuite name="createWorkoutsHandler" errors="0" failures="0" skipped="0" timestamp="2026-06-09T18:01:43" time="0.173" tests="7">
+    <testcase classname="createWorkoutsHandler returns 401 when session user is not present" name="createWorkoutsHandler returns 401 when session user is not present" time="0.002">
+    </testcase>
+    <testcase classname="createWorkoutsHandler returns 401 when user is not found in the database" name="createWorkoutsHandler returns 401 when user is not found in the database" time="0">
+    </testcase>
+    <testcase classname="createWorkoutsHandler returns 400 for non-numeric page query parameter" name="createWorkoutsHandler returns 400 for non-numeric page query parameter" time="0">
+    </testcase>
+    <testcase classname="createWorkoutsHandler returns paginated workout list for GET requests" name="createWorkoutsHandler returns paginated workout list for GET requests" time="0.002">
+    </testcase>
+    <testcase classname="createWorkoutsHandler returns 422 when workout validation fails" name="createWorkoutsHandler returns 422 when workout validation fails" time="0">
+    </testcase>
+    <testcase classname="createWorkoutsHandler returns 401 when user id cannot be resolved after validation" name="createWorkoutsHandler returns 401 when user id cannot be resolved after validation" time="0.001">
+    </testcase>
+    <testcase classname="createWorkoutsHandler returns 201 with the new workout id for valid POST" name="createWorkoutsHandler returns 201 with the new workout id for valid POST" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="createAccountHandler" errors="0" failures="0" skipped="0" timestamp="2026-06-09T18:01:43" time="0.151" tests="3">
+    <testcase classname="createAccountHandler returns current user for GET requests" name="createAccountHandler returns current user for GET requests" time="0.002">
     </testcase>
     <testcase classname="createAccountHandler clears the cookie after account deletion" name="createAccountHandler clears the cookie after account deletion" time="0">
     </testcase>
     <testcase classname="createAccountHandler returns 401 when user is not authenticated" name="createAccountHandler returns 401 when user is not authenticated" time="0">
     </testcase>
   </testsuite>
-  <testsuite name="createWorkoutsHandler" errors="0" failures="0" skipped="0" timestamp="2026-06-09T17:26:30" time="0.094" tests="7">
-    <testcase classname="createWorkoutsHandler returns 401 when session user is not present" name="createWorkoutsHandler returns 401 when session user is not present" time="0.001">
+  <testsuite name="createLoginHandler" errors="0" failures="0" skipped="0" timestamp="2026-06-09T18:01:43" time="0.137" tests="2">
+    <testcase classname="createLoginHandler returns 422 for invalid credentials" name="createLoginHandler returns 422 for invalid credentials" time="0.002">
     </testcase>
-    <testcase classname="createWorkoutsHandler returns 401 when user is not found in the database" name="createWorkoutsHandler returns 401 when user is not found in the database" time="0">
-    </testcase>
-    <testcase classname="createWorkoutsHandler returns 400 for non-numeric page query parameter" name="createWorkoutsHandler returns 400 for non-numeric page query parameter" time="0.001">
-    </testcase>
-    <testcase classname="createWorkoutsHandler returns paginated workout list for GET requests" name="createWorkoutsHandler returns paginated workout list for GET requests" time="0">
-    </testcase>
-    <testcase classname="createWorkoutsHandler returns 422 when workout validation fails" name="createWorkoutsHandler returns 422 when workout validation fails" time="0">
-    </testcase>
-    <testcase classname="createWorkoutsHandler returns 401 when user id cannot be resolved after validation" name="createWorkoutsHandler returns 401 when user id cannot be resolved after validation" time="0">
-    </testcase>
-    <testcase classname="createWorkoutsHandler returns 201 with the new workout id for valid POST" name="createWorkoutsHandler returns 201 with the new workout id for valid POST" time="0.001">
+    <testcase classname="createLoginHandler returns a session cookie for valid credentials" name="createLoginHandler returns a session cookie for valid credentials" time="0.001">
     </testcase>
   </testsuite>
-  <testsuite name="createLoginHandler" errors="0" failures="0" skipped="0" timestamp="2026-06-09T17:26:30" time="0.079" tests="2">
-    <testcase classname="createLoginHandler returns 422 for invalid credentials" name="createLoginHandler returns 422 for invalid credentials" time="0.001">
-    </testcase>
-    <testcase classname="createLoginHandler returns a session cookie for valid credentials" name="createLoginHandler returns a session cookie for valid credentials" time="0">
-    </testcase>
-  </testsuite>
-  <testsuite name="invalidExerciseEditMessage" errors="0" failures="0" skipped="0" timestamp="2026-06-09T17:26:30" time="0.058" tests="6">
-    <testcase classname="invalidExerciseEditMessage returns null for a valid strength exercise edit payload" name="invalidExerciseEditMessage returns null for a valid strength exercise edit payload" time="0.001">
+  <testsuite name="invalidExerciseEditMessage" errors="0" failures="0" skipped="0" timestamp="2026-06-09T18:01:43" time="0.12" tests="6">
+    <testcase classname="invalidExerciseEditMessage returns null for a valid strength exercise edit payload" name="invalidExerciseEditMessage returns null for a valid strength exercise edit payload" time="0.002">
     </testcase>
     <testcase classname="invalidExerciseEditMessage returns null for a valid strength exercise with comma-separated weights" name="invalidExerciseEditMessage returns null for a valid strength exercise with comma-separated weights" time="0">
     </testcase>
-    <testcase classname="invalidExerciseEditMessage returns null for a valid cardio exercise without weight validation" name="invalidExerciseEditMessage returns null for a valid cardio exercise without weight validation" time="0">
+    <testcase classname="invalidExerciseEditMessage returns null for a valid cardio exercise without weight validation" name="invalidExerciseEditMessage returns null for a valid cardio exercise without weight validation" time="0.001">
     </testcase>
     <testcase classname="invalidExerciseEditMessage returns an error when the description is too short" name="invalidExerciseEditMessage returns an error when the description is too short" time="0">
     </testcase>
-    <testcase classname="invalidExerciseEditMessage returns an error when the weight description uses an unsupported unit for strength" name="invalidExerciseEditMessage returns an error when the weight description uses an unsupported unit for strength" time="0">
+    <testcase classname="invalidExerciseEditMessage returns an error when the weight description uses an unsupported unit for strength" name="invalidExerciseEditMessage returns an error when the weight description uses an unsupported unit for strength" time="0.001">
     </testcase>
     <testcase classname="invalidExerciseEditMessage returns null for bodyweight exercises" name="invalidExerciseEditMessage returns null for bodyweight exercises" time="0">
     </testcase>

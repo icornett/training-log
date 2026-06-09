@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "postinstall": "npm --prefix api ci",
     "prepare": "simple-git-hooks",
     "dev": "vite",
     "dev:web": "vite",
