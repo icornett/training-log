@@ -61,5 +61,8 @@
   },
   "simple-git-hooks": {
     "pre-commit": "npm run precommit"
+  },
+  "engines": {
+    "node": ">=25"
   }
 }
