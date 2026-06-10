@@ -14,7 +14,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.10.1",
+    "@types/node": "^25.0.0",
     "@types/pg": "^8.11.10",
     "drizzle-kit": "^0.31.10",
     "typescript": "^5.6.3"
@@ -22,5 +22,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "func start --port 7071"
+  },
+  "engines": {
+    "node": ">=25"
   }
 }
