@@ -22,6 +22,7 @@
     "test:web": "vitest run",
     "test:web:ci": "vitest run --coverage",
     "test:e2e:mobile": "playwright test --project=ios-safari --project=android-chrome",
+    "test:e2e:real-db": "playwright test tests/e2e/real-db --project=ios-safari --project=android-chrome",
     "precommit": "npm run typecheck && npm run test:api && npm run test:web"
   },
   "dependencies": {
@@ -40,7 +41,7 @@
     "@testing-library/user-event": "^14.5.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^29.5.14",
-    "@types/node": "^25.0.0",
+    "@types/node": "^22.0.0",
     "@types/pg": "^8.11.10",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
@@ -63,6 +64,6 @@
     "pre-commit": "npm run precommit"
   },
   "engines": {
-    "node": ">=25"
+    "node": ">=22"
   }
 }

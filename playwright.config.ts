@@ -4,6 +4,7 @@ const baseURL = process.env.BASE_URL ?? 'http://127.0.0.1:4173'
 
 export default defineConfig({
   testDir: './tests/e2e',
+  testIgnore: '**/real-db/**',
   timeout: 30_000,
   expect: {
     timeout: process.env.CI ? 10_000 : 5_000,
