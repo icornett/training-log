@@ -1,10 +1,10 @@
-import { FormEvent, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { FormEvent, useEffect, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
-import { useAuth } from "../context/AuthContext";
-import { api } from "../services/api";
-import type { WorkoutDetails } from "../types/domain";
-import { formatWorkoutDate } from "../utils/date";
+import { useAuth } from '../context/AuthContext'
+import { api } from '../services/api'
+import type { WorkoutDetails } from '../types/domain'
+import { formatWorkoutDate } from '../utils/date'
 
 export const WorkoutDetailPage = (): JSX.Element | null => {
   const navigate = useNavigate();
