@@ -182,9 +182,14 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
           payload,
         );
         localStorage.removeItem("trainingLog:pendingWorkout");
-        navigate(`/training_log/${page}/workouts/${newWorkout.id}`, {
-          replace: true,
-        });
+        setMessage("Exercise added.");
+        setError(null);
+        // Allow message to render before navigation
+        setTimeout(() => {
+          navigate(`/training_log/${page}/workouts/${newWorkout.id}`, {
+            replace: true,
+          });
+        }, 500);
         return;
       }
 
@@ -278,6 +283,7 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
         </div>
         <p>{workoutDate}</p>
         <p>Add your first exercise to save this workout.</p>
+        {message ? <p className="success-text">{message}</p> : null}
         {error ? <p className="error-text">{error}</p> : null}
         <section className="panel-block">
           <h2>Add Exercise</h2>

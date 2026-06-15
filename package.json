@@ -23,6 +23,7 @@
     "test:web:ci": "vitest run --coverage",
     "test:e2e:mobile": "playwright test --project=ios-safari --project=android-chrome",
     "test:e2e:real-db": "playwright test -c playwright.real-db.config.ts --project=ios-safari --project=android-chrome",
+    "test:e2e:sqlite": "playwright test -c playwright.sqlite.config.ts",
     "precommit": "npm run typecheck && npm run test:api && npm run test:web"
   },
   "dependencies": {
