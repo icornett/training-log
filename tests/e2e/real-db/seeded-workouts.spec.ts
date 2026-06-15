@@ -1,4 +1,31 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
+
+const openUpperBodyWorkout = async (page: Page): Promise<void> => {
+  await page.goto('/login')
+  await page.getByLabel('Username').fill('Playwright User')
+  await page.getByLabel('Password').fill('playwright-pass-123')
+  await page.getByRole('button', { name: 'Login' }).click()
+
+  const upperBodyRow = page.getByRole('row').filter({ hasText: 'Upper Body' })
+  await upperBodyRow.getByRole('link', { name: 'View Workout' }).click()
+  await expect(page.getByRole('heading', { name: 'Upper Body' })).toBeVisible()
+}
+
+const cleanupExerciseIfPresent = async (
+  page: Page,
+  description: string,
+): Promise<void> => {
+  try {
+    await openUpperBodyWorkout(page)
+    const rows = page.getByRole('listitem').filter({ hasText: description })
+    if ((await rows.count()) > 0) {
+      await rows.first().getByRole('button', { name: 'Delete' }).click()
+      await expect(page.getByText('Exercise deleted.')).toBeVisible()
+    }
+  } catch {
+    // Best-effort cleanup to avoid leaking seeded state across runs.
+  }
+}
 
 test('seeded user can browse the real database', async ({ page }) => {
   await page.goto('/login')
@@ -21,21 +48,20 @@ test('seeded user can browse the real database', async ({ page }) => {
 })
 
 test('seeded user can add an exercise in the real database', async ({ page }) => {
-  await page.goto('/login')
+  const uniqueExercise = `Cable Rows ${String(Date.now()).slice(-6)}`
 
-  await page.getByLabel('Username').fill('Playwright User')
-  await page.getByLabel('Password').fill('playwright-pass-123')
-  await page.getByRole('button', { name: 'Login' }).click()
+  try {
+    await openUpperBodyWorkout(page)
 
-  const upperBodyRow = page.getByRole('row').filter({ hasText: 'Upper Body' })
-  await upperBodyRow.getByRole('link', { name: 'View Workout' }).click()
+    await page.getByLabel('Description').fill(uniqueExercise)
+    await page.getByLabel('Sets').fill('3')
+    await page.getByLabel('Reps').fill('12')
+    await page.getByLabel('Weight').fill('70 lbs')
+    await page.getByRole('button', { name: 'Add Exercise' }).click()
 
-  await page.getByLabel('Description').fill('Cable Rows')
-  await page.getByLabel('Sets').fill('3')
-  await page.getByLabel('Reps').fill('12')
-  await page.getByLabel('Weight').fill('70 lbs')
-  await page.getByRole('button', { name: 'Add Exercise' }).click()
-
-  await expect(page.getByText('Exercise added.')).toBeVisible()
-  await expect(page.getByRole('listitem').filter({ hasText: 'Cable Rows' })).toBeVisible()
+    await expect(page.getByText('Exercise added.')).toBeVisible()
+    await expect(page.getByRole('listitem').filter({ hasText: uniqueExercise })).toBeVisible()
+  } finally {
+    await cleanupExerciseIfPresent(page, uniqueExercise)
+  }
 })
