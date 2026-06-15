@@ -34,11 +34,18 @@ Useful commands:
 - API tests: `npm run test:api`
 - Frontend tests: `npm run test:web`
 - Mobile E2E smoke tests (iOS + Android emulation): `npm run test:e2e:mobile`
+- Real-database user-journey E2E tests: `npm run test:e2e:real-db`
 - Production build: `npm run build`
 
 ## Database Setup
 
 The PostgreSQL schema and seed data are still defined in [schema.sql](/Users/iancornett/src/ae-bootcamp-demo/training-log/schema.sql). Load that schema into your local or Azure PostgreSQL instance before starting the API.
+
+## Real DB E2E
+
+The real-database Playwright lane seeds a dedicated `Playwright User` account from [tests/e2e/seed/real-db-seed.sql](tests/e2e/seed/real-db-seed.sql) and runs the browser against the preview deployment URL.
+
+To run the same lane manually, set `BASE_URL` to the preview URL and run `npm run test:e2e:real-db`.
 
 ## Git Hooks
 
