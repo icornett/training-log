@@ -1,10 +1,16 @@
 import { expect, test, type Page } from '@playwright/test'
 
 const openUpperBodyWorkout = async (page: Page): Promise<void> => {
-  await page.goto('/login')
-  await page.getByLabel('Username').fill('Playwright User')
-  await page.getByLabel('Password').fill('playwright-pass-123')
-  await page.getByRole('button', { name: 'Login' }).click()
+  await page.goto('/training_log/1/workouts')
+
+  const loginHeading = page.getByRole('heading', { name: 'Login' })
+  if ((await loginHeading.count()) > 0) {
+    await page.getByLabel('Username').fill('Playwright User')
+    await page.getByLabel('Password').fill('playwright-pass-123')
+    await page.getByRole('button', { name: 'Login' }).click()
+  }
+
+  await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
 
   const upperBodyRow = page.getByRole('row').filter({ hasText: 'Upper Body' })
   await upperBodyRow.getByRole('link', { name: 'View Workout' }).click()
@@ -53,10 +59,10 @@ test('seeded user can add an exercise in the real database', async ({ page }) =>
   try {
     await openUpperBodyWorkout(page)
 
-    await page.getByLabel('Description').fill(uniqueExercise)
-    await page.getByLabel('Sets').fill('3')
-    await page.getByLabel('Reps').fill('12')
-    await page.getByRole('textbox', { name: 'Weight' }).fill('70 lbs')
+    await page.locator('#exercise-description').fill(uniqueExercise)
+    await page.locator('#exercise-sets').fill('3')
+    await page.locator('#exercise-reps').fill('12')
+    await page.locator('#exercise-weight').fill('70 lbs')
     await page.getByRole('button', { name: 'Add Exercise' }).click()
 
     await expect(page.getByText('Exercise added.')).toBeVisible()
