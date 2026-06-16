@@ -41,6 +41,15 @@ until docker exec "${CONTAINER_NAME}" pg_isready -U "${DB_USER}" -d "${DB_NAME}"
 done
 
 echo "Applying schema.sql to local Postgres..."
-docker exec -i "${CONTAINER_NAME}" psql -v ON_ERROR_STOP=1 -U "${DB_USER}" -d "${DB_NAME}" < schema.sql >/dev/null
+TRIES=0
+until docker exec -i "${CONTAINER_NAME}" psql -v ON_ERROR_STOP=1 -U "${DB_USER}" -d "${DB_NAME}" < schema.sql >/dev/null 2>&1; do
+  TRIES=$((TRIES + 1))
+  if [ "${TRIES}" -ge 30 ]; then
+    echo "Timed out applying schema.sql to local Postgres." >&2
+    docker logs --tail 40 "${CONTAINER_NAME}" >&2 || true
+    exit 1
+  fi
+  sleep 1
+done
 
 echo "Local DB is ready at postgresql://${DB_USER}:***@127.0.0.1:${DB_PORT}/${DB_NAME}"
