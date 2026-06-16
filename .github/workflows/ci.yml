@@ -61,6 +61,7 @@ jobs:
           DATABASE_URL: ${{ secrets.SQLITE_DATABASE_URL }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
           AzureWebJobsStorage: UseDevelopmentStorage=true
+          FUNCTIONS_WORKER_RUNTIME: node
 
       - name: SQLite E2E tests
         run: BASE_URL=http://127.0.0.1:4280 npm run test:e2e:sqlite
