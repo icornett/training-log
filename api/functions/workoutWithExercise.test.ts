@@ -1,4 +1,5 @@
 import type { HttpRequest } from '@azure/functions'
+import { jest } from '@jest/globals'
 
 import { createWorkoutWithExerciseHandler } from './workoutWithExercise.js'
 import type { WorkoutDetails } from '../shared/types.js'
@@ -106,6 +107,35 @@ describe('createWorkoutWithExerciseHandler', () => {
     expect(response.jsonBody).toMatchObject({
       exercises: expect.arrayContaining([expect.objectContaining({ description: 'Squats' })]),
     })
+  })
+
+  it('converts cardio speed from km/h to mph before create', async () => {
+    const createBoth = jest.fn(async () => ({ workoutId: 1, exerciseId: 10 }))
+    const handler = createWorkoutWithExerciseHandler({ ...baseDeps, createBoth })
+    const response = await handler(
+      makeRequest({
+        name: 'Legs Day',
+        date: '2026-06-01',
+        exercise: {
+          description: 'Treadmill',
+          exerciseType: 'cardio',
+          durationMinutes: 20,
+          speedKph: 20,
+          notes: '',
+        },
+      }),
+    )
+
+    expect(response.status).toBe(201)
+    expect(createBoth).toHaveBeenCalledWith(
+      1,
+      'Legs Day',
+      '2026-06-01',
+      expect.objectContaining({
+        exerciseType: 'cardio',
+        speedMph: 12.43,
+      }),
+    )
   })
 
   it('returns 500 when workout cannot be fetched after creation', async () => {

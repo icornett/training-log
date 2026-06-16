@@ -56,7 +56,7 @@ test('seeded user can add an exercise in the real database', async ({ page }) =>
     await page.getByLabel('Description').fill(uniqueExercise)
     await page.getByLabel('Sets').fill('3')
     await page.getByLabel('Reps').fill('12')
-    await page.getByLabel('Weight').fill('70 lbs')
+    await page.getByRole('textbox', { name: 'Weight' }).fill('70 lbs')
     await page.getByRole('button', { name: 'Add Exercise' }).click()
 
     await expect(page.getByText('Exercise added.')).toBeVisible()

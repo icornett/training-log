@@ -77,7 +77,7 @@ export const invalidNewExerciseMessage = async (
   return (
     'Invalid exercise entry. Please ensure you have not already added this particular exercise ' +
     "description to your workout, that your description is between 5 and 100 characters, and " +
-    "that the weight description provides a number and either 'kgs' or 'lbs' as the unit, or " +
+    "that the weight description provides a number and either 'kg(s)' or 'lb(s)' as the unit, or " +
     "'bodyweight', if no additional weight was used."
   )
 }
@@ -94,7 +94,7 @@ export const invalidExerciseEditMessage = (
 
   return (
     'Invalid exercise entry. Please ensure that your description is between 5 and 100 characters, ' +
-    "and that the weight description provides a number and either 'kgs' or 'lbs' as the unit, " +
+    "and that the weight description provides a number and either 'kg(s)' or 'lb(s)' as the unit, " +
     "or 'bodyweight', if no additional weight was used."
   )
 }
@@ -165,7 +165,7 @@ const exerciseWeightsInvalid = (weights: string): boolean => {
     .toLowerCase()
 
   // Check if unit is valid
-  const allowedUnits = new Set(['lbs', 'kgs'])
+  const allowedUnits = new Set(['lb', 'lbs', 'kg', 'kgs'])
   return !allowedUnits.has(unit)
 }
 

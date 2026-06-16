@@ -8,15 +8,18 @@ import {
   requireExistingUser,
   requireWorkoutOwnership,
 } from '../shared/validation.js'
+import { kphToMph } from '../shared/speed.js'
 
 interface UpdateExerciseBody {
   description?: string
   exerciseType?: string
+  speedUnit?: 'mph' | 'kmh'
   numSets?: number
   numReps?: number
   weightDescription?: string
   durationMinutes?: number
   speedMph?: number
+  speedKph?: number
   notes?: string
 }
 
@@ -68,7 +71,12 @@ app.http('workoutExerciseById', {
     const numReps = body.numReps !== undefined ? Number(body.numReps) : exercise.numReps
     const weightDescription = body.weightDescription !== undefined ? body.weightDescription : exercise.weightDescription
     const durationMinutes = body.durationMinutes !== undefined ? Number(body.durationMinutes) : exercise.durationMinutes
-    const speedMph = body.speedMph !== undefined ? Number(body.speedMph) : exercise.speedMph
+    const speedMph =
+      body.speedMph !== undefined
+        ? Number(body.speedMph)
+        : body.speedKph !== undefined
+          ? Number(kphToMph(Number(body.speedKph)).toFixed(2))
+          : exercise.speedMph
     const notes = body.notes !== undefined ? body.notes : exercise.notes
 
     const invalidMsg = await invalidExerciseEditForWorkoutMessage(

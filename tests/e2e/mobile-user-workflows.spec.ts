@@ -14,6 +14,7 @@ test('mobile user can complete core workout workflow', async ({ page }) => {
 
   await page.getByLabel('Username').fill('Workflow User')
   await page.getByLabel('Password').fill('workflow-password-123')
+  await page.getByLabel(/I agree to the privacy notice/i).check()
   await page.getByRole('button', { name: 'Create Account' }).click()
 
   await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
@@ -29,15 +30,16 @@ test('mobile user can complete core workout workflow', async ({ page }) => {
   await page.getByLabel('Description').fill('Pull Ups')
   await page.getByLabel('Sets').fill('4')
   await page.getByLabel('Reps').fill('10')
-  await page.getByLabel('Weight').fill('bodyweight')
+  await page.getByRole('textbox', { name: 'Weight' }).fill('bodyweight')
   await page.getByRole('button', { name: 'Add Exercise' }).click()
 
   await expect(page.getByRole('heading', { name: 'Power Day' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Workout Controls' })).toBeVisible()
 
   await page.getByLabel('Description').fill('Deadlift')
   await page.getByLabel('Sets').fill('3')
   await page.getByLabel('Reps').fill('5')
-  await page.getByLabel('Weight').fill('225 lbs')
+  await page.getByRole('textbox', { name: 'Weight' }).fill('225 lbs')
   await page.getByRole('button', { name: 'Add Exercise' }).click()
   await expect(page.getByText('Exercise added.')).toBeVisible()
 

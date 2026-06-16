@@ -133,15 +133,116 @@ describe('WorkoutDetailPage', () => {
       expect(api.createExercise).toHaveBeenCalledWith(1, {
         description: 'Pull Ups',
         exerciseType: 'strength',
+        speedUnit: undefined,
         numSets: 4,
         numReps: 10,
         weightDescription: 'bodyweight',
         durationMinutes: undefined,
         speedMph: undefined,
+        speedKph: undefined,
         notes: '',
       })
     })
     expect(await screen.findByText('Exercise added.')).toBeInTheDocument()
+  })
+
+  it('defaults strength unit to lbs when no unit is typed', async () => {
+    const updatedWorkout: WorkoutDetails = {
+      ...workoutFixture,
+      exercises: [
+        ...workoutFixture.exercises,
+        {
+          id: 15,
+          description: 'Dumbbell Press',
+          exerciseType: 'strength',
+          numSets: 3,
+          numReps: 12,
+          weightDescription: '40 lbs',
+          durationMinutes: null,
+          speedMph: null,
+          notes: null,
+        },
+      ],
+    }
+    vi.mocked(api.createExercise).mockResolvedValue(updatedWorkout)
+
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Upper Body' })
+    await userEvent.clear(screen.getByLabelText('Description'))
+    await userEvent.type(screen.getByLabelText('Description'), 'Dumbbell Press')
+    await userEvent.clear(screen.getByLabelText('Sets'))
+    await userEvent.type(screen.getByLabelText('Sets'), '3')
+    await userEvent.clear(screen.getByLabelText('Reps'))
+    await userEvent.type(screen.getByLabelText('Reps'), '12')
+    await userEvent.clear(screen.getByLabelText('Weight'))
+    await userEvent.type(screen.getByLabelText('Weight'), '40')
+    await userEvent.click(screen.getByRole('button', { name: 'Add Exercise' }))
+
+    await waitFor(() => {
+      expect(api.createExercise).toHaveBeenCalledWith(1, {
+        description: 'Dumbbell Press',
+        exerciseType: 'strength',
+        speedUnit: undefined,
+        numSets: 3,
+        numReps: 12,
+        weightDescription: '40 lbs',
+        durationMinutes: undefined,
+        speedMph: undefined,
+        speedKph: undefined,
+        notes: '',
+      })
+    })
+  })
+
+  it('submits metric strength weight when kg unit is selected', async () => {
+    const updatedWorkout: WorkoutDetails = {
+      ...workoutFixture,
+      exercises: [
+        ...workoutFixture.exercises,
+        {
+          id: 16,
+          description: 'Leg Press',
+          exerciseType: 'strength',
+          numSets: 4,
+          numReps: 10,
+          weightDescription: '80 kgs',
+          durationMinutes: null,
+          speedMph: null,
+          notes: null,
+        },
+      ],
+    }
+    vi.mocked(api.createExercise).mockResolvedValue(updatedWorkout)
+
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Upper Body' })
+    await userEvent.clear(screen.getByLabelText('Description'))
+    await userEvent.type(screen.getByLabelText('Description'), 'Leg Press')
+    await userEvent.clear(screen.getByLabelText('Sets'))
+    await userEvent.type(screen.getByLabelText('Sets'), '4')
+    await userEvent.clear(screen.getByLabelText('Reps'))
+    await userEvent.type(screen.getByLabelText('Reps'), '10')
+    await userEvent.selectOptions(screen.getByLabelText('Weight Unit'), 'kg')
+    await userEvent.clear(screen.getByLabelText('Weight'))
+    await userEvent.type(screen.getByLabelText('Weight'), '80')
+    await userEvent.click(screen.getByRole('button', { name: 'Add Exercise' }))
+
+    await waitFor(() => {
+      expect(api.createExercise).toHaveBeenCalledWith(1, {
+        description: 'Leg Press',
+        exerciseType: 'strength',
+        speedUnit: undefined,
+        numSets: 4,
+        numReps: 10,
+        weightDescription: '80 kgs',
+        durationMinutes: undefined,
+        speedMph: undefined,
+        speedKph: undefined,
+        notes: '',
+      })
+    })
   })
 
   it('blocks adding a duplicate exercise description', async () => {
@@ -221,11 +322,13 @@ describe('WorkoutDetailPage', () => {
         exerciseId: 11,
         description: 'Incline Bench Press',
         exerciseType: 'strength',
+        speedUnit: undefined,
         numSets: 3,
         numReps: 8,
         weightDescription: '65 lbs',
         durationMinutes: undefined,
         speedMph: undefined,
+        speedKph: undefined,
         notes: '',
       })
     })
@@ -296,15 +399,82 @@ describe('WorkoutDetailPage', () => {
       expect(api.createExercise).toHaveBeenCalledWith(1, {
         description: 'Treadmill',
         exerciseType: 'cardio',
+        speedUnit: 'mph',
         numSets: undefined,
         numReps: undefined,
         weightDescription: undefined,
         durationMinutes: 30,
         speedMph: 6,
+        speedKph: undefined,
         notes: '',
       })
     })
     expect(await screen.findByText('Exercise added.')).toBeInTheDocument()
+  })
+
+  it('submits a cardio exercise in km/h and sends speedKph', async () => {
+    const updatedWorkout: WorkoutDetails = {
+      ...workoutFixture,
+      exercises: [
+        ...workoutFixture.exercises,
+        {
+          id: 13,
+          description: 'Bike',
+          exerciseType: 'cardio',
+          numSets: null,
+          numReps: null,
+          weightDescription: null,
+          durationMinutes: 20,
+          speedMph: 12.43,
+          notes: null,
+        },
+      ],
+    }
+    vi.mocked(api.createExercise).mockResolvedValue(updatedWorkout)
+    renderPage()
+    await screen.findByRole('heading', { name: 'Upper Body' })
+    await userEvent.type(screen.getByLabelText('Description'), 'Bike')
+    await userEvent.selectOptions(screen.getByLabelText('Exercise Type'), 'Cardio')
+    await userEvent.selectOptions(screen.getByLabelText('Speed Unit'), 'km/h')
+    await userEvent.type(screen.getByLabelText('Duration (minutes)'), '20')
+    await userEvent.type(screen.getByLabelText('Speed (km/h)'), '20')
+    await userEvent.click(screen.getByRole('button', { name: 'Add Exercise' }))
+    await waitFor(() => {
+      expect(api.createExercise).toHaveBeenCalledWith(1, {
+        description: 'Bike',
+        exerciseType: 'cardio',
+        speedUnit: 'kmh',
+        numSets: undefined,
+        numReps: undefined,
+        weightDescription: undefined,
+        durationMinutes: 20,
+        speedMph: undefined,
+        speedKph: 20,
+        notes: '',
+      })
+    })
+  })
+
+  it('shows km/h conversion in cardio exercise display', async () => {
+    const cardioWorkout: WorkoutDetails = {
+      ...workoutFixture,
+      exercises: [
+        {
+          id: 14,
+          description: 'Treadmill',
+          exerciseType: 'cardio',
+          numSets: null,
+          numReps: null,
+          weightDescription: null,
+          durationMinutes: 30,
+          speedMph: 6,
+          notes: null,
+        },
+      ],
+    }
+    vi.mocked(api.getWorkout).mockResolvedValue(cardioWorkout)
+    renderPage()
+    expect(await screen.findByText('30 min @ 6 mph (9.7 km/h)')).toBeInTheDocument()
   })
 })
 

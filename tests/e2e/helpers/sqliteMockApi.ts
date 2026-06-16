@@ -112,6 +112,12 @@ export const setupSqliteMockApi = async (page: Page, options: MockApiOptions = {
     if (method === 'POST' && url.pathname === '/api/signup') {
       const username = String(body.username ?? '').trim()
       const password = String(body.password ?? '')
+      const gdprConsentAccepted = body.gdprConsentAccepted === true
+
+      if (!gdprConsentAccepted) {
+        await json(422, { error: 'You must accept the privacy notice to create an account.' })
+        return
+      }
 
       if (username.length === 0 || password.length < 10) {
         await json(422, { error: 'Please enter a unique username and a password with at least 10 characters.' })
@@ -245,6 +251,73 @@ export const setupSqliteMockApi = async (page: Page, options: MockApiOptions = {
       }
 
       await json(405, { error: 'Method not allowed.' })
+      return
+    }
+
+    if (url.pathname === '/api/account/export') {
+      if (!(await requireSession())) {
+        return
+      }
+
+      const format = url.searchParams.get('format') === 'csv' ? 'csv' : 'json'
+      const username = esc(sessionUser ?? '')
+
+      const workoutsResult = db.exec(
+        `SELECT
+           id,
+           name,
+           date,
+           num_sets AS numSets,
+           num_reps AS numReps,
+           weight_description AS weightDescription
+         FROM workouts
+         WHERE username = '${username}'
+         ORDER BY date DESC;`,
+      )[0] ?? null
+
+      const workouts = asRows<Record<string, unknown>>(workoutsResult)
+      const workoutIds = workouts.map((w) => Number(w.id))
+
+      const exercises = workoutIds.length
+        ? asRows<Record<string, unknown>>(
+            db.exec(
+              `SELECT
+                 id,
+                 workout_id AS workoutId,
+                 description,
+                 exercise_type AS exerciseType,
+                 num_sets AS numSets,
+                 num_reps AS numReps,
+                 weight_description AS weightDescription,
+                 duration_minutes AS durationMinutes,
+                 speed_mph AS speedMph,
+                 notes
+               FROM exercises
+               WHERE workout_id IN (${workoutIds.join(',')});`,
+            )[0] ?? null,
+          )
+        : []
+
+      const payload = {
+        username: sessionUser,
+        exportedAt: new Date().toISOString(),
+        workouts: workouts.map((workout) => ({
+          ...workout,
+          exercises: exercises.filter((exercise) => exercise.workoutId === workout.id),
+        })),
+      }
+
+      if (format === 'csv') {
+        const csv = ['"username","workoutName"', ...workouts.map((w) => `"${sessionUser}","${String(w.name)}"`)].join('\n')
+        await route.fulfill({
+          status: 200,
+          contentType: 'text/csv; charset=utf-8',
+          body: csv,
+        })
+        return
+      }
+
+      await json(200, payload)
       return
     }
 

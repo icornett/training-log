@@ -54,11 +54,13 @@ export interface WorkoutUpdateInput {
 export interface ExerciseInput {
   description: string
   exerciseType: 'strength' | 'cardio'
+  speedUnit?: 'mph' | 'kmh'
   numSets?: number
   numReps?: number
   weightDescription?: string
   durationMinutes?: number
   speedMph?: number
+  speedKph?: number
   notes?: string
 }
 
