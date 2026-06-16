@@ -1,8 +1,32 @@
 import { expect, test, type Page } from '@playwright/test'
 
+type StrengthExercise = {
+  description: string
+  sets: string
+  reps: string
+  weight: string
+}
+
 const makeUsername = (projectName: string): string => {
   const projectSlug = projectName.replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 8)
   return `e2e-${projectSlug}-${String(Date.now()).slice(-4)}`
+}
+
+const buildStrengthExercises = (totalExercises: number): StrengthExercise[] =>
+  Array.from({ length: totalExercises }, (_, index) => ({
+    description: `Pull Ups ${index + 1}`,
+    sets: String(4 + index),
+    reps: String(10 + index),
+    weight: 'bodyweight',
+  }))
+
+const addStrengthExercise = async (page: Page, exercise: StrengthExercise): Promise<void> => {
+  await page.getByLabel('Description').fill(exercise.description)
+  await page.getByLabel('Exercise Type').selectOption('strength')
+  await page.getByLabel('Sets').fill(exercise.sets)
+  await page.getByLabel('Reps').fill(exercise.reps)
+  await page.getByLabel('Weight').fill(exercise.weight)
+  await page.getByRole('button', { name: 'Add Exercise' }).click()
 }
 
 const cleanupUserIfPresent = async (page: Page, username: string, password: string): Promise<void> => {
@@ -28,6 +52,7 @@ const cleanupUserIfPresent = async (page: Page, username: string, password: stri
 test('user can complete a full journey against the real database', async ({ page }, testInfo) => {
   const username = makeUsername(testInfo.project.name)
   const password = 'real-db-password-123'
+  const exercises = buildStrengthExercises(3)
 
   try {
     await page.goto('/signup')
@@ -47,17 +72,23 @@ test('user can complete a full journey against the real database', async ({ page
     await expect(page.getByRole('heading', { name: 'Power Day' })).toBeVisible()
     await expect(page.getByText('Add your first exercise to save this workout.')).toBeVisible()
 
-    await page.getByLabel('Description').fill('Pull Ups')
-    await page.getByLabel('Sets').fill('4')
-    await page.getByLabel('Reps').fill('10')
-    await page.getByLabel('Weight').fill('bodyweight')
-    await page.getByRole('button', { name: 'Add Exercise' }).click()
+    for (const exercise of exercises) {
+      await addStrengthExercise(page, exercise)
+      await expect(page.getByText('Exercise added.')).toBeVisible()
+      await expect(page.getByRole('listitem').filter({ hasText: exercise.description })).toBeVisible()
+    }
 
-    await expect(page.getByText('Exercise added.')).toBeVisible()
-    await expect(page.getByRole('listitem').filter({ hasText: 'Pull Ups' })).toBeVisible()
+    const duplicateExercise = exercises[0]
+    await addStrengthExercise(page, duplicateExercise)
+    await expect(page.getByText('This exercise already exists for the workout.')).toBeVisible()
+    await expect(page.getByRole('listitem').filter({ hasText: duplicateExercise.description })).toHaveCount(1)
 
-    const pullUpsRow = page.getByRole('listitem').filter({ hasText: 'Pull Ups' })
-    await pullUpsRow.getByRole('button', { name: 'Edit' }).click()
+    const firstExercise = exercises[0]
+    const secondExercise = exercises[1]
+    const thirdExercise = exercises[2]
+
+    const firstExerciseRow = page.getByRole('listitem').filter({ hasText: firstExercise.description })
+    await firstExerciseRow.getByRole('button', { name: 'Edit' }).click()
 
     await expect(page.getByRole('heading', { name: 'Edit Exercise' })).toBeVisible()
     await page.getByLabel('Description').fill('Pull Ups Updated')
@@ -65,6 +96,8 @@ test('user can complete a full journey against the real database', async ({ page
 
     await expect(page.getByText('Exercise updated.')).toBeVisible()
     await expect(page.getByRole('listitem').filter({ hasText: 'Pull Ups Updated' })).toBeVisible()
+    await expect(page.getByRole('listitem').filter({ hasText: secondExercise.description })).toBeVisible()
+    await expect(page.getByRole('listitem').filter({ hasText: thirdExercise.description })).toBeVisible()
 
     await page.getByRole('button', { name: 'Logout' }).click()
     await expect(page.getByRole('heading', { name: 'Login' })).toBeVisible()
@@ -75,6 +108,12 @@ test('user can complete a full journey against the real database', async ({ page
 
     await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
     await expect(page.getByText(username)).toBeVisible()
+    await page.getByRole('row').filter({ hasText: 'Power Day' }).getByRole('link', { name: 'View Workout' }).click()
+
+    await expect(page.getByRole('heading', { name: 'Power Day' })).toBeVisible()
+    await expect(page.getByRole('listitem').filter({ hasText: 'Pull Ups Updated' })).toBeVisible()
+    await expect(page.getByRole('listitem').filter({ hasText: secondExercise.description })).toBeVisible()
+    await expect(page.getByRole('listitem').filter({ hasText: thirdExercise.description })).toBeVisible()
   } finally {
     await cleanupUserIfPresent(page, username, password)
   }

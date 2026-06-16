@@ -1,8 +1,32 @@
 import { expect, test, type Page } from '@playwright/test'
 
+type StrengthExercise = {
+  description: string
+  sets: string
+  reps: string
+  weight: string
+}
+
 const makeUsername = (projectName: string): string => {
   const projectSlug = projectName.replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 8)
   return `sqlite-${projectSlug}-${String(Date.now()).slice(-4)}`
+}
+
+const buildStrengthExercises = (totalExercises: number): StrengthExercise[] =>
+  Array.from({ length: totalExercises }, (_, index) => ({
+    description: `SQLite Exercise ${index + 1}`,
+    sets: String(3 + index),
+    reps: String(12 + index),
+    weight: 'bodyweight',
+  }))
+
+const addStrengthExercise = async (page: Page, exercise: StrengthExercise): Promise<void> => {
+  await page.getByLabel('Description').fill(exercise.description)
+  await page.getByLabel('Exercise Type').selectOption('strength')
+  await page.getByLabel('Sets').fill(exercise.sets)
+  await page.getByLabel('Reps').fill(exercise.reps)
+  await page.getByLabel('Weight').fill(exercise.weight)
+  await page.getByRole('button', { name: 'Add Exercise' }).click()
 }
 
 const cleanupUserIfPresent = async (
@@ -32,6 +56,8 @@ const cleanupUserIfPresent = async (
 test('sqlite user can complete a full workflow', async ({ page }, testInfo) => {
   const username = makeUsername(testInfo.project.name)
   const password = 'sqlite-password-123'
+  const exercises = buildStrengthExercises(3)
+  const workoutName = 'SQLite Workout'
 
   try {
     // Signup
@@ -46,35 +72,23 @@ test('sqlite user can complete a full workflow', async ({ page }, testInfo) => {
 
     // Create workout
     await page.getByRole('link', { name: 'Log New Workout' }).click()
-    await page.getByLabel('Workout Name').fill('SQLite Test Workout')
+    await page.getByLabel('Workout Name').fill(workoutName)
     await page.getByLabel('Workout Date').fill('2026-06-15')
     await page.getByRole('button', { name: 'Continue to Exercises' }).click()
 
-    await expect(page.getByRole('heading', { name: 'SQLite Test Workout' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: workoutName })).toBeVisible()
     await expect(page.getByText('Add your first exercise to save this workout.')).toBeVisible()
 
-    // Add exercise to pending workout
-    await page.getByLabel('Description').fill('Push Ups')
-    await page.getByLabel('Exercise Type').selectOption('strength')
-    await page.getByLabel('Sets').fill('3')
-    await page.getByLabel('Reps').fill('15')
-    await page.getByLabel('Weight').fill('bodyweight')
-    await page.getByRole('button', { name: 'Add Exercise' }).click()
+    for (const exercise of exercises) {
+      await addStrengthExercise(page, exercise)
+      await expect(page.getByText('Exercise added.')).toBeVisible()
+      await expect(page.getByRole('listitem').filter({ hasText: exercise.description })).toBeVisible()
+    }
 
-    // Should navigate to saved workout after adding first exercise
-    await expect(page.getByRole('heading', { name: 'SQLite Test Workout' })).toBeVisible()
-    await expect(page.getByRole('listitem').filter({ hasText: 'Push Ups' })).toBeVisible()
-
-    // Add second exercise
-    await page.getByLabel('Description').fill('Squats')
-    await page.getByLabel('Exercise Type').selectOption('strength')
-    await page.getByLabel('Sets').fill('4')
-    await page.getByLabel('Reps').fill('20')
-    await page.getByLabel('Weight').fill('bodyweight')
-    await page.getByRole('button', { name: 'Add Exercise' }).click()
-
-    await expect(page.getByText('Exercise added.')).toBeVisible()
-    await expect(page.getByRole('listitem').filter({ hasText: 'Squats' })).toBeVisible()
+    const duplicateExercise = exercises[0]
+    await addStrengthExercise(page, duplicateExercise)
+    await expect(page.getByText('This exercise already exists for the workout.')).toBeVisible()
+    await expect(page.getByRole('listitem').filter({ hasText: duplicateExercise.description })).toHaveCount(1)
 
     // Logout
     await page.getByRole('button', { name: 'Logout' }).click()
@@ -88,13 +102,14 @@ test('sqlite user can complete a full workflow', async ({ page }, testInfo) => {
     await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
     await page
       .getByRole('row')
-      .filter({ hasText: 'SQLite Test Workout' })
+      .filter({ hasText: workoutName })
       .getByRole('link', { name: 'View Workout' })
       .click()
 
-    await expect(page.getByRole('heading', { name: 'SQLite Test Workout' })).toBeVisible()
-    await expect(page.getByRole('listitem').filter({ hasText: 'Push Ups' })).toBeVisible()
-    await expect(page.getByRole('listitem').filter({ hasText: 'Squats' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: workoutName })).toBeVisible()
+    for (const exercise of exercises) {
+      await expect(page.getByRole('listitem').filter({ hasText: exercise.description })).toBeVisible()
+    }
   } finally {
     // Always cleanup
     await cleanupUserIfPresent(page, username, password)

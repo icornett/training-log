@@ -167,6 +167,22 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
         notes: exerciseNotes || "",
       };
 
+      if (!isPending && editingExerciseId === null) {
+        const normalizedDescription = exerciseDescription.trim().toLowerCase();
+        const hasDuplicate =
+          workout?.exercises.some(
+            (exercise) =>
+              exercise.description.trim().toLowerCase() ===
+              normalizedDescription,
+          ) ?? false;
+
+        if (hasDuplicate) {
+          setError("This exercise already exists for the workout.");
+          setMessage(null);
+          return;
+        }
+      }
+
       if (isPending && editingExerciseId === null) {
         const raw = localStorage.getItem("trainingLog:pendingWorkout");
         if (!raw) {

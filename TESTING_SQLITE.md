@@ -2,35 +2,35 @@
 
 ## Overview
 
-The project now includes SQLite end-to-end tests that allow you to test the full user workflow locally without requiring Azure PostgreSQL infrastructure.
+The project now includes local-database end-to-end tests that allow you to test the full user workflow without requiring Azure PostgreSQL infrastructure.
 
 ## Test Structure
 
 - **Real-DB tests** (`tests/e2e/real-db/`): Run against a pre-seeded Azure PostgreSQL database in CI/CD pipeline
-- **SQLite tests** (`tests/e2e/sqlite/`): Run against a local SQLite database for local development
+- **SQLite tests** (`tests/e2e/sqlite/`): Run against a local Dockerized PostgreSQL database for local development
 - **Default tests** (`tests/e2e/mobile-*`): Run on PR with standard setup (excluded real-db and sqlite)
 
 ## Running SQLite Tests Locally
 
 ### Prerequisites
 
-1. **Ensure you're using SQLite locally** (default for local dev):
+1. **Install Docker** and ensure Docker Desktop is running.
+
+2. **Start and seed the local DB**:
    ```bash
-   # Check your DATABASE_URL environment
-   echo $DATABASE_URL
-   # Should be something like: sqlite:./test.db or similar
+  npm run db:local:prepare
    ```
 
-2. **Build the frontend**:
+3. **Build the frontend**:
    ```bash
    npm run build
    ```
 
-3. **Start the preview server**:
+4. **Start the local API + SWA stack**:
    ```bash
-   npm run preview
+  npm run dev:sqlite:stack
    ```
-   This serves the built frontend on `http://localhost:4173`
+  This serves the frontend and API at `http://127.0.0.1:4280`
 
 ### Run the Tests
 
@@ -95,16 +95,18 @@ const makeUsername = (projectName: string): string => {
 
 ## Troubleshooting
 
-### Test times out on signup
+### Signup returns 500
 
-**Issue**: Page doesn't load or signup hangs
-**Solution**: Ensure preview server is running (`npm run preview`) on port 4173
+**Issue**: API responds with 500 during signup
+**Solution**: Ensure local DB is available and seeded:
+- Run `npm run db:local:prepare`
+- Confirm Docker container `training-log-local-db` is running
 
 ### "element not found" errors
 
 **Issue**: Selectors can't find form inputs
 **Solution**: This often means the page didn't load. Check:
-- Preview server is running
+- Local stack is running (`npm run dev:sqlite:stack`)
 - Frontend was rebuilt (`npm run build`)
 - BASE_URL in error message matches your setup
 

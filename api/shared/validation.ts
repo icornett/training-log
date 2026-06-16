@@ -1,8 +1,9 @@
 import {
   countWorkoutsByUsername,
+  getExerciseForWorkout,
   getWorkoutDetailsForUser,
+  hasDuplicateExerciseDescription,
   listWorkoutsByUsername,
-  normalizedExerciseDescriptionsByWorkout,
   uniqueUsernames,
   userExists,
 } from './repository.js'
@@ -98,6 +99,29 @@ export const invalidExerciseEditMessage = (
   )
 }
 
+export const invalidExerciseEditForWorkoutMessage = async (
+  workoutId: number,
+  exerciseId: number,
+  description: string,
+  weights: string,
+  exerciseType: string,
+): Promise<string | null> => {
+  const targetExercise = await getExerciseForWorkout(workoutId, exerciseId)
+  if (!targetExercise) {
+    return null
+  }
+
+  const hasDuplicate = await hasDuplicateExerciseDescription(workoutId, description, {
+    excludeExerciseId: exerciseId,
+  })
+
+  if (hasDuplicate) {
+    return 'This exercise already exists for the workout.'
+  }
+
+  return invalidExerciseEditMessage(description, weights, exerciseType)
+}
+
 const invalidNewExercise = async (
   description: string,
   weights: string,
@@ -146,9 +170,7 @@ const exerciseWeightsInvalid = (weights: string): boolean => {
 }
 
 const duplicateExercise = async (description: string, workoutId: number): Promise<boolean> => {
-  const scrubbed = description.toLowerCase().replace(/\s+/g, '')
-  const existing = await normalizedExerciseDescriptionsByWorkout(workoutId)
-  return existing.includes(scrubbed)
+  return hasDuplicateExerciseDescription(workoutId, description)
 }
 
 export const requireExistingUser = async (username: string): Promise<boolean> => {

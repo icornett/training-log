@@ -17,7 +17,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '25'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -33,10 +33,28 @@ jobs:
         run: npm run test:web:ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium webkit
+        run: npx playwright install --with-deps chromium webkit firefox
 
       - name: Mobile e2e tests
         run: npm run test:e2e:mobile
+
+      - name: Build frontend and API
+        run: npm run build && npm run build:api
+
+      - name: Start full stack via SWA CLI
+        run: |
+          npm run dev:swa &
+          npx wait-on http://127.0.0.1:4280 --timeout 90000
+        env:
+          DATABASE_URL: ${{ secrets.SQLITE_DATABASE_URL }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          AzureWebJobsStorage: UseDevelopmentStorage=true
+
+      - name: SQLite E2E tests
+        run: BASE_URL=http://127.0.0.1:4280 npm run test:e2e:sqlite
+        env:
+          DATABASE_URL: ${{ secrets.SQLITE_DATABASE_URL }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
 
       - name: Publish test results
         if: always()

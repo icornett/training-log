@@ -143,6 +143,19 @@ describe('WorkoutDetailPage', () => {
     expect(await screen.findByText('Exercise added.')).toBeInTheDocument()
   })
 
+  it('blocks adding a duplicate exercise description', async () => {
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Upper Body' })
+
+    await userEvent.clear(screen.getByLabelText('Description'))
+    await userEvent.type(screen.getByLabelText('Description'), 'Bench Press')
+    await userEvent.click(screen.getByRole('button', { name: 'Add Exercise' }))
+
+    expect(await screen.findByText('This exercise already exists for the workout.')).toBeInTheDocument()
+    expect(api.createExercise).not.toHaveBeenCalled()
+  })
+
   it('deletes the workout and navigates to the list', async () => {
     vi.mocked(api.deleteWorkout).mockResolvedValue(undefined as never)
     render(
