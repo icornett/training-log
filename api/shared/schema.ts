@@ -1,9 +1,11 @@
 import {
   date,
   integer,
+  jsonb,
   pgTable,
   real,
   serial,
+  timestamp,
   text,
   uniqueIndex,
   varchar,
@@ -13,6 +15,11 @@ export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   username: varchar('username', { length: 25 }).unique().notNull(),
   password: text('password').notNull(),
+  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
+  gdprConsentAt: timestamp('gdpr_consent_at', { withTimezone: true, mode: 'string' }),
+  gdprConsentVersion: varchar('gdpr_consent_version', { length: 20 }),
+  gdprConsentIp: varchar('gdpr_consent_ip', { length: 64 }),
+  gdprConsentUserAgent: varchar('gdpr_consent_user_agent', { length: 255 }),
 })
 
 export const workouts = pgTable(
@@ -49,6 +56,17 @@ export const exercises = pgTable('exercises', {
   notes: text('notes'),
 })
 
+export const auditLogs = pgTable('audit_logs', {
+  id: serial('id').primaryKey(),
+  eventType: varchar('event_type', { length: 40 }).notNull(),
+  username: varchar('username', { length: 25 }),
+  payload: jsonb('payload'),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
+    .notNull()
+    .defaultNow(),
+})
+
 export type User = typeof users.$inferSelect
 export type Workout = typeof workouts.$inferSelect
 export type Exercise = typeof exercises.$inferSelect
+export type AuditLog = typeof auditLogs.$inferSelect

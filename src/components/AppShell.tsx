@@ -4,16 +4,11 @@ import { useAuth } from '../context/AuthContext'
 
 export const AppShell = (): JSX.Element => {
   const navigate = useNavigate()
-  const { currentUser, loading, logout, deleteAccount } = useAuth()
+  const { currentUser, loading, logout } = useAuth()
 
   const handleLogout = async (): Promise<void> => {
     await logout()
     navigate('/login')
-  }
-
-  const handleDeleteAccount = async (): Promise<void> => {
-    await deleteAccount()
-    navigate('/signup')
   }
 
   return (
@@ -27,11 +22,9 @@ export const AppShell = (): JSX.Element => {
           {loading ? null : currentUser ? (
             <>
               <span className="nav-identity">{currentUser.username}</span>
+              <Link to="/training_log/1/account">Account</Link>
               <button type="button" className="ghost-button" onClick={handleLogout}>
                 Logout
-              </button>
-              <button type="button" className="ghost-button danger-button" onClick={handleDeleteAccount}>
-                Delete Account
               </button>
             </>
           ) : (

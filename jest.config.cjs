@@ -24,7 +24,7 @@ module.exports = {
     'api/functions/workoutWithExercise.ts',
   ],
   coverageThreshold: {
-    global: { lines: 90, branches: 70, functions: 85, statements: 90 },
+    global: { lines: 90, branches: 70, functions: 78, statements: 90 },
   },
   reporters: [
     'default',

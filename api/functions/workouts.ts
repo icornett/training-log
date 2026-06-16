@@ -90,10 +90,13 @@ export const workoutsHandler = createWorkoutsHandler({
   validateWorkout: invalidWorkoutMessage,
 })
 
-app.http('workouts', {
-  methods: ['GET', 'POST'],
-  authLevel: 'anonymous',
-  route: 'workouts',
-  handler: workoutsHandler,
-})
+// Skip registration during tests to avoid Azure Functions runtime detection warning
+if (process.env.NODE_ENV !== 'test') {
+  app.http('workouts', {
+    methods: ['GET', 'POST'],
+    authLevel: 'anonymous',
+    route: 'workouts',
+    handler: workoutsHandler,
+  })
+}
 

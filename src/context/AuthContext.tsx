@@ -16,6 +16,7 @@ interface AuthContextValue {
   refresh: () => Promise<void>
   logout: () => Promise<void>
   deleteAccount: () => Promise<void>
+  exportAccountData: (format: 'json' | 'csv') => Promise<string>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -37,6 +38,11 @@ export const AuthProvider = ({ children }: PropsWithChildren): JSX.Element => {
   const deleteAccount = async (): Promise<void> => {
     await api.deleteAccount()
     setCurrentUser(null)
+  }
+
+  const exportAccountData = async (format: 'json' | 'csv'): Promise<string> => {
+    const data = await api.exportAccountData(format)
+    return typeof data === 'string' ? data : JSON.stringify(data, null, 2)
   }
 
   useEffect(() => {
@@ -63,7 +69,7 @@ export const AuthProvider = ({ children }: PropsWithChildren): JSX.Element => {
   }, [])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ currentUser, loading, refresh, logout, deleteAccount }),
+    () => ({ currentUser, loading, refresh, logout, deleteAccount, exportAccountData }),
     [currentUser, loading],
   )
 

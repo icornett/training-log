@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom'
 
 import { AppShell } from './components/AppShell'
+import { AccountSettingsPage } from './pages/AccountSettingsPage'
 import { AuthLandingPage } from './pages/AuthLandingPage'
 import { LoginPage } from './pages/LoginPage'
 import { NewWorkoutPage } from './pages/NewWorkoutPage'
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
       { index: true, element: <AuthLandingPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'signup', element: <SignupPage /> },
+      { path: 'training_log/:pageNumber/account', element: <AccountSettingsPage /> },
       { path: 'training_log/:pageNumber/workouts', element: <WorkoutsPage /> },
       { path: 'training_log/:pageNumber/workouts/new', element: <NewWorkoutPage /> },
       {

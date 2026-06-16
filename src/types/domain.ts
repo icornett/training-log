@@ -54,11 +54,13 @@ export interface WorkoutUpdateInput {
 export interface ExerciseInput {
   description: string
   exerciseType: 'strength' | 'cardio'
+  speedUnit?: 'mph' | 'kmh'
   numSets?: number
   numReps?: number
   weightDescription?: string
   durationMinutes?: number
   speedMph?: number
+  speedKph?: number
   notes?: string
 }
 
@@ -70,4 +72,22 @@ export interface ExerciseUpdateInput extends ExerciseInput {
 export interface Credentials {
   username: string
   password: string
+}
+
+export interface SignupCredentials extends Credentials {
+  gdprConsentAccepted: boolean
+}
+
+export interface AccountExportData {
+  username: string
+  exportedAt: string
+  workouts: Array<{
+    id: number
+    name: string
+    date: string
+    numSets: number
+    numReps: number
+    weightDescription: string
+    exercises: Exercise[]
+  }>
 }

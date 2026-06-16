@@ -1,5 +1,7 @@
 import './functions/account.js'
+import './functions/accountExport.js'
 import './functions/login.js'
+import './functions/purgeDeletedUsers.js'
 import './functions/logout.js'
 import './functions/signup.js'
 import './functions/workoutById.js'

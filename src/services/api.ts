@@ -1,8 +1,10 @@
 import type {
+  AccountExportData,
   Credentials,
   ExerciseInput,
   ExerciseUpdateInput,
   SessionUser,
+  SignupCredentials,
   WorkoutCreateInput,
   WorkoutDetails,
   WorkoutListItem,
@@ -60,9 +62,13 @@ export const api = {
     })
   },
 
-  async signup(payload: Credentials): Promise<void> {
+  async signup(payload: SignupCredentials): Promise<void> {
     if (payload.username.trim().length === 0 || payload.password.length < 10) {
       throw new Error('Please enter a unique username and a password with at least 10 characters.')
+    }
+
+    if (!payload.gdprConsentAccepted) {
+      throw new Error('You must accept the privacy notice to create an account.')
     }
 
     await request<void>('/api/signup', {
@@ -94,6 +100,30 @@ export const api = {
     await request<void>('/api/account', {
       method: 'DELETE',
     })
+  },
+
+  async exportAccountData(format: 'json' | 'csv'): Promise<AccountExportData | string> {
+    const response = await fetch(`/api/account/export?format=${format}`, {
+      credentials: 'same-origin',
+      method: 'GET',
+    })
+
+    if (!response.ok) {
+      let message = `Request failed with status ${response.status}`
+      try {
+        const body = (await response.json()) as { error?: string; message?: string }
+        message = body.error ?? body.message ?? message
+      } catch {
+        // Ignore non-json error responses.
+      }
+      throw new ApiError(response.status, message)
+    }
+
+    if (format === 'csv') {
+      return response.text()
+    }
+
+    return (await response.json()) as AccountExportData
   },
 
   async listWorkouts(pageNumber: number): Promise<{ items: WorkoutListItem[]; totalPages: number }> {

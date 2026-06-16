@@ -40,6 +40,10 @@ test.describe('authenticated mobile edge paths', () => {
   test('allows deleting account and prevents subsequent login', async ({ page }) => {
     await page.goto('/training_log/1/workouts')
 
+    page.on('dialog', (dialog) => {
+      void dialog.accept()
+    })
+    await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Delete Account' }).click()
     await expect(page.getByRole('heading', { name: 'Signup' })).toBeVisible()
 
@@ -82,6 +86,7 @@ test.describe('unauthenticated mobile auth error paths', () => {
 
     await page.getByLabel('Username').fill('Brand New User')
     await page.getByLabel('Password').fill('short')
+    await page.getByLabel(/I agree to the privacy notice/i).check()
     await page.getByRole('button', { name: 'Create Account' }).click()
     await expect(page.getByText('Please enter a unique username and a password with at least 10 characters.')).toBeVisible()
 

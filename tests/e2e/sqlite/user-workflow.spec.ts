@@ -25,8 +25,23 @@ const addStrengthExercise = async (page: Page, exercise: StrengthExercise): Prom
   await page.getByLabel('Exercise Type').selectOption('strength')
   await page.getByLabel('Sets').fill(exercise.sets)
   await page.getByLabel('Reps').fill(exercise.reps)
-  await page.getByLabel('Weight').fill(exercise.weight)
+  await page.getByRole('textbox', { name: 'Weight' }).fill(exercise.weight)
   await page.getByRole('button', { name: 'Add Exercise' }).click()
+}
+
+const expectWorkoutsLanding = async (page: Page, action: string): Promise<void> => {
+  const workoutsHeading = page.getByRole('heading', { name: 'Workouts' })
+
+  try {
+    await expect.poll(() => page.url(), { timeout: 12_000 }).toContain('/training_log/')
+  } catch {
+    const inlineError = (await page.locator('.error-text').first().textContent())?.trim() ?? 'none'
+    throw new Error(
+      `${action} did not navigate to /training_log/. url=${page.url()} inlineError=${inlineError}`,
+    )
+  }
+
+  await expect(workoutsHeading).toBeVisible({ timeout: 12_000 })
 }
 
 const cleanupUserIfPresent = async (
@@ -35,16 +50,20 @@ const cleanupUserIfPresent = async (
   password: string,
 ): Promise<void> => {
   try {
-    const deleteButton = page.getByRole('button', { name: 'Delete Account' })
-    if ((await deleteButton.count()) === 0) {
+    const accountLink = page.getByRole('link', { name: 'Account' })
+    if ((await accountLink.count()) === 0) {
       await page.goto('/login')
       await page.getByLabel('Username').fill(username)
       await page.getByLabel('Password').fill(password)
       await page.getByRole('button', { name: 'Login' }).click()
     }
 
+    await page.getByRole('link', { name: 'Account' }).click()
     const visibleDeleteButton = page.getByRole('button', { name: 'Delete Account' })
     if ((await visibleDeleteButton.count()) > 0) {
+      page.on('dialog', (dialog) => {
+        void dialog.accept()
+      })
       await visibleDeleteButton.click()
       await expect(page.getByRole('heading', { name: 'Signup' })).toBeVisible()
     }
@@ -65,9 +84,10 @@ test('sqlite user can complete a full workflow', async ({ page }, testInfo) => {
 
     await page.getByLabel('Username').fill(username)
     await page.getByLabel('Password').fill(password)
+    await page.getByLabel(/I agree to the privacy notice/i).check()
     await page.getByRole('button', { name: 'Create Account' }).click()
 
-    await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
+    await expectWorkoutsLanding(page, 'Signup')
     await expect(page.getByText(username)).toBeVisible()
 
     // Create workout
@@ -79,9 +99,12 @@ test('sqlite user can complete a full workflow', async ({ page }, testInfo) => {
     await expect(page.getByRole('heading', { name: workoutName })).toBeVisible()
     await expect(page.getByText('Add your first exercise to save this workout.')).toBeVisible()
 
-    for (const exercise of exercises) {
+    for (const [index, exercise] of exercises.entries()) {
       await addStrengthExercise(page, exercise)
       await expect(page.getByText('Exercise added.')).toBeVisible()
+      if (index === 0) {
+        await expect(page.getByRole('heading', { name: 'Workout Controls' })).toBeVisible()
+      }
       await expect(page.getByRole('listitem').filter({ hasText: exercise.description })).toBeVisible()
     }
 
@@ -99,7 +122,7 @@ test('sqlite user can complete a full workflow', async ({ page }, testInfo) => {
     await page.getByLabel('Password').fill(password)
     await page.getByRole('button', { name: 'Login' }).click()
 
-    await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
+    await expectWorkoutsLanding(page, 'Login')
     await page
       .getByRole('row')
       .filter({ hasText: workoutName })
@@ -125,9 +148,10 @@ test('sqlite user can browse workouts', async ({ page }, testInfo) => {
     await page.goto('/signup')
     await page.getByLabel('Username').fill(username)
     await page.getByLabel('Password').fill(password)
+    await page.getByLabel(/I agree to the privacy notice/i).check()
     await page.getByRole('button', { name: 'Create Account' }).click()
 
-    await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
+    await expectWorkoutsLanding(page, 'Signup')
 
     // Create a workout
     await page.getByRole('link', { name: 'Log New Workout' }).click()
@@ -140,11 +164,12 @@ test('sqlite user can browse workouts', async ({ page }, testInfo) => {
     await page.getByLabel('Exercise Type').selectOption('strength')
     await page.getByLabel('Sets').fill('5')
     await page.getByLabel('Reps').fill('5')
-    await page.getByLabel('Weight').fill('225 lbs')
+    await page.getByRole('textbox', { name: 'Weight' }).fill('225 lbs')
     await page.getByRole('button', { name: 'Add Exercise' }).click()
+    await expect(page.getByRole('heading', { name: 'Workout Controls' })).toBeVisible()
 
     // Navigate back to workouts list
-    await page.getByRole('link', { name: 'Workouts' }).click()
+    await page.getByRole('link', { name: 'Workouts', exact: true }).click()
 
     // Verify workout appears in list
     await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()

@@ -4,23 +4,28 @@ import { getSessionUser } from '../shared/auth.js'
 import { getNumericPathParam, json, parseJsonBody } from '../shared/http.js'
 import { addExercise, atExerciseLimit, workoutExists } from '../shared/repository.js'
 import { invalidNewExerciseMessage, requireExistingUser, requireWorkoutOwnership } from '../shared/validation.js'
+import { kphToMph } from '../shared/speed.js'
 
 interface CreateExerciseBody {
   description?: string
   exerciseType?: string
+  speedUnit?: 'mph' | 'kmh'
   numSets?: number
   numReps?: number
   weightDescription?: string
   durationMinutes?: number
   speedMph?: number
+  speedKph?: number
   notes?: string
 }
 
-app.http('workoutExercises', {
-  methods: ['POST'],
-  authLevel: 'anonymous',
-  route: 'workouts/{workoutId}/exercises',
-  handler: async (request: HttpRequest) => {
+// Skip registration during tests to avoid Azure Functions runtime detection warning
+if (process.env.NODE_ENV !== 'test') {
+  app.http('workoutExercises', {
+    methods: ['POST'],
+    authLevel: 'anonymous',
+    route: 'workouts/{workoutId}/exercises',
+    handler: async (request: HttpRequest) => {
     const user = getSessionUser(request)
     if (!user || !(await requireExistingUser(user.username))) {
       return json(401, { error: 'Please login to access the Training Log App.' })
@@ -54,7 +59,13 @@ app.http('workoutExercises', {
     const numReps = body.numReps !== undefined ? Number(body.numReps) : null
     const weightDescription = body.weightDescription ? body.weightDescription.toLowerCase() : null
     const durationMinutes = body.durationMinutes !== undefined ? Number(body.durationMinutes) : null
-    const speedMph = body.speedMph !== undefined ? Number(body.speedMph) : null
+    const speedMphRaw =
+      body.speedMph !== undefined
+        ? Number(body.speedMph)
+        : body.speedKph !== undefined
+          ? kphToMph(Number(body.speedKph))
+          : null
+    const speedMph = speedMphRaw === null ? null : Number(speedMphRaw.toFixed(2))
     const notes = body.notes ?? null
 
     const invalidMsg = await invalidNewExerciseMessage(description, weightDescription ?? '', workoutId, exerciseType)
@@ -79,4 +90,5 @@ app.http('workoutExercises', {
       message: `You've successfully added ${description} to your workout.`,
     })
   },
-})
+  })
+}

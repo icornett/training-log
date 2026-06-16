@@ -13,6 +13,7 @@ import {
   invalidWorkoutMessage,
   requireExistingUser,
 } from '../shared/validation.js'
+import { kphToMph } from '../shared/speed.js'
 
 interface WorkoutWithExerciseBody {
   name?: string
@@ -20,11 +21,13 @@ interface WorkoutWithExerciseBody {
   exercise?: {
     description?: string
     exerciseType?: string
+    speedUnit?: 'mph' | 'kmh'
     numSets?: number
     numReps?: number
     weightDescription?: string
     durationMinutes?: number
     speedMph?: number
+    speedKph?: number
     notes?: string
   }
 }
@@ -83,7 +86,13 @@ export const createWorkoutWithExerciseHandler = (deps: WorkoutWithExerciseDepend
     const numReps = ex.numReps !== undefined ? Number(ex.numReps) : null
     const weightDescription = ex.weightDescription ? ex.weightDescription.toLowerCase() : null
     const durationMinutes = ex.durationMinutes !== undefined ? Number(ex.durationMinutes) : null
-    const speedMph = ex.speedMph !== undefined ? Number(ex.speedMph) : null
+    const speedMphRaw =
+      ex.speedMph !== undefined
+        ? Number(ex.speedMph)
+        : ex.speedKph !== undefined
+          ? kphToMph(Number(ex.speedKph))
+          : null
+    const speedMph = speedMphRaw === null ? null : Number(speedMphRaw.toFixed(2))
     const notes = ex.notes ?? null
 
     const exerciseError = deps.validateFirstExercise(description, weightDescription ?? '', exerciseType)
@@ -126,9 +135,12 @@ export const workoutWithExerciseHandler = createWorkoutWithExerciseHandler({
   getWorkout: getWorkoutWithExercisesForUser,
 })
 
-app.http('workoutWithFirstExercise', {
-  methods: ['POST'],
-  authLevel: 'anonymous',
-  route: 'workouts/with-first-exercise',
-  handler: workoutWithExerciseHandler,
-})
+// Skip registration during tests to avoid Azure Functions runtime detection warning
+if (process.env.NODE_ENV !== 'test') {
+  app.http('workoutWithFirstExercise', {
+    methods: ['POST'],
+    authLevel: 'anonymous',
+    route: 'workouts/with-first-exercise',
+    handler: workoutWithExerciseHandler,
+  })
+}

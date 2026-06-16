@@ -24,4 +24,12 @@ describe('invalidExerciseEditMessage', () => {
   it('returns null for bodyweight exercises', () => {
     expect(invalidExerciseEditMessage('Pull Ups', 'bodyweight', 'strength')).toBeNull()
   })
+
+  it('accepts kg unit alias for metric strength exercises', () => {
+    expect(invalidExerciseEditMessage('Back Squat', '100 kg', 'strength')).toBeNull()
+  })
+
+  it('accepts lb unit alias for imperial strength exercises', () => {
+    expect(invalidExerciseEditMessage('Bench Press', '185 lb', 'strength')).toBeNull()
+  })
 })

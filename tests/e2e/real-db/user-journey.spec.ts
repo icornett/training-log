@@ -25,22 +25,26 @@ const addStrengthExercise = async (page: Page, exercise: StrengthExercise): Prom
   await page.getByLabel('Exercise Type').selectOption('strength')
   await page.getByLabel('Sets').fill(exercise.sets)
   await page.getByLabel('Reps').fill(exercise.reps)
-  await page.getByLabel('Weight').fill(exercise.weight)
+  await page.getByRole('textbox', { name: 'Weight' }).fill(exercise.weight)
   await page.getByRole('button', { name: 'Add Exercise' }).click()
 }
 
 const cleanupUserIfPresent = async (page: Page, username: string, password: string): Promise<void> => {
   try {
-    const deleteButton = page.getByRole('button', { name: 'Delete Account' })
-    if ((await deleteButton.count()) === 0) {
+    const accountLink = page.getByRole('link', { name: 'Account' })
+    if ((await accountLink.count()) === 0) {
       await page.goto('/login')
       await page.getByLabel('Username').fill(username)
       await page.getByLabel('Password').fill(password)
       await page.getByRole('button', { name: 'Login' }).click()
     }
 
+    await page.getByRole('link', { name: 'Account' }).click()
     const visibleDeleteButton = page.getByRole('button', { name: 'Delete Account' })
     if ((await visibleDeleteButton.count()) > 0) {
+      page.on('dialog', (dialog) => {
+        void dialog.accept()
+      })
       await visibleDeleteButton.click()
       await expect(page.getByRole('heading', { name: 'Signup' })).toBeVisible()
     }
@@ -59,6 +63,7 @@ test('user can complete a full journey against the real database', async ({ page
 
     await page.getByLabel('Username').fill(username)
     await page.getByLabel('Password').fill(password)
+    await page.getByLabel(/I agree to the privacy notice/i).check()
     await page.getByRole('button', { name: 'Create Account' }).click()
 
     await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
@@ -72,9 +77,12 @@ test('user can complete a full journey against the real database', async ({ page
     await expect(page.getByRole('heading', { name: 'Power Day' })).toBeVisible()
     await expect(page.getByText('Add your first exercise to save this workout.')).toBeVisible()
 
-    for (const exercise of exercises) {
+    for (const [index, exercise] of exercises.entries()) {
       await addStrengthExercise(page, exercise)
       await expect(page.getByText('Exercise added.')).toBeVisible()
+      if (index === 0) {
+        await expect(page.getByRole('heading', { name: 'Workout Controls' })).toBeVisible()
+      }
       await expect(page.getByRole('listitem').filter({ hasText: exercise.description })).toBeVisible()
     }
 

@@ -4,6 +4,29 @@ CREATE TABLE IF NOT EXISTS users (
   password text NOT NULL
 );
 
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS gdpr_consent_at timestamptz;
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS gdpr_consent_version varchar(20);
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS gdpr_consent_ip varchar(64);
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS gdpr_consent_user_agent varchar(255);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id serial PRIMARY KEY,
+  event_type varchar(40) NOT NULL,
+  username varchar(25),
+  payload jsonb,
+  created_at timestamptz NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS workouts (
   id serial PRIMARY KEY,
   name varchar(15) NOT NULL,

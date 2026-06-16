@@ -20,6 +20,14 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
       - name: Install dependencies
         run: npm ci
 
@@ -41,20 +49,47 @@ jobs:
       - name: Build frontend and API
         run: npm run build && npm run build:api
 
-      - name: Start full stack via SWA CLI
-        run: |
-          npm run dev:swa &
-          npx wait-on http://127.0.0.1:4280 --timeout 90000
-        env:
-          DATABASE_URL: ${{ secrets.SQLITE_DATABASE_URL }}
-          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-          AzureWebJobsStorage: UseDevelopmentStorage=true
+      - name: Prepare local Postgres for SQLite E2E
+        run: npm run db:local:prepare
+
+      - name: Install Azure Functions Core Tools
+        run: npm i -g azure-functions-core-tools@4 --unsafe-perm true
 
       - name: SQLite E2E tests
-        run: BASE_URL=http://127.0.0.1:4280 npm run test:e2e:sqlite
+        run: |
+          npm run dev:api:func:localdb > /tmp/func.log 2>&1 &
+          API_PID=$!
+          npm run dev:swa:proxy > /tmp/swa.log 2>&1 &
+          SWA_PID=$!
+          trap 'kill "$API_PID" "$SWA_PID" || true' EXIT
+          npx wait-on http://127.0.0.1:7071 http://127.0.0.1:4280 --timeout 90000
+
+          echo "Waiting for API routes to be ready behind SWA proxy..."
+          for i in {1..30}; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:4280/api/account || true)
+            if [ "$status" = "401" ]; then
+              echo "API is ready (GET /api/account -> 401)."
+              break
+            fi
+
+            if [ "$i" -eq 30 ]; then
+              echo "API route readiness check failed. Last status: $status"
+              echo "--- API log tail ---"
+              tail -n 120 /tmp/func.log || true
+              echo "--- SWA log tail ---"
+              tail -n 120 /tmp/swa.log || true
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+          BASE_URL=http://127.0.0.1:4280 npm run test:e2e:sqlite
         env:
-          DATABASE_URL: ${{ secrets.SQLITE_DATABASE_URL }}
-          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          SESSION_SECRET: ci-local-session-secret
+          AzureWebJobsStorage: UseDevelopmentStorage=true
+          FUNCTIONS_WORKER_RUNTIME: node
+          DISABLE_TIMER_TRIGGERS: 'true'
 
       - name: Publish test results
         if: always()

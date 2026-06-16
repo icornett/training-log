@@ -21,7 +21,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start": "func start --port 7071"
+    "start": "func start --port 7071 --typescript"
   },
   "engines": {
     "node": ">=22"

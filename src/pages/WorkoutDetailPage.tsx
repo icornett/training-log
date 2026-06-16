@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
 import type { WorkoutDetails } from '../types/domain'
 import { formatWorkoutDate } from '../utils/date'
+import { mphToKph } from '../utils/speed'
 
 export const WorkoutDetailPage = (): JSX.Element | null => {
   const navigate = useNavigate();
@@ -28,8 +29,14 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
   const [exerciseSets, setExerciseSets] = useState("3");
   const [exerciseReps, setExerciseReps] = useState("8");
   const [exerciseWeight, setExerciseWeight] = useState("bodyweight");
+  const [exerciseWeightUnit, setExerciseWeightUnit] = useState<"lbs" | "kg">(
+    "lbs",
+  );
   const [exerciseDuration, setExerciseDuration] = useState("");
   const [exerciseSpeed, setExerciseSpeed] = useState("");
+  const [exerciseSpeedUnit, setExerciseSpeedUnit] = useState<"mph" | "kmh">(
+    "mph",
+  );
   const [exerciseNotes, setExerciseNotes] = useState("");
   const [editingExerciseId, setEditingExerciseId] = useState<number | null>(
     null,
@@ -103,14 +110,37 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
 
   const isOwner = currentUser?.username === workout?.username;
 
+  const normalizeStrengthWeight = (
+    rawWeight: string,
+    unit: "lbs" | "kg",
+  ): string => {
+    const trimmed = rawWeight.trim();
+    if (trimmed.length === 0) {
+      return "";
+    }
+
+    if (trimmed.toLowerCase() === "bodyweight") {
+      return "bodyweight";
+    }
+
+    // Keep explicit user-supplied units for advanced entries like "25, 20, 15 lbs".
+    if (/\b(lb|lbs|kg|kgs)\b/i.test(trimmed)) {
+      return trimmed;
+    }
+
+    return `${trimmed} ${unit === "kg" ? "kgs" : "lbs"}`;
+  };
+
   const resetExerciseForm = (): void => {
     setExerciseDescription("");
     setExerciseType("strength");
     setExerciseSets("3");
     setExerciseReps("8");
     setExerciseWeight("bodyweight");
+    setExerciseWeightUnit("lbs");
     setExerciseDuration("");
     setExerciseSpeed("");
+    setExerciseSpeedUnit("mph");
     setExerciseNotes("");
     setEditingExerciseId(null);
   };
@@ -160,10 +190,20 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
         numSets: exerciseType === "strength" ? Number(exerciseSets) : undefined,
         numReps: exerciseType === "strength" ? Number(exerciseReps) : undefined,
         weightDescription:
-          exerciseType === "strength" ? exerciseWeight : undefined,
+          exerciseType === "strength"
+            ? normalizeStrengthWeight(exerciseWeight, exerciseWeightUnit)
+            : undefined,
         durationMinutes:
           exerciseType === "cardio" ? Number(exerciseDuration) : undefined,
-        speedMph: exerciseType === "cardio" ? Number(exerciseSpeed) : undefined,
+        speedUnit: exerciseType === "cardio" ? exerciseSpeedUnit : undefined,
+        speedMph:
+          exerciseType === "cardio" && exerciseSpeedUnit === "mph"
+            ? Number(exerciseSpeed)
+            : undefined,
+        speedKph:
+          exerciseType === "cardio" && exerciseSpeedUnit === "kmh"
+            ? Number(exerciseSpeed)
+            : undefined,
         notes: exerciseNotes || "",
       };
 
@@ -241,8 +281,12 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
     setExerciseSets(String(exercise.numSets ?? 3));
     setExerciseReps(String(exercise.numReps ?? 8));
     setExerciseWeight(exercise.weightDescription ?? "bodyweight");
+    setExerciseWeightUnit(
+      /\b(kg|kgs)\b/i.test(exercise.weightDescription ?? "") ? "kg" : "lbs",
+    );
     setExerciseDuration(String(exercise.durationMinutes ?? ""));
     setExerciseSpeed(String(exercise.speedMph ?? ""));
+    setExerciseSpeedUnit("mph");
     setExerciseNotes(exercise.notes ?? "");
   };
 
@@ -349,9 +393,20 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
                   id="exercise-weight"
                   value={exerciseWeight}
                   onChange={(event) => setExerciseWeight(event.target.value)}
-                  placeholder="e.g. 65 lbs, 25, 20, 15 lbs, bodyweight"
+                  placeholder="e.g. 65, 25, 20, 15, bodyweight"
                   required
                 />
+                <label htmlFor="exercise-weight-unit">Weight Unit</label>
+                <select
+                  id="exercise-weight-unit"
+                  value={exerciseWeightUnit}
+                  onChange={(event) =>
+                    setExerciseWeightUnit(event.target.value as "lbs" | "kg")
+                  }
+                >
+                  <option value="lbs">lbs (default)</option>
+                  <option value="kg">kg</option>
+                </select>
               </>
             ) : (
               <>
@@ -365,7 +420,20 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
                   onChange={(event) => setExerciseDuration(event.target.value)}
                   required
                 />
-                <label htmlFor="exercise-speed">Speed (mph)</label>
+                <label htmlFor="exercise-speed-unit">Speed Unit</label>
+                <select
+                  id="exercise-speed-unit"
+                  value={exerciseSpeedUnit}
+                  onChange={(event) =>
+                    setExerciseSpeedUnit(event.target.value as "mph" | "kmh")
+                  }
+                >
+                  <option value="mph">mph</option>
+                  <option value="kmh">km/h</option>
+                </select>
+                <label htmlFor="exercise-speed">
+                  {exerciseSpeedUnit === "mph" ? "Speed (mph)" : "Speed (km/h)"}
+                </label>
                 <input
                   id="exercise-speed"
                   type="number"
@@ -472,7 +540,7 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
                       : exercise.exerciseType === "cardio" &&
                           exercise.durationMinutes &&
                           exercise.speedMph
-                        ? `${exercise.durationMinutes} min @ ${exercise.speedMph} mph`
+                        ? `${exercise.durationMinutes} min @ ${exercise.speedMph} mph (${mphToKph(exercise.speedMph).toFixed(1)} km/h)`
                         : ""}
                     {exercise.notes ? ` · ${exercise.notes}` : ""}
                   </span>
@@ -563,9 +631,20 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
                   id="exercise-weight"
                   value={exerciseWeight}
                   onChange={(event) => setExerciseWeight(event.target.value)}
-                  placeholder="e.g. 65 lbs, 25, 20, 15 lbs, bodyweight"
+                  placeholder="e.g. 65, 25, 20, 15, bodyweight"
                   required
                 />
+                <label htmlFor="exercise-weight-unit">Weight Unit</label>
+                <select
+                  id="exercise-weight-unit"
+                  value={exerciseWeightUnit}
+                  onChange={(event) =>
+                    setExerciseWeightUnit(event.target.value as "lbs" | "kg")
+                  }
+                >
+                  <option value="lbs">lbs (default)</option>
+                  <option value="kg">kg</option>
+                </select>
               </>
             ) : (
               <>
@@ -579,7 +658,20 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
                   onChange={(event) => setExerciseDuration(event.target.value)}
                   required
                 />
-                <label htmlFor="exercise-speed">Speed (mph)</label>
+                <label htmlFor="exercise-speed-unit">Speed Unit</label>
+                <select
+                  id="exercise-speed-unit"
+                  value={exerciseSpeedUnit}
+                  onChange={(event) =>
+                    setExerciseSpeedUnit(event.target.value as "mph" | "kmh")
+                  }
+                >
+                  <option value="mph">mph</option>
+                  <option value="kmh">km/h</option>
+                </select>
+                <label htmlFor="exercise-speed">
+                  {exerciseSpeedUnit === "mph" ? "Speed (mph)" : "Speed (km/h)"}
+                </label>
                 <input
                   id="exercise-speed"
                   type="number"

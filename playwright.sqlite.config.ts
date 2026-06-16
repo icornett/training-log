@@ -58,7 +58,8 @@ export default defineConfig({
   webServer: process.env.BASE_URL
     ? undefined
     : {
-        command: 'npm run db:local:prepare && npm run build && npm run build:api && npm run dev:sqlite:stack',
+        command:
+          'npm run db:local:prepare && npm run build && npm run build:api && DISABLE_TIMER_TRIGGERS=true FUNCTIONS_WORKER_RUNTIME=node SESSION_SECRET=sqlite-local-session-secret npm run dev:sqlite:stack',
         url: sqliteBaseURL,
         reuseExistingServer: true,
         timeout: 120_000,
