@@ -43,8 +43,9 @@ test('mobile user can complete core workout workflow', async ({ page }) => {
   await page.getByRole('button', { name: 'Add Exercise' }).click()
   await expect(page.getByText('Exercise added.')).toBeVisible()
 
-  const deadliftRow = page.getByRole('listitem').filter({ hasText: 'Deadlift' })
-  await expect(deadliftRow).toBeVisible()
+  // Wait for the exercise list to update after the API round-trip on CI.
+  const deadliftRow = page.getByRole('listitem').filter({ hasText: 'Deadlift' }).first()
+  await expect(deadliftRow).toBeVisible({ timeout: 20_000 })
 
   await deadliftRow.getByRole('button', { name: /^Edit$/ }).click()
   await expect(page.getByRole('heading', { name: 'Edit Exercise' })).toBeVisible()
@@ -52,8 +53,8 @@ test('mobile user can complete core workout workflow', async ({ page }) => {
   await page.getByRole('button', { name: 'Save Exercise' }).click()
   await expect(page.getByText('Exercise updated.')).toBeVisible()
 
-  const updatedDeadliftRow = page.getByRole('listitem').filter({ hasText: 'Deadlift Updated' })
-  await expect(updatedDeadliftRow).toBeVisible()
+  const updatedDeadliftRow = page.getByRole('listitem').filter({ hasText: 'Deadlift Updated' }).first()
+  await expect(updatedDeadliftRow).toBeVisible({ timeout: 20_000 })
 
   await updatedDeadliftRow.getByRole('button', { name: /^Delete$/ }).click()
   await expect(page.getByText('Exercise deleted.')).toBeVisible()
