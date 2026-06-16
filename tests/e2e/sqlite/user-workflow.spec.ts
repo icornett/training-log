@@ -29,6 +29,21 @@ const addStrengthExercise = async (page: Page, exercise: StrengthExercise): Prom
   await page.getByRole('button', { name: 'Add Exercise' }).click()
 }
 
+const expectWorkoutsLanding = async (page: Page, action: string): Promise<void> => {
+  const workoutsHeading = page.getByRole('heading', { name: 'Workouts' })
+
+  try {
+    await expect.poll(() => page.url(), { timeout: 12_000 }).toContain('/training_log/')
+  } catch {
+    const inlineError = (await page.locator('.error-text').first().textContent())?.trim() ?? 'none'
+    throw new Error(
+      `${action} did not navigate to /training_log/. url=${page.url()} inlineError=${inlineError}`,
+    )
+  }
+
+  await expect(workoutsHeading).toBeVisible({ timeout: 12_000 })
+}
+
 const cleanupUserIfPresent = async (
   page: Page,
   username: string,
@@ -72,7 +87,7 @@ test('sqlite user can complete a full workflow', async ({ page }, testInfo) => {
     await page.getByLabel(/I agree to the privacy notice/i).check()
     await page.getByRole('button', { name: 'Create Account' }).click()
 
-    await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
+    await expectWorkoutsLanding(page, 'Signup')
     await expect(page.getByText(username)).toBeVisible()
 
     // Create workout
@@ -107,7 +122,7 @@ test('sqlite user can complete a full workflow', async ({ page }, testInfo) => {
     await page.getByLabel('Password').fill(password)
     await page.getByRole('button', { name: 'Login' }).click()
 
-    await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
+    await expectWorkoutsLanding(page, 'Login')
     await page
       .getByRole('row')
       .filter({ hasText: workoutName })
@@ -136,7 +151,7 @@ test('sqlite user can browse workouts', async ({ page }, testInfo) => {
     await page.getByLabel(/I agree to the privacy notice/i).check()
     await page.getByRole('button', { name: 'Create Account' }).click()
 
-    await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
+    await expectWorkoutsLanding(page, 'Signup')
 
     // Create a workout
     await page.getByRole('link', { name: 'Log New Workout' }).click()

@@ -49,25 +49,26 @@ jobs:
       - name: Build frontend and API
         run: npm run build && npm run build:api
 
+      - name: Prepare local Postgres for SQLite E2E
+        run: npm run db:local:prepare
+
       - name: Install Azure Functions Core Tools
         run: npm i -g azure-functions-core-tools@4 --unsafe-perm true
 
       - name: Start full stack via SWA CLI
         run: |
-          npm run dev:api:func &
+          npm run dev:api:func:localdb &
           npm run dev:swa:proxy &
           npx wait-on http://127.0.0.1:7071 http://127.0.0.1:4280 --timeout 90000
         env:
-          DATABASE_URL: ${{ secrets.SQLITE_DATABASE_URL }}
-          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          DATABASE_URL: postgresql://traininglog:traininglog@127.0.0.1:55432/training_log?sslmode=disable
+          SESSION_SECRET: ci-local-session-secret
           AzureWebJobsStorage: UseDevelopmentStorage=true
           FUNCTIONS_WORKER_RUNTIME: node
+          DISABLE_TIMER_TRIGGERS: 'true'
 
       - name: SQLite E2E tests
         run: BASE_URL=http://127.0.0.1:4280 npm run test:e2e:sqlite
-        env:
-          DATABASE_URL: ${{ secrets.SQLITE_DATABASE_URL }}
-          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
 
       - name: Publish test results
         if: always()
