@@ -54,8 +54,9 @@ jobs:
 
       - name: Start full stack via SWA CLI
         run: |
-          npm run dev:swa &
-          npx wait-on http://127.0.0.1:4280 --timeout 90000
+          npm run dev:api:func &
+          npm run dev:swa:proxy &
+          npx wait-on http://127.0.0.1:7071 http://127.0.0.1:4280 --timeout 90000
         env:
           DATABASE_URL: ${{ secrets.SQLITE_DATABASE_URL }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
