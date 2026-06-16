@@ -31,14 +31,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Cache API node_modules
-        uses: actions/cache@v4
-        with:
-          path: api/node_modules
-          key: api-node-modules-${{ runner.os }}-${{ hashFiles('api/package-lock.json') }}
-          restore-keys: |
-            api-node-modules-${{ runner.os }}-
-
       - name: Typecheck
         run: npm run typecheck
 
