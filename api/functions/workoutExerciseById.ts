@@ -3,7 +3,11 @@ import { app, type HttpRequest } from '@azure/functions'
 import { getSessionUser } from '../shared/auth.js'
 import { getNumericPathParam, json, parseJsonBody } from '../shared/http.js'
 import { deleteExercise, getExerciseForWorkout, updateExercise, workoutExists } from '../shared/repository.js'
-import { invalidExerciseEditMessage, requireExistingUser, requireWorkoutOwnership } from '../shared/validation.js'
+import {
+  invalidExerciseEditForWorkoutMessage,
+  requireExistingUser,
+  requireWorkoutOwnership,
+} from '../shared/validation.js'
 
 interface UpdateExerciseBody {
   description?: string
@@ -67,7 +71,13 @@ app.http('workoutExerciseById', {
     const speedMph = body.speedMph !== undefined ? Number(body.speedMph) : exercise.speedMph
     const notes = body.notes !== undefined ? body.notes : exercise.notes
 
-    const invalidMsg = invalidExerciseEditMessage(description, weightDescription ?? '', exerciseType)
+    const invalidMsg = await invalidExerciseEditForWorkoutMessage(
+      workoutId,
+      exerciseId,
+      description,
+      weightDescription ?? '',
+      exerciseType,
+    )
     if (invalidMsg) {
       return json(422, { error: invalidMsg })
     }

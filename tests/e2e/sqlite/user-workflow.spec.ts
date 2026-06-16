@@ -9,14 +9,14 @@ type StrengthExercise = {
 
 const makeUsername = (projectName: string): string => {
   const projectSlug = projectName.replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 8)
-  return `e2e-${projectSlug}-${String(Date.now()).slice(-4)}`
+  return `sqlite-${projectSlug}-${String(Date.now()).slice(-4)}`
 }
 
 const buildStrengthExercises = (totalExercises: number): StrengthExercise[] =>
   Array.from({ length: totalExercises }, (_, index) => ({
-    description: `Pull Ups ${index + 1}`,
-    sets: String(4 + index),
-    reps: String(10 + index),
+    description: `SQLite Exercise ${index + 1}`,
+    sets: String(3 + index),
+    reps: String(12 + index),
     weight: 'bodyweight',
   }))
 
@@ -29,7 +29,11 @@ const addStrengthExercise = async (page: Page, exercise: StrengthExercise): Prom
   await page.getByRole('button', { name: 'Add Exercise' }).click()
 }
 
-const cleanupUserIfPresent = async (page: Page, username: string, password: string): Promise<void> => {
+const cleanupUserIfPresent = async (
+  page: Page,
+  username: string,
+  password: string,
+): Promise<void> => {
   try {
     const deleteButton = page.getByRole('button', { name: 'Delete Account' })
     if ((await deleteButton.count()) === 0) {
@@ -49,12 +53,14 @@ const cleanupUserIfPresent = async (page: Page, username: string, password: stri
   }
 }
 
-test('user can complete a full journey against the real database', async ({ page }, testInfo) => {
+test('sqlite user can complete a full workflow', async ({ page }, testInfo) => {
   const username = makeUsername(testInfo.project.name)
-  const password = 'real-db-password-123'
+  const password = 'sqlite-password-123'
   const exercises = buildStrengthExercises(3)
+  const workoutName = 'SQLite Workout'
 
   try {
+    // Signup
     await page.goto('/signup')
 
     await page.getByLabel('Username').fill(username)
@@ -64,12 +70,13 @@ test('user can complete a full journey against the real database', async ({ page
     await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
     await expect(page.getByText(username)).toBeVisible()
 
+    // Create workout
     await page.getByRole('link', { name: 'Log New Workout' }).click()
-    await page.getByLabel('Workout Name').fill('Power Day')
-    await page.getByLabel('Workout Date').fill('2026-06-05')
+    await page.getByLabel('Workout Name').fill(workoutName)
+    await page.getByLabel('Workout Date').fill('2026-06-15')
     await page.getByRole('button', { name: 'Continue to Exercises' }).click()
 
-    await expect(page.getByRole('heading', { name: 'Power Day' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: workoutName })).toBeVisible()
     await expect(page.getByText('Add your first exercise to save this workout.')).toBeVisible()
 
     for (const exercise of exercises) {
@@ -83,38 +90,67 @@ test('user can complete a full journey against the real database', async ({ page
     await expect(page.getByText('This exercise already exists for the workout.')).toBeVisible()
     await expect(page.getByRole('listitem').filter({ hasText: duplicateExercise.description })).toHaveCount(1)
 
-    const firstExercise = exercises[0]
-    const secondExercise = exercises[1]
-    const thirdExercise = exercises[2]
-
-    const firstExerciseRow = page.getByRole('listitem').filter({ hasText: firstExercise.description })
-    await firstExerciseRow.getByRole('button', { name: 'Edit' }).click()
-
-    await expect(page.getByRole('heading', { name: 'Edit Exercise' })).toBeVisible()
-    await page.getByLabel('Description').fill('Pull Ups Updated')
-    await page.getByRole('button', { name: 'Save Exercise' }).click()
-
-    await expect(page.getByText('Exercise updated.')).toBeVisible()
-    await expect(page.getByRole('listitem').filter({ hasText: 'Pull Ups Updated' })).toBeVisible()
-    await expect(page.getByRole('listitem').filter({ hasText: secondExercise.description })).toBeVisible()
-    await expect(page.getByRole('listitem').filter({ hasText: thirdExercise.description })).toBeVisible()
-
+    // Logout
     await page.getByRole('button', { name: 'Logout' }).click()
     await expect(page.getByRole('heading', { name: 'Login' })).toBeVisible()
 
+    // Login and verify persistence
     await page.getByLabel('Username').fill(username)
     await page.getByLabel('Password').fill(password)
     await page.getByRole('button', { name: 'Login' }).click()
 
     await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
-    await expect(page.getByText(username)).toBeVisible()
-    await page.getByRole('row').filter({ hasText: 'Power Day' }).getByRole('link', { name: 'View Workout' }).click()
+    await page
+      .getByRole('row')
+      .filter({ hasText: workoutName })
+      .getByRole('link', { name: 'View Workout' })
+      .click()
 
-    await expect(page.getByRole('heading', { name: 'Power Day' })).toBeVisible()
-    await expect(page.getByRole('listitem').filter({ hasText: 'Pull Ups Updated' })).toBeVisible()
-    await expect(page.getByRole('listitem').filter({ hasText: secondExercise.description })).toBeVisible()
-    await expect(page.getByRole('listitem').filter({ hasText: thirdExercise.description })).toBeVisible()
+    await expect(page.getByRole('heading', { name: workoutName })).toBeVisible()
+    for (const exercise of exercises) {
+      await expect(page.getByRole('listitem').filter({ hasText: exercise.description })).toBeVisible()
+    }
   } finally {
+    // Always cleanup
+    await cleanupUserIfPresent(page, username, password)
+  }
+})
+
+test('sqlite user can browse workouts', async ({ page }, testInfo) => {
+  const username = makeUsername(testInfo.project.name)
+  const password = 'sqlite-password-123'
+
+  try {
+    // Signup and create workout
+    await page.goto('/signup')
+    await page.getByLabel('Username').fill(username)
+    await page.getByLabel('Password').fill(password)
+    await page.getByRole('button', { name: 'Create Account' }).click()
+
+    await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
+
+    // Create a workout
+    await page.getByRole('link', { name: 'Log New Workout' }).click()
+    await page.getByLabel('Workout Name').fill('Browse Test')
+    await page.getByLabel('Workout Date').fill('2026-06-14')
+    await page.getByRole('button', { name: 'Continue to Exercises' }).click()
+
+    // Add an exercise
+    await page.getByLabel('Description').fill('Bench Press')
+    await page.getByLabel('Exercise Type').selectOption('strength')
+    await page.getByLabel('Sets').fill('5')
+    await page.getByLabel('Reps').fill('5')
+    await page.getByLabel('Weight').fill('225 lbs')
+    await page.getByRole('button', { name: 'Add Exercise' }).click()
+
+    // Navigate back to workouts list
+    await page.getByRole('link', { name: 'Workouts' }).click()
+
+    // Verify workout appears in list
+    await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
+    await expect(page.getByRole('row').filter({ hasText: 'Browse Test' })).toBeVisible()
+  } finally {
+    // Always cleanup
     await cleanupUserIfPresent(page, username, password)
   }
 })

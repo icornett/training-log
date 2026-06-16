@@ -167,6 +167,22 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
         notes: exerciseNotes || "",
       };
 
+      if (!isPending && editingExerciseId === null) {
+        const normalizedDescription = exerciseDescription.trim().toLowerCase();
+        const hasDuplicate =
+          workout?.exercises.some(
+            (exercise) =>
+              exercise.description.trim().toLowerCase() ===
+              normalizedDescription,
+          ) ?? false;
+
+        if (hasDuplicate) {
+          setError("This exercise already exists for the workout.");
+          setMessage(null);
+          return;
+        }
+      }
+
       if (isPending && editingExerciseId === null) {
         const raw = localStorage.getItem("trainingLog:pendingWorkout");
         if (!raw) {
@@ -182,9 +198,14 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
           payload,
         );
         localStorage.removeItem("trainingLog:pendingWorkout");
-        navigate(`/training_log/${page}/workouts/${newWorkout.id}`, {
-          replace: true,
-        });
+        setMessage("Exercise added.");
+        setError(null);
+        // Allow message to render before navigation
+        setTimeout(() => {
+          navigate(`/training_log/${page}/workouts/${newWorkout.id}`, {
+            replace: true,
+          });
+        }, 500);
         return;
       }
 
@@ -278,6 +299,7 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
         </div>
         <p>{workoutDate}</p>
         <p>Add your first exercise to save this workout.</p>
+        {message ? <p className="success-text">{message}</p> : null}
         {error ? <p className="error-text">{error}</p> : null}
         <section className="panel-block">
           <h2>Add Exercise</h2>

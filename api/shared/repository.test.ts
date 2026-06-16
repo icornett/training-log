@@ -9,7 +9,7 @@ jest.unstable_mockModule('./db.js', () => ({
   db: { select },
 }))
 
-const { listExercises } = await import('./repository.js')
+const { hasDuplicateExerciseDescription, listExercises } = await import('./repository.js')
 
 describe('listExercises', () => {
   beforeEach(() => {
@@ -41,5 +41,66 @@ describe('listExercises', () => {
         speedMph: 6.2,
       }),
     ])
+  })
+})
+
+describe('hasDuplicateExerciseDescription', () => {
+  beforeEach(() => {
+    orderBy.mockReset()
+    where.mockClear()
+    from.mockClear()
+    select.mockClear()
+  })
+
+  it('returns true for duplicate descriptions ignoring case and spaces', async () => {
+    orderBy.mockResolvedValue([
+      {
+        id: 1,
+        description: 'Bench Press',
+        numSets: 3,
+        numReps: 8,
+        weightDescription: '65 lbs',
+        workoutId: 7,
+        exerciseType: 'strength',
+        durationMinutes: null,
+        speedMph: null,
+        notes: null,
+      },
+    ])
+
+    await expect(hasDuplicateExerciseDescription(7, '  bench   press  ')).resolves.toBe(true)
+  })
+
+  it('ignores the target exercise when excludeExerciseId is provided', async () => {
+    orderBy.mockResolvedValue([
+      {
+        id: 11,
+        description: 'Bench Press',
+        numSets: 3,
+        numReps: 8,
+        weightDescription: '65 lbs',
+        workoutId: 4,
+        exerciseType: 'strength',
+        durationMinutes: null,
+        speedMph: null,
+        notes: null,
+      },
+      {
+        id: 12,
+        description: 'Row',
+        numSets: 3,
+        numReps: 10,
+        weightDescription: '70 lbs',
+        workoutId: 4,
+        exerciseType: 'strength',
+        durationMinutes: null,
+        speedMph: null,
+        notes: null,
+      },
+    ])
+
+    await expect(
+      hasDuplicateExerciseDescription(4, 'bench press', { excludeExerciseId: 11 }),
+    ).resolves.toBe(false)
   })
 })

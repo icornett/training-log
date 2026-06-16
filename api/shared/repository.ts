@@ -16,6 +16,9 @@ const normalizeExerciseRow = (
   speedMph: row.speedMph === null ? null : Number(row.speedMph),
 })
 
+const normalizeDescription = (value: string): string =>
+  value.toLowerCase().replace(/\s+/g, '')
+
 export const uniqueUsernames = async (): Promise<string[]> => {
   const rows = await db.select({ username: users.username }).from(users)
   return rows.map((r) => r.username)
@@ -287,7 +290,22 @@ export const atExerciseLimit = async (workoutId: number): Promise<boolean> => {
 
 export const normalizedExerciseDescriptionsByWorkout = async (workoutId: number): Promise<string[]> => {
   const rows = await listExercises(workoutId)
-  return rows.map((e) => e.description.toLowerCase().replace(/\s+/g, ''))
+  return rows.map((e) => normalizeDescription(e.description))
+}
+
+export const hasDuplicateExerciseDescription = async (
+  workoutId: number,
+  description: string,
+  options: { excludeExerciseId?: number } = {},
+): Promise<boolean> => {
+  const scrubbed = normalizeDescription(description)
+  const rows = await listExercises(workoutId)
+
+  return rows.some(
+    (exercise) =>
+      exercise.id !== options.excludeExerciseId &&
+      normalizeDescription(exercise.description) === scrubbed,
+  )
 }
 
 export const workoutExists = async (workoutId: number): Promise<boolean> => {
