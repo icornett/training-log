@@ -57,6 +57,9 @@ jobs:
       - name: Build frontend and API
         run: npm run build && npm run build:api
 
+      - name: Install Azure Functions Core Tools
+        run: npm i -g azure-functions-core-tools@4 --unsafe-perm true
+
       - name: Start full stack via SWA CLI
         run: |
           npm run dev:swa &
