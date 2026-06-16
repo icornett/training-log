@@ -57,12 +57,33 @@ jobs:
 
       - name: SQLite E2E tests
         run: |
-          npm run dev:api:func:localdb &
+          npm run dev:api:func:localdb > /tmp/func.log 2>&1 &
           API_PID=$!
-          npm run dev:swa:proxy &
+          npm run dev:swa:proxy > /tmp/swa.log 2>&1 &
           SWA_PID=$!
           trap 'kill "$API_PID" "$SWA_PID" || true' EXIT
           npx wait-on http://127.0.0.1:7071 http://127.0.0.1:4280 --timeout 90000
+
+          echo "Waiting for API routes to be ready behind SWA proxy..."
+          for i in {1..30}; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:4280/api/account || true)
+            if [ "$status" = "401" ]; then
+              echo "API is ready (GET /api/account -> 401)."
+              break
+            fi
+
+            if [ "$i" -eq 30 ]; then
+              echo "API route readiness check failed. Last status: $status"
+              echo "--- API log tail ---"
+              tail -n 120 /tmp/func.log || true
+              echo "--- SWA log tail ---"
+              tail -n 120 /tmp/swa.log || true
+              exit 1
+            fi
+
+            sleep 2
+          done
+
           BASE_URL=http://127.0.0.1:4280 npm run test:e2e:sqlite
         env:
           SESSION_SECRET: ci-local-session-secret
