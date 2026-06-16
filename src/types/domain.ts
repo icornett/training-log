@@ -71,3 +71,21 @@ export interface Credentials {
   username: string
   password: string
 }
+
+export interface SignupCredentials extends Credentials {
+  gdprConsentAccepted: boolean
+}
+
+export interface AccountExportData {
+  username: string
+  exportedAt: string
+  workouts: Array<{
+    id: number
+    name: string
+    date: string
+    numSets: number
+    numReps: number
+    weightDescription: string
+    exercises: Exercise[]
+  }>
+}

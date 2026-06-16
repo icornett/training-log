@@ -36,6 +36,7 @@ describe('SignupPage', () => {
       refresh: vi.fn().mockResolvedValue(undefined),
       logout: vi.fn(),
       deleteAccount: vi.fn(),
+      exportAccountData: vi.fn(),
     })
   })
 
@@ -47,6 +48,7 @@ describe('SignupPage', () => {
       refresh,
       logout: vi.fn(),
       deleteAccount: vi.fn(),
+      exportAccountData: vi.fn(),
     })
 
     render(
@@ -57,12 +59,14 @@ describe('SignupPage', () => {
 
     await userEvent.type(screen.getByLabelText('Username'), 'New User')
     await userEvent.type(screen.getByLabelText('Password'), 'super-secure-password')
+    await userEvent.click(screen.getByLabelText(/I agree to the privacy notice/i))
     await userEvent.click(screen.getByRole('button', { name: 'Create Account' }))
 
     await waitFor(() => {
       expect(api.signup).toHaveBeenCalledWith({
         username: 'New User',
         password: 'super-secure-password',
+        gdprConsentAccepted: true,
       })
       expect(refresh).toHaveBeenCalled()
       expect(navigateMock).toHaveBeenCalledWith('/training_log/1/workouts')
@@ -80,6 +84,7 @@ describe('SignupPage', () => {
 
     await userEvent.type(screen.getByLabelText('Username'), 'Jane Doe')
     await userEvent.type(screen.getByLabelText('Password'), 'super-secure-password')
+    await userEvent.click(screen.getByLabelText(/I agree to the privacy notice/i))
     await userEvent.click(screen.getByRole('button', { name: 'Create Account' }))
 
     expect(await screen.findByText('Username already exists.')).toBeInTheDocument()

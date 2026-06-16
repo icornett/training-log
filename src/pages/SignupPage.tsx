@@ -9,6 +9,7 @@ export const SignupPage = (): JSX.Element => {
   const { currentUser, refresh } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [gdprConsentAccepted, setGdprConsentAccepted] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -22,7 +23,7 @@ export const SignupPage = (): JSX.Element => {
     setError(null)
 
     try {
-      await api.signup({ username, password })
+      await api.signup({ username, password, gdprConsentAccepted })
       await refresh()
       navigate('/training_log/1/workouts')
     } catch (err) {
@@ -50,6 +51,16 @@ export const SignupPage = (): JSX.Element => {
           onChange={(event) => setPassword(event.target.value)}
           required
         />
+        <label htmlFor="signup-gdpr-consent" className="checkbox-row">
+          <input
+            id="signup-gdpr-consent"
+            type="checkbox"
+            checked={gdprConsentAccepted}
+            onChange={(event) => setGdprConsentAccepted(event.target.checked)}
+            required
+          />
+          I agree to the privacy notice and data processing terms.
+        </label>
         {error ? <p className="error-text">{error}</p> : null}
         <button type="submit">Create Account</button>
       </form>

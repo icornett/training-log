@@ -31,6 +31,7 @@ describe('AuthLandingPage', () => {
       refresh: vi.fn(),
       logout: vi.fn(),
       deleteAccount: vi.fn(),
+      exportAccountData: vi.fn(),
     })
 
     render(
@@ -52,6 +53,7 @@ describe('AuthLandingPage', () => {
       refresh: vi.fn(),
       logout: vi.fn(),
       deleteAccount: vi.fn(),
+      exportAccountData: vi.fn(),
     })
 
     render(

@@ -2,13 +2,14 @@ import { app, type HttpRequest } from '@azure/functions'
 
 import { clearSessionCookie, getSessionUser } from '../shared/auth.js'
 import { json } from '../shared/http.js'
-import { deleteUserByUsername } from '../shared/repository.js'
+import { logGdprEvent, softDeleteUserByUsername } from '../shared/repository.js'
 import { requireExistingUser } from '../shared/validation.js'
 
 interface AccountDependencies {
   getUser: typeof getSessionUser
   requireUser: (username: string) => Promise<boolean>
   deleteUser: (username: string) => Promise<void>
+  auditEvent: (username: string) => Promise<void>
   clearCookie: () => string
 }
 
@@ -23,7 +24,12 @@ export const createAccountHandler = (dependencies: AccountDependencies) => {
       return json(200, { username: user.username })
     }
 
+    if (request.method !== 'DELETE') {
+      return json(405, { error: 'Method not allowed.' })
+    }
+
     await dependencies.deleteUser(user.username)
+    await dependencies.auditEvent(user.username)
 
     return json(
       200,
@@ -38,7 +44,12 @@ export const createAccountHandler = (dependencies: AccountDependencies) => {
 export const accountHandler = createAccountHandler({
   getUser: getSessionUser,
   requireUser: requireExistingUser,
-  deleteUser: deleteUserByUsername,
+  deleteUser: softDeleteUserByUsername,
+  auditEvent: async (username) => {
+    await logGdprEvent('account_deleted', username, {
+      strategy: 'soft-delete',
+    })
+  },
   clearCookie: clearSessionCookie,
 })
 

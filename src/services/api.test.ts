@@ -40,6 +40,35 @@ describe('api service', () => {
     )
   })
 
+  it('rejects signup when GDPR consent is missing', async () => {
+    await expect(
+      api.signup({
+        username: 'Jane Doe',
+        password: 'long-enough-password',
+        gdprConsentAccepted: false,
+      }),
+    ).rejects.toThrow('You must accept the privacy notice to create an account.')
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('calls signup endpoint with consent flag', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ ok: true }))
+
+    await api.signup({
+      username: 'Jane Doe',
+      password: 'long-enough-password',
+      gdprConsentAccepted: true,
+    })
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/signup',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'same-origin',
+      }),
+    )
+  })
+
   it('returns null for 401 current user lookup', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ error: 'Unauthorized' }, 401))
 
@@ -163,5 +192,30 @@ describe('api service', () => {
     )
     expect(fetch).toHaveBeenNthCalledWith(2, '/api/workouts/7', expect.any(Object))
     expect(result.exercises).toHaveLength(0)
+  })
+
+  it('exports account data as JSON', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      jsonResponse({ username: 'Jane Doe', exportedAt: '2026-06-15T00:00:00.000Z', workouts: [] }),
+    )
+
+    const result = await api.exportAccountData('json')
+
+    expect(fetch).toHaveBeenCalledWith('/api/account/export?format=json', expect.any(Object))
+    expect(result).toMatchObject({ username: 'Jane Doe' })
+  })
+
+  it('exports account data as CSV', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response('username,workoutName\nJane Doe,Legs Day', {
+        status: 200,
+        headers: { 'Content-Type': 'text/csv; charset=utf-8' },
+      }),
+    )
+
+    const result = await api.exportAccountData('csv')
+
+    expect(fetch).toHaveBeenCalledWith('/api/account/export?format=csv', expect.any(Object))
+    expect(result).toContain('Legs Day')
   })
 })

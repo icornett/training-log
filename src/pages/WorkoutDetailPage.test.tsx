@@ -66,6 +66,7 @@ describe('WorkoutDetailPage', () => {
       refresh: vi.fn(),
       logout: vi.fn(),
       deleteAccount: vi.fn(),
+      exportAccountData: vi.fn(),
     })
     vi.mocked(api.getWorkout).mockResolvedValue(workoutFixture)
   })
@@ -316,6 +317,7 @@ describe('WorkoutDetailPage — pending mode', () => {
       refresh: vi.fn(),
       logout: vi.fn(),
       deleteAccount: vi.fn(),
+      exportAccountData: vi.fn(),
     })
   })
 

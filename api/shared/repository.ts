@@ -1,9 +1,15 @@
 import bcrypt from 'bcryptjs'
-import { and, count, desc, eq } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNotNull, isNull, lte } from 'drizzle-orm'
 
 import { db } from './db.js'
-import { exercises, users, workouts } from './schema.js'
-import type { ExerciseRow, WorkoutDetails, WorkoutRow } from './types.js'
+import { auditLogs, exercises, users, workouts } from './schema.js'
+import type {
+  AccountExportPayload,
+  ExerciseRow,
+  GdprAuditEvent,
+  WorkoutDetails,
+  WorkoutRow,
+} from './types.js'
 
 const normalizeExerciseRow = (
   row: Omit<ExerciseRow, 'durationMinutes' | 'speedMph'> & {
@@ -28,7 +34,7 @@ export const findUserIdByUsername = async (username: string): Promise<number | n
   const rows = await db
     .select({ id: users.id })
     .from(users)
-    .where(eq(users.username, username))
+    .where(and(eq(users.username, username), isNull(users.deletedAt)))
     .limit(1)
   return rows.length > 0 ? rows[0].id : null
 }
@@ -37,16 +43,32 @@ export const userExists = async (username: string): Promise<boolean> => {
   return (await findUserIdByUsername(username)) !== null
 }
 
-export const addUser = async (username: string, password: string): Promise<void> => {
+export const addUser = async (
+  username: string,
+  password: string,
+  consent?: {
+    consentAt: string
+    consentVersion: string
+    consentIp: string | null
+    consentUserAgent: string | null
+  },
+): Promise<void> => {
   const hashed = await bcrypt.hash(password, 12)
-  await db.insert(users).values({ username, password: hashed })
+  await db.insert(users).values({
+    username,
+    password: hashed,
+    gdprConsentAt: consent?.consentAt,
+    gdprConsentVersion: consent?.consentVersion,
+    gdprConsentIp: consent?.consentIp ?? null,
+    gdprConsentUserAgent: consent?.consentUserAgent ?? null,
+  })
 }
 
 export const validLoginCredentials = async (username: string, password: string): Promise<boolean> => {
   const rows = await db
     .select({ password: users.password })
     .from(users)
-    .where(eq(users.username, username))
+    .where(and(eq(users.username, username), isNull(users.deletedAt)))
     .limit(1)
   if (rows.length === 0) {
     return false
@@ -278,6 +300,110 @@ export const deleteUserByUsername = async (username: string): Promise<void> => {
     return
   }
   await db.delete(users).where(eq(users.id, userId))
+}
+
+export const softDeleteUserByUsername = async (username: string): Promise<void> => {
+  await db
+    .update(users)
+    .set({ deletedAt: new Date().toISOString() })
+    .where(and(eq(users.username, username), isNull(users.deletedAt)))
+}
+
+export const hardDeleteUserById = async (userId: number): Promise<void> => {
+  await db.delete(users).where(eq(users.id, userId))
+}
+
+export const listSoftDeletedUsersPastRetention = async (
+  cutoffIso: string,
+): Promise<Array<{ id: number; username: string }>> => {
+  return db
+    .select({ id: users.id, username: users.username })
+    .from(users)
+    .where(and(isNotNull(users.deletedAt), lte(users.deletedAt, cutoffIso)))
+}
+
+export const logGdprEvent = async (
+  eventType: GdprAuditEvent,
+  username: string | null,
+  payload: Record<string, unknown> = {},
+): Promise<void> => {
+  await db.insert(auditLogs).values({
+    eventType,
+    username,
+    payload,
+  })
+}
+
+export const getUserDataExportByUsername = async (
+  username: string,
+): Promise<AccountExportPayload | null> => {
+  const userId = await findUserIdByUsername(username)
+  if (!userId) {
+    return null
+  }
+
+  const workoutRows = await db
+    .select({
+      id: workouts.id,
+      name: workouts.name,
+      date: workouts.date,
+      numSets: workouts.numSets,
+      numReps: workouts.numReps,
+      weightDescription: workouts.weightDescription,
+    })
+    .from(workouts)
+    .where(eq(workouts.userId, userId))
+    .orderBy(desc(workouts.date))
+
+  const workoutIds = workoutRows.map((w) => w.id)
+  const exerciseRows = workoutIds.length
+    ? await db
+        .select({
+          id: exercises.id,
+          description: exercises.description,
+          workoutId: exercises.workoutId,
+          exerciseType: exercises.exerciseType,
+          numSets: exercises.numSets,
+          numReps: exercises.numReps,
+          weightDescription: exercises.weightDescription,
+          durationMinutes: exercises.durationMinutes,
+          speedMph: exercises.speedMph,
+          notes: exercises.notes,
+        })
+        .from(exercises)
+        .where(inArray(exercises.workoutId, workoutIds))
+    : []
+
+  const exercisesByWorkout = new Map<number, AccountExportPayload['workouts'][number]['exercises']>()
+  for (const row of exerciseRows) {
+    const list = exercisesByWorkout.get(row.workoutId) ?? []
+    list.push({
+      id: row.id,
+      description: row.description,
+      exerciseType: row.exerciseType,
+      numSets: row.numSets,
+      numReps: row.numReps,
+      weightDescription: row.weightDescription,
+      durationMinutes: row.durationMinutes === null ? null : Number(row.durationMinutes),
+      speedMph: row.speedMph === null ? null : Number(row.speedMph),
+      notes: row.notes,
+    })
+    exercisesByWorkout.set(row.workoutId, list)
+  }
+
+  return {
+    username,
+    exportedAt: new Date().toISOString(),
+    workouts: workoutRows.map((workout) => ({
+      id: workout.id,
+      name: workout.name,
+      date: workout.date,
+      numSets: workout.numSets,
+      numReps: workout.numReps,
+      weightDescription: workout.weightDescription,
+      exercises: exercisesByWorkout.get(workout.id) ?? [],
+    })),
+  }
 }
 
 export const atExerciseLimit = async (workoutId: number): Promise<boolean> => {

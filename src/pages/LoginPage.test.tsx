@@ -36,6 +36,7 @@ describe('LoginPage', () => {
       refresh: vi.fn().mockResolvedValue(undefined),
       logout: vi.fn(),
       deleteAccount: vi.fn(),
+        exportAccountData: vi.fn(),
     })
   })
 
@@ -47,6 +48,7 @@ describe('LoginPage', () => {
       refresh,
       logout: vi.fn(),
       deleteAccount: vi.fn(),
+        exportAccountData: vi.fn(),
     })
 
     render(
@@ -89,6 +91,7 @@ describe('LoginPage', () => {
       refresh: vi.fn(),
       logout: vi.fn(),
       deleteAccount: vi.fn(),
+        exportAccountData: vi.fn(),
     })
 
     render(

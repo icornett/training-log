@@ -8,6 +8,7 @@ describe('createAccountHandler', () => {
       getUser: () => ({ username: 'demo' }),
       requireUser: async () => true,
       deleteUser: async () => undefined,
+      auditEvent: async () => undefined,
       clearCookie: () => 'cleared',
     })
 
@@ -26,6 +27,7 @@ describe('createAccountHandler', () => {
       deleteUser: async (username) => {
         deleted.push(username)
       },
+      auditEvent: async () => undefined,
       clearCookie: () => 'training_log_session=;',
     })
 
@@ -45,6 +47,7 @@ describe('createAccountHandler', () => {
       getUser: () => null,
       requireUser: async () => true,
       deleteUser: async () => undefined,
+      auditEvent: async () => undefined,
       clearCookie: () => '',
     })
 
@@ -52,5 +55,20 @@ describe('createAccountHandler', () => {
     const response = await handler(request)
 
     expect(response.status).toBe(401)
+  })
+
+  it('returns 405 for unsupported methods', async () => {
+    const handler = createAccountHandler({
+      getUser: () => ({ username: 'demo' }),
+      requireUser: async () => true,
+      deleteUser: async () => undefined,
+      auditEvent: async () => undefined,
+      clearCookie: () => 'training_log_session=;',
+    })
+
+    const request = { method: 'POST' } as HttpRequest
+    const response = await handler(request)
+
+    expect(response.status).toBe(405)
   })
 })
