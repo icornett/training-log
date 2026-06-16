@@ -135,9 +135,12 @@ export const workoutWithExerciseHandler = createWorkoutWithExerciseHandler({
   getWorkout: getWorkoutWithExercisesForUser,
 })
 
-app.http('workoutWithFirstExercise', {
-  methods: ['POST'],
-  authLevel: 'anonymous',
-  route: 'workouts/with-first-exercise',
-  handler: workoutWithExerciseHandler,
-})
+// Skip registration during tests to avoid Azure Functions runtime detection warning
+if (process.env.NODE_ENV !== 'test') {
+  app.http('workoutWithFirstExercise', {
+    methods: ['POST'],
+    authLevel: 'anonymous',
+    route: 'workouts/with-first-exercise',
+    handler: workoutWithExerciseHandler,
+  })
+}

@@ -40,9 +40,12 @@ export const loginHandler = createLoginHandler({
   validateCredentials: validLoginCredentials,
 })
 
-app.http('login', {
-  methods: ['POST'],
-  authLevel: 'anonymous',
-  route: 'login',
-  handler: loginHandler,
-})
+// Skip registration during tests to avoid Azure Functions runtime detection warning
+if (process.env.NODE_ENV !== 'test') {
+  app.http('login', {
+    methods: ['POST'],
+    authLevel: 'anonymous',
+    route: 'login',
+    handler: loginHandler,
+  })
+}

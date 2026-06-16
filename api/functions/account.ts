@@ -53,9 +53,12 @@ export const accountHandler = createAccountHandler({
   clearCookie: clearSessionCookie,
 })
 
-app.http('account', {
-  methods: ['GET', 'DELETE'],
-  authLevel: 'anonymous',
-  route: 'account',
-  handler: accountHandler,
-})
+// Skip registration during tests to avoid Azure Functions runtime detection warning
+if (process.env.NODE_ENV !== 'test') {
+  app.http('account', {
+    methods: ['GET', 'DELETE'],
+    authLevel: 'anonymous',
+    route: 'account',
+    handler: accountHandler,
+  })
+}

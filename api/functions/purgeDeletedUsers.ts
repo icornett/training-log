@@ -47,9 +47,12 @@ export const purgeDeletedUsersHandler = createPurgeDeletedUsersHandler({
     }),
 })
 
-app.http('purge-deleted-users', {
-  methods: ['POST'],
-  authLevel: 'anonymous',
-  route: 'admin/purge-deleted-users',
-  handler: purgeDeletedUsersHandler,
-})
+// Skip registration during tests to avoid Azure Functions runtime detection warning
+if (process.env.NODE_ENV !== 'test') {
+  app.http('purge-deleted-users', {
+    methods: ['POST'],
+    authLevel: 'anonymous',
+    route: 'admin/purge-deleted-users',
+    handler: purgeDeletedUsersHandler,
+  })
+}

@@ -72,9 +72,12 @@ const signupHandler = createSignupHandler({
   },
 })
 
-app.http('signup', {
-  methods: ['POST'],
-  authLevel: 'anonymous',
-  route: 'signup',
-  handler: signupHandler,
-})
+// Skip registration during tests to avoid Azure Functions runtime detection warning
+if (process.env.NODE_ENV !== 'test') {
+  app.http('signup', {
+    methods: ['POST'],
+    authLevel: 'anonymous',
+    route: 'signup',
+    handler: signupHandler,
+  })
+}

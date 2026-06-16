@@ -23,11 +23,13 @@ interface UpdateExerciseBody {
   notes?: string
 }
 
-app.http('workoutExerciseById', {
-  methods: ['PUT', 'DELETE'],
-  authLevel: 'anonymous',
-  route: 'workouts/{workoutId}/exercises/{exerciseId}',
-  handler: async (request: HttpRequest) => {
+// Skip registration during tests to avoid Azure Functions runtime detection warning
+if (process.env.NODE_ENV !== 'test') {
+  app.http('workoutExerciseById', {
+    methods: ['PUT', 'DELETE'],
+    authLevel: 'anonymous',
+    route: 'workouts/{workoutId}/exercises/{exerciseId}',
+    handler: async (request: HttpRequest) => {
     const user = getSessionUser(request)
     if (!user || !(await requireExistingUser(user.username))) {
       return json(401, { error: 'Please login to access the Training Log App.' })
@@ -103,4 +105,5 @@ app.http('workoutExerciseById', {
     )
     return json(200, { message: `You've successfully updated exercise #${exerciseId}` })
   },
-})
+  })
+}

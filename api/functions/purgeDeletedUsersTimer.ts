@@ -36,7 +36,10 @@ export const purgeDeletedUsersTimerHandler = createPurgeDeletedUsersTimerHandler
     }),
 })
 
-app.timer('purge-deleted-users-timer', {
-  schedule: process.env.GDPR_PURGE_SCHEDULE ?? '0 0 */12 * * *',
-  handler: purgeDeletedUsersTimerHandler,
-})
+// Skip registration during tests to avoid Azure Functions runtime detection warning
+if (process.env.NODE_ENV !== 'test') {
+  app.timer('purge-deleted-users-timer', {
+    schedule: process.env.GDPR_PURGE_SCHEDULE ?? '0 0 */12 * * *',
+    handler: purgeDeletedUsersTimerHandler,
+  })
+}

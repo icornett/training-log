@@ -117,9 +117,12 @@ export const accountExportHandler = createAccountExportHandler({
   },
 })
 
-app.http('account-export', {
-  methods: ['GET'],
-  authLevel: 'anonymous',
-  route: 'account/export',
-  handler: accountExportHandler,
-})
+// Skip registration during tests to avoid Azure Functions runtime detection warning
+if (process.env.NODE_ENV !== 'test') {
+  app.http('account-export', {
+    methods: ['GET'],
+    authLevel: 'anonymous',
+    route: 'account/export',
+    handler: accountExportHandler,
+  })
+}
