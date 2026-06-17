@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
@@ -59,7 +59,9 @@ export const SignupPage = (): JSX.Element => {
             onChange={(event) => setGdprConsentAccepted(event.target.checked)}
             required
           />
-          I agree to the privacy notice and data processing terms.
+          <span>
+            I agree to the <Link to="/privacy">privacy notice</Link> and data processing terms.
+          </span>
         </label>
         {error ? <p className="error-text">{error}</p> : null}
         <button type="submit">Create Account</button>
