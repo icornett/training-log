@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 
 export const AppShell = (): JSX.Element => {
   const navigate = useNavigate()
-  const { currentUser, loading, logout } = useAuth()
+  const { currentUser, loading, logout, isOffline, pendingCount, lastSyncError } = useAuth()
 
   const handleLogout = async (): Promise<void> => {
     await logout()
@@ -21,6 +21,11 @@ export const AppShell = (): JSX.Element => {
           <Link to="/training_log/1/workouts">Workouts</Link>
           {loading ? null : currentUser ? (
             <>
+              {isOffline ? <span className="nav-status nav-status-offline">Offline</span> : null}
+              {pendingCount > 0 ? (
+                <span className="nav-status nav-status-pending">{pendingCount} pending sync</span>
+              ) : null}
+              {lastSyncError ? <span className="nav-status nav-status-conflict">Sync issue</span> : null}
               <span className="nav-identity">{currentUser.username}</span>
               <Link to="/training_log/1/account">Account</Link>
               <button type="button" className="ghost-button" onClick={handleLogout}>

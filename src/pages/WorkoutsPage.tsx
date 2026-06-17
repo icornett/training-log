@@ -2,9 +2,22 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { Pagination } from '../components/Pagination'
+import { syncStatusChangedEventName } from '../services/localStore'
 import { api } from '../services/api'
 import type { WorkoutListItem } from '../types/domain'
 import { formatWorkoutDate } from '../utils/date'
+
+const getSyncLabel = (pendingState?: WorkoutListItem['pendingState']): string | null => {
+  if (pendingState === 'pending') {
+    return 'Pending sync'
+  }
+
+  if (pendingState === 'conflict') {
+    return 'Sync conflict'
+  }
+
+  return null
+}
 
 export const WorkoutsPage = (): JSX.Element => {
   const navigate = useNavigate()
@@ -16,6 +29,7 @@ export const WorkoutsPage = (): JSX.Element => {
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [syncVersion, setSyncVersion] = useState(0)
 
   useEffect(() => {
     let disposed = false
@@ -46,7 +60,19 @@ export const WorkoutsPage = (): JSX.Element => {
     return () => {
       disposed = true
     }
-  }, [page])
+  }, [page, syncVersion])
+
+  useEffect(() => {
+    const handleSyncStatusChanged = (): void => {
+      setSyncVersion((value) => value + 1)
+    }
+
+    window.addEventListener(syncStatusChangedEventName, handleSyncStatusChanged)
+
+    return () => {
+      window.removeEventListener(syncStatusChangedEventName, handleSyncStatusChanged)
+    }
+  }, [])
 
   useEffect(() => {
     if (!pageNumber || page !== parsedPage) {
@@ -69,26 +95,35 @@ export const WorkoutsPage = (): JSX.Element => {
       {!loading && !error && items.length === 0 ? <p>No workouts yet.</p> : null}
 
       {!loading && !error && items.length > 0 ? (
-        <table className="workouts-table">
-          <thead>
-            <tr>
-              <th>Workout</th>
-              <th>Date</th>
-              <th>Details</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.id}>
-                <td>{item.name}</td>
-                <td>{formatWorkoutDate(item.date)}</td>
-                <td>
-                  <Link to={`/training_log/${page}/workouts/${item.id}`}>View Workout</Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ul className="workout-feed" aria-label="Workout list">
+          {items.map((item) => {
+            const syncLabel = getSyncLabel(item.pendingState)
+
+            return (
+              <li key={item.id} className="workout-card">
+                <div className="workout-card-header">
+                  <Link className="workout-card-title" to={`/training_log/${page}/workouts/${item.id}`}>
+                    {item.name}
+                  </Link>
+                  {syncLabel ? (
+                    <span
+                      className={`status-chip ${
+                        item.pendingState === 'conflict' ? 'status-chip-conflict' : 'status-chip-pending'
+                      }`}
+                    >
+                      {syncLabel}
+                    </span>
+                  ) : null}
+                </div>
+                <p className="workout-card-meta">{formatWorkoutDate(item.date)}</p>
+                <p className="workout-card-meta">{item.weightDescription}</p>
+                <Link className="secondary-link" to={`/training_log/${page}/workouts/${item.id}`}>
+                  View Workout
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
       ) : null}
 
       <Pagination pageNumber={Math.min(page, totalPages)} totalPages={totalPages} />

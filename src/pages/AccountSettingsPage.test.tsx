@@ -36,6 +36,9 @@ describe('AccountSettingsPage', () => {
     vi.mocked(useAuth).mockReturnValue({
       currentUser: { username: 'demo' },
       loading: false,
+      isOffline: false,
+      pendingCount: 0,
+      lastSyncError: null,
       refresh: vi.fn(),
       logout: vi.fn(),
       deleteAccount: vi.fn(),
@@ -48,6 +51,9 @@ describe('AccountSettingsPage', () => {
     vi.mocked(useAuth).mockReturnValue({
       currentUser: { username: 'demo' },
       loading: false,
+      isOffline: false,
+      pendingCount: 0,
+      lastSyncError: null,
       refresh: vi.fn(),
       logout: vi.fn(),
       deleteAccount: vi.fn(),
@@ -75,6 +81,9 @@ describe('AccountSettingsPage', () => {
     vi.mocked(useAuth).mockReturnValue({
       currentUser: { username: 'demo' },
       loading: false,
+      isOffline: false,
+      pendingCount: 0,
+      lastSyncError: null,
       refresh: vi.fn(),
       logout: vi.fn(),
       deleteAccount,

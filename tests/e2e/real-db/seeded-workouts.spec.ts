@@ -12,8 +12,8 @@ const openUpperBodyWorkout = async (page: Page): Promise<void> => {
 
   await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
 
-  const upperBodyRow = page.getByRole('row').filter({ hasText: 'Upper Body' })
-  await upperBodyRow.getByRole('link', { name: 'View Workout' }).click()
+  const upperBodyCard = page.getByRole('listitem').filter({ hasText: 'Upper Body' }).first()
+  await upperBodyCard.getByRole('link', { name: 'View Workout' }).click()
   await expect(page.getByRole('heading', { name: 'Upper Body' })).toBeVisible()
 }
 
@@ -42,11 +42,11 @@ test('seeded user can browse the real database', async ({ page }) => {
 
   await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
   await expect(page.getByText('Playwright User')).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'Upper Body' })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'Lower Body' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Upper Body' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Lower Body' })).toBeVisible()
 
-  const upperBodyRow = page.getByRole('row').filter({ hasText: 'Upper Body' })
-  await upperBodyRow.getByRole('link', { name: 'View Workout' }).click()
+  const upperBodyCard = page.getByRole('listitem').filter({ hasText: 'Upper Body' }).first()
+  await upperBodyCard.getByRole('link', { name: 'View Workout' }).click()
 
   await expect(page.getByRole('heading', { name: 'Upper Body' })).toBeVisible()
   await expect(page.getByText('Bench Press')).toBeVisible()

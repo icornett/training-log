@@ -57,8 +57,32 @@ describe('WorkoutsPage', () => {
     await waitFor(() => {
       expect(api.listWorkouts).toHaveBeenCalledWith(1)
     })
-    expect(await screen.findByRole('cell', { name: 'Upper Body' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Upper Body' })).toBeInTheDocument()
     expect(screen.getByText('Page 1 of 2')).toBeInTheDocument()
+  })
+
+  it('shows pending sync markers on workout cards', async () => {
+    vi.mocked(api.listWorkouts).mockResolvedValue({
+      items: [
+        {
+          id: -101,
+          name: 'Offline Legs',
+          date: '2026-06-16',
+          username: 'Jane Doe',
+          numSets: 0,
+          numReps: 0,
+          weightDescription: 'Pending sync',
+          clientId: 'workout-local-1',
+          lastSyncedAt: null,
+          pendingState: 'pending',
+        },
+      ],
+      totalPages: 1,
+    })
+
+    renderPage()
+
+    expect((await screen.findAllByText('Pending sync')).length).toBeGreaterThan(0)
   })
 
   it('renders empty state when there are no workouts', async () => {

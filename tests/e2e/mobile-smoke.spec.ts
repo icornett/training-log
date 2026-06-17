@@ -17,6 +17,6 @@ test('mobile users can load workouts from seeded sqlite data', async ({ page }) 
   await page.goto('/training_log/1/workouts')
 
   await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'Upper Body' })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'Lower Body' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Upper Body' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Lower Body' })).toBeVisible()
 })
