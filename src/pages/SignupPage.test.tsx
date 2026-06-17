@@ -89,4 +89,15 @@ describe('SignupPage', () => {
 
     expect(await screen.findByText('Username already exists.')).toBeInTheDocument()
   })
+
+  it('renders a privacy notice link to the privacy policy page', () => {
+    render(
+      <MemoryRouter>
+        <SignupPage />
+      </MemoryRouter>,
+    )
+
+    const privacyLink = screen.getByRole('link', { name: /privacy notice/i })
+    expect(privacyLink).toHaveAttribute('href', '/privacy')
+  })
 })

@@ -235,6 +235,11 @@ button:hover {
   padding-top: 1rem;
 }
 
+.privacy-content {
+  line-height: 1.6;
+  max-width: 70ch;
+}
+
 .compact-form {
   max-width: 420px;
 }
