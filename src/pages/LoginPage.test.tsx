@@ -33,10 +33,13 @@ describe('LoginPage', () => {
     vi.mocked(useAuth).mockReturnValue({
       currentUser: null,
       loading: false,
+      isOffline: false,
+      pendingCount: 0,
+      lastSyncError: null,
       refresh: vi.fn().mockResolvedValue(undefined),
       logout: vi.fn(),
       deleteAccount: vi.fn(),
-        exportAccountData: vi.fn(),
+      exportAccountData: vi.fn(),
     })
   })
 
@@ -45,10 +48,13 @@ describe('LoginPage', () => {
     vi.mocked(useAuth).mockReturnValue({
       currentUser: null,
       loading: false,
+      isOffline: false,
+      pendingCount: 0,
+      lastSyncError: null,
       refresh,
       logout: vi.fn(),
       deleteAccount: vi.fn(),
-        exportAccountData: vi.fn(),
+      exportAccountData: vi.fn(),
     })
 
     render(
@@ -88,10 +94,13 @@ describe('LoginPage', () => {
     vi.mocked(useAuth).mockReturnValue({
       currentUser: { username: 'Jane Doe' },
       loading: false,
+      isOffline: false,
+      pendingCount: 0,
+      lastSyncError: null,
       refresh: vi.fn(),
       logout: vi.fn(),
       deleteAccount: vi.fn(),
-        exportAccountData: vi.fn(),
+      exportAccountData: vi.fn(),
     })
 
     render(

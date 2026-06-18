@@ -7,6 +7,30 @@ export interface SessionUser {
   username: string
 }
 
+export type SyncState = 'synced' | 'pending' | 'conflict'
+
+export type PendingEntityType = 'workout' | 'exercise'
+
+export type PendingOperationAction = 'create' | 'update' | 'delete'
+
+export interface PendingOperation {
+  operationId: string
+  deviceId: string
+  entityType: PendingEntityType
+  action: PendingOperationAction
+  payload: Record<string, unknown>
+  createdAt: string
+  retryCount: number
+}
+
+export interface ConflictPayload {
+  operationId: string
+  entityType: PendingEntityType
+  serverValue: Record<string, unknown>
+  clientValue: Record<string, unknown>
+  detectedAt: string
+}
+
 export interface WorkoutListItem {
   id: number
   name: string
@@ -15,6 +39,9 @@ export interface WorkoutListItem {
   numSets: number
   numReps: number
   weightDescription: string
+  clientId?: string
+  lastSyncedAt?: string | null
+  pendingState?: SyncState
 }
 
 export interface Exercise {
@@ -27,6 +54,9 @@ export interface Exercise {
   durationMinutes: number | null
   speedMph: number | null
   notes: string | null
+  clientId?: string
+  lastSyncedAt?: string | null
+  pendingState?: SyncState
 }
 
 export interface WorkoutDetails {
@@ -38,6 +68,9 @@ export interface WorkoutDetails {
   numReps: number
   weightDescription: string
   exercises: Exercise[]
+  clientId?: string
+  lastSyncedAt?: string | null
+  pendingState?: SyncState
 }
 
 export interface WorkoutCreateInput {

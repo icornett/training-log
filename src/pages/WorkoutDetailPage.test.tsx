@@ -63,6 +63,9 @@ describe('WorkoutDetailPage', () => {
     vi.mocked(useAuth).mockReturnValue({
       currentUser: { username: 'Jane Doe' },
       loading: false,
+      isOffline: false,
+      pendingCount: 0,
+      lastSyncError: null,
       refresh: vi.fn(),
       logout: vi.fn(),
       deleteAccount: vi.fn(),
@@ -141,7 +144,7 @@ describe('WorkoutDetailPage', () => {
         speedMph: undefined,
         speedKph: undefined,
         notes: '',
-      })
+      }, expect.objectContaining({ id: 1 }))
     })
     expect(await screen.findByText('Exercise added.')).toBeInTheDocument()
   })
@@ -191,7 +194,7 @@ describe('WorkoutDetailPage', () => {
         speedMph: undefined,
         speedKph: undefined,
         notes: '',
-      })
+      }, expect.objectContaining({ id: 1 }))
     })
   })
 
@@ -241,7 +244,7 @@ describe('WorkoutDetailPage', () => {
         speedMph: undefined,
         speedKph: undefined,
         notes: '',
-      })
+      }, expect.objectContaining({ id: 1 }))
     })
   })
 
@@ -330,7 +333,7 @@ describe('WorkoutDetailPage', () => {
         speedMph: undefined,
         speedKph: undefined,
         notes: '',
-      })
+      }, expect.objectContaining({ id: 1 }))
     })
     expect(await screen.findByText('Exercise updated.')).toBeInTheDocument()
   })
@@ -342,7 +345,7 @@ describe('WorkoutDetailPage', () => {
     await screen.findByRole('heading', { name: 'Upper Body' })
     await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
     await waitFor(() => {
-      expect(api.deleteExercise).toHaveBeenCalledWith(1, 11)
+      expect(api.deleteExercise).toHaveBeenCalledWith(1, 11, expect.objectContaining({ id: 1 }))
     })
     expect(await screen.findByText('Exercise deleted.')).toBeInTheDocument()
   })
@@ -407,7 +410,7 @@ describe('WorkoutDetailPage', () => {
         speedMph: 6,
         speedKph: undefined,
         notes: '',
-      })
+      }, expect.objectContaining({ id: 1 }))
     })
     expect(await screen.findByText('Exercise added.')).toBeInTheDocument()
   })
@@ -451,7 +454,7 @@ describe('WorkoutDetailPage', () => {
         speedMph: undefined,
         speedKph: 20,
         notes: '',
-      })
+      }, expect.objectContaining({ id: 1 }))
     })
   })
 
@@ -476,6 +479,40 @@ describe('WorkoutDetailPage', () => {
     renderPage()
     expect(await screen.findByText('30 min @ 6 mph (9.7 km/h)')).toBeInTheDocument()
   })
+
+  it('shows sync state markers for pending workout and exercises', async () => {
+    vi.mocked(api.getWorkout).mockResolvedValue({
+      ...workoutFixture,
+      pendingState: 'pending',
+      exercises: [
+        {
+          ...workoutFixture.exercises[0],
+          pendingState: 'pending',
+        },
+      ],
+    })
+
+    renderPage()
+
+    expect((await screen.findAllByText('Pending sync')).length).toBeGreaterThan(1)
+  })
+
+  it('shows conflict markers for conflicting workout changes', async () => {
+    vi.mocked(api.getWorkout).mockResolvedValue({
+      ...workoutFixture,
+      pendingState: 'conflict',
+      exercises: [
+        {
+          ...workoutFixture.exercises[0],
+          pendingState: 'conflict',
+        },
+      ],
+    })
+
+    renderPage()
+
+    expect((await screen.findAllByText('Sync conflict')).length).toBeGreaterThan(1)
+  })
 })
 
 describe('WorkoutDetailPage — pending mode', () => {
@@ -484,6 +521,9 @@ describe('WorkoutDetailPage — pending mode', () => {
     vi.mocked(useAuth).mockReturnValue({
       currentUser: { username: 'Jane Doe' },
       loading: false,
+      isOffline: false,
+      pendingCount: 0,
+      lastSyncError: null,
       refresh: vi.fn(),
       logout: vi.fn(),
       deleteAccount: vi.fn(),

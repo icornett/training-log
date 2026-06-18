@@ -116,7 +116,7 @@ test('user can complete a full journey against the real database', async ({ page
 
     await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
     await expect(page.getByText(username)).toBeVisible()
-    await page.getByRole('row').filter({ hasText: 'Power Day' }).getByRole('link', { name: 'View Workout' }).click()
+    await page.getByRole('listitem').filter({ hasText: 'Power Day' }).first().getByRole('link', { name: 'View Workout' }).click()
 
     await expect(page.getByRole('heading', { name: 'Power Day' })).toBeVisible()
     await expect(page.getByRole('listitem').filter({ hasText: 'Pull Ups Updated' })).toBeVisible()

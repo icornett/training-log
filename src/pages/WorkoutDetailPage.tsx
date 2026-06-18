@@ -2,10 +2,23 @@ import { FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { useAuth } from '../context/AuthContext'
+import { syncStatusChangedEventName } from '../services/localStore'
 import { api } from '../services/api'
 import type { WorkoutDetails } from '../types/domain'
 import { formatWorkoutDate } from '../utils/date'
 import { mphToKph } from '../utils/speed'
+
+const getSyncLabel = (pendingState?: WorkoutDetails['pendingState']): string | null => {
+  if (pendingState === 'pending') {
+    return 'Pending sync'
+  }
+
+  if (pendingState === 'conflict') {
+    return 'Sync conflict'
+  }
+
+  return null
+}
 
 export const WorkoutDetailPage = (): JSX.Element | null => {
   const navigate = useNavigate();
@@ -41,6 +54,7 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
   const [editingExerciseId, setEditingExerciseId] = useState<number | null>(
     null,
   );
+  const [syncVersion, setSyncVersion] = useState(0);
 
   useEffect(() => {
     if (isPending) return;
@@ -82,7 +96,19 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
     return () => {
       disposed = true;
     };
-  }, [id, isPending]);
+  }, [id, isPending, syncVersion]);
+
+  useEffect(() => {
+    const handleSyncStatusChanged = (): void => {
+      setSyncVersion((value) => value + 1);
+    };
+
+    window.addEventListener(syncStatusChangedEventName, handleSyncStatusChanged);
+
+    return () => {
+      window.removeEventListener(syncStatusChangedEventName, handleSyncStatusChanged);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isPending) return;
@@ -251,12 +277,15 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
 
       const updatedWorkout =
         editingExerciseId === null
-          ? await api.createExercise(id, payload)
-          : await api.updateExercise({
-              workoutId: id,
-              exerciseId: editingExerciseId,
-              ...payload,
-            });
+          ? await api.createExercise(id, payload, workout ?? undefined)
+          : await api.updateExercise(
+              {
+                workoutId: id,
+                exerciseId: editingExerciseId,
+                ...payload,
+              },
+              workout ?? undefined,
+            );
 
       setWorkout(updatedWorkout);
       setMessage(
@@ -292,7 +321,7 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
 
   const handleDeleteExercise = async (exerciseId: number): Promise<void> => {
     try {
-      const updatedWorkout = await api.deleteExercise(id, exerciseId);
+      const updatedWorkout = await api.deleteExercise(id, exerciseId, workout ?? undefined);
       setWorkout(updatedWorkout);
       setMessage("Exercise deleted.");
       setError(null);
@@ -466,7 +495,18 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
   return (
     <section className="card">
       <div className="title-row">
-        <h1>{workout.name}</h1>
+          <div className="title-stack">
+            <h1>{workout?.name}</h1>
+            {getSyncLabel(workout?.pendingState) ? (
+              <span
+                className={`status-chip ${
+                  workout?.pendingState === 'conflict' ? 'status-chip-conflict' : 'status-chip-pending'
+                }`}
+              >
+                {getSyncLabel(workout?.pendingState)}
+              </span>
+            ) : null}
+          </div>
         <Link className="secondary-link" to={`/training_log/${page}/workouts`}>
           Back to workouts
         </Link>
@@ -532,6 +572,15 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
               <div className="exercise-row">
                 <div>
                   <strong>{exercise.description}</strong>
+                  {getSyncLabel(exercise.pendingState) ? (
+                    <span
+                      className={`status-chip inline-status-chip ${
+                        exercise.pendingState === 'conflict' ? 'status-chip-conflict' : 'status-chip-pending'
+                      }`}
+                    >
+                      {getSyncLabel(exercise.pendingState)}
+                    </span>
+                  ) : null}
                   <span>
                     {exercise.exerciseType === "strength" &&
                     exercise.numSets &&

@@ -33,6 +33,9 @@ describe('SignupPage', () => {
     vi.mocked(useAuth).mockReturnValue({
       currentUser: null,
       loading: false,
+      isOffline: false,
+      pendingCount: 0,
+      lastSyncError: null,
       refresh: vi.fn().mockResolvedValue(undefined),
       logout: vi.fn(),
       deleteAccount: vi.fn(),
@@ -45,6 +48,9 @@ describe('SignupPage', () => {
     vi.mocked(useAuth).mockReturnValue({
       currentUser: null,
       loading: false,
+      isOffline: false,
+      pendingCount: 0,
+      lastSyncError: null,
       refresh,
       logout: vi.fn(),
       deleteAccount: vi.fn(),

@@ -123,11 +123,7 @@ test('sqlite user can complete a full workflow', async ({ page }, testInfo) => {
     await page.getByRole('button', { name: 'Login' }).click()
 
     await expectWorkoutsLanding(page, 'Login')
-    await page
-      .getByRole('row')
-      .filter({ hasText: workoutName })
-      .getByRole('link', { name: 'View Workout' })
-      .click()
+    await page.getByRole('listitem').filter({ hasText: workoutName }).first().getByRole('link', { name: 'View Workout' }).click()
 
     await expect(page.getByRole('heading', { name: workoutName })).toBeVisible()
     for (const exercise of exercises) {
@@ -173,7 +169,7 @@ test('sqlite user can browse workouts', async ({ page }, testInfo) => {
 
     // Verify workout appears in list
     await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
-    await expect(page.getByRole('row').filter({ hasText: 'Browse Test' })).toBeVisible()
+    await expect(page.getByRole('listitem').filter({ hasText: 'Browse Test' }).first()).toBeVisible()
   } finally {
     // Always cleanup
     await cleanupUserIfPresent(page, username, password)
