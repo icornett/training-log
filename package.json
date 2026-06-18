@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "postinstall": "npm --prefix api ci",
-    "prepare": "simple-git-hooks",
+    "prepare": "command -v simple-git-hooks >/dev/null 2>&1 && simple-git-hooks || echo 'simple-git-hooks not installed; skipping prepare'",
     "dev": "vite",
     "dev:web": "vite",
     "dev:swa": "swa start ./dist --api-location ./api --host 127.0.0.1 --port 4280",
