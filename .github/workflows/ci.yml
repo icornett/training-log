@@ -29,7 +29,7 @@ jobs:
             playwright-${{ runner.os }}-
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=dev
 
       - name: Typecheck
         run: npm run typecheck
