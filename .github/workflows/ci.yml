@@ -78,8 +78,8 @@ jobs:
           path: test-results/
           if-no-files-found: ignore
 
-  sqlite-e2e:
-    name: SQLite E2E Tests
+  localdb-e2e:
+    name: Local DB E2E Tests
     runs-on: ubuntu-latest
     needs: [validate]
     steps:
@@ -105,42 +105,13 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox webkit
 
-      - name: Prepare local Postgres for SQLite E2E
-        run: npm run db:local:prepare
-
       - name: Install Azure Functions Core Tools
         run: npm i -g azure-functions-core-tools@4 --unsafe-perm true
 
-      - name: SQLite E2E tests
+      - name: Local DB E2E tests
         run: |
-          npm run dev:api:func:localdb > /tmp/func.log 2>&1 &
-          API_PID=$!
-          npm run dev:swa:proxy > /tmp/swa.log 2>&1 &
-          SWA_PID=$!
-          trap 'kill "$API_PID" "$SWA_PID" || true' EXIT
-          npx wait-on http://127.0.0.1:7071 http://127.0.0.1:4280 --timeout 90000
-
-          echo "Waiting for API routes to be ready behind SWA proxy..."
-          for i in {1..30}; do
-            status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:4280/api/account || true)
-            if [ "$status" = "401" ]; then
-              echo "API is ready (GET /api/account -> 401)."
-              break
-            fi
-
-            if [ "$i" -eq 30 ]; then
-              echo "API route readiness check failed. Last status: $status"
-              echo "--- API log tail ---"
-              tail -n 120 /tmp/func.log || true
-              echo "--- SWA log tail ---"
-              tail -n 120 /tmp/swa.log || true
-              exit 1
-            fi
-
-            sleep 2
-          done
-
-          BASE_URL=http://127.0.0.1:4280 npm run test:e2e:sqlite
+          npm run db:localdb:stack:prepare
+          sh ./bin/run-localdb-e2e.sh
         env:
           SESSION_SECRET: ci-local-session-secret
           AzureWebJobsStorage: UseDevelopmentStorage=true
@@ -165,14 +136,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-test-results-sqlite
+          name: playwright-test-results-localdb
           path: test-results/
           if-no-files-found: ignore
 
   version:
     name: Auto Semver Tag
     runs-on: ubuntu-latest
-    needs: [validate, mobile-e2e, sqlite-e2e]
+    needs: [validate, mobile-e2e, localdb-e2e]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write

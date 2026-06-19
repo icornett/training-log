@@ -11,9 +11,10 @@
     "dev:swa": "swa start ./dist --api-location ./api --host 127.0.0.1 --port 4280",
     "dev:swa:proxy": "swa start ./dist --api-devserver-url http://127.0.0.1:7071 --host 127.0.0.1 --port 4280",
     "db:local:prepare": "sh ./bin/prepare-local-db.sh",
+    "db:localdb:stack:prepare": "npm run db:local:prepare && npm run build && npm run build:api",
     "dev:api:func": "npm --prefix api run start",
-    "dev:api:func:localdb": "DATABASE_URL=postgresql://traininglog:traininglog@127.0.0.1:55432/training_log?sslmode=disable npm --prefix api run start",
-    "dev:sqlite:stack": "concurrently -k -n api,swa -c cyan,magenta \"npm run dev:api:func:localdb\" \"npm run dev:swa:proxy\"",
+    "dev:api:func:localdb": "DATABASE_URL=postgresql://traininglog:traininglog@${LOCAL_DB_HOST:-127.0.0.1}:55432/training_log?sslmode=disable npm --prefix api run start",
+    "dev:localdb:stack": "concurrently -k -n api,swa -c cyan,magenta \"npm run dev:api:func:localdb\" \"npm run dev:swa:proxy\"",
     "dev:api:build": "tsc -p api/tsconfig.json --watch",
     "dev:api:start": "wait-on api/dist/index.js && npm --prefix api run start",
     "dev:full": "concurrently -k -n api-build,api,web -c yellow,cyan,magenta \"npm run dev:api:build\" \"npm run dev:api:start\" \"npm run dev:web\"",
@@ -29,7 +30,8 @@
     "test:web:ci": "vitest run --coverage",
     "test:e2e:mobile": "playwright test --project=ios-safari --project=android-chrome",
     "test:e2e:real-db": "playwright test -c playwright.real-db.config.ts --project=ios-safari --project=android-chrome",
-    "test:e2e:sqlite": "playwright test -c playwright.sqlite.config.ts",
+    "test:e2e:localdb": "playwright test -c playwright.sqlite.config.ts",
+    "test:e2e:localdb:container": "sh ./bin/run-localdb-e2e-container.sh",
     "precommit": "npm run typecheck && npm run test:api && npm run test:web"
   },
   "dependencies": {
