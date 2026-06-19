@@ -1,4 +1,4 @@
-# SQLite E2E Testing Guide
+# Local DB E2E Testing Guide
 
 ## Overview
 
@@ -7,28 +7,36 @@ The project now includes local-database end-to-end tests that allow you to test 
 ## Test Structure
 
 - **Real-DB tests** (`tests/e2e/real-db/`): Run against a pre-seeded Azure PostgreSQL database in CI/CD pipeline
-- **SQLite tests** (`tests/e2e/sqlite/`): Run against a local Dockerized PostgreSQL database for local development
-- **Default tests** (`tests/e2e/mobile-*`): Run on PR with standard setup (excluded real-db and sqlite)
+- **Local DB tests** (`tests/e2e/sqlite/`): Run against a local Dockerized PostgreSQL database for local development
+- **Default tests** (`tests/e2e/mobile-*`): Run on PR with standard setup (excluded real-db and local-db)
 
-## Running SQLite Tests Locally
+## Running Local DB Tests Locally
 
 ### Prerequisites
 
 1. **Install Docker** and ensure Docker Desktop is running.
 
-2. **Start and seed the local DB**:
+2. **Containerized runner that mirrors the Playwright CI image**:
+  ```bash
+  npm run test:e2e:localdb:container
+  ```
+  This is the closest local match for CI because it runs the suite inside
+  `mcr.microsoft.com/playwright:v1.61.0-jammy` while still using the same
+  Dockerized Postgres instance on your machine.
+
+3. **Start and seed the local DB**:
    ```bash
   npm run db:local:prepare
    ```
 
-3. **Build the frontend**:
+4. **Build the frontend**:
    ```bash
    npm run build
    ```
 
-4. **Start the local API + SWA stack**:
+5. **Start the local API + SWA stack**:
    ```bash
-  npm run dev:sqlite:stack
+  npm run dev:localdb:stack
    ```
   This serves the frontend and API at `http://127.0.0.1:4280`
 
@@ -37,8 +45,11 @@ The project now includes local-database end-to-end tests that allow you to test 
 In a separate terminal:
 
 ```bash
-# Run all SQLite tests across Chromium, Firefox, and WebKit
-npm run test:e2e:sqlite
+# Run all local-db tests across Chromium, Firefox, and WebKit
+npm run test:e2e:localdb
+
+# Run the same suite inside the Playwright container image used for CI browser tooling
+npm run test:e2e:localdb:container
 
 # Run tests on a specific browser
 npx playwright test -c playwright.sqlite.config.ts --project=chromium
@@ -50,7 +61,7 @@ npx playwright test -c playwright.sqlite.config.ts -g "user can complete a full 
 npx playwright test -c playwright.sqlite.config.ts --ui
 
 # Generate and view the HTML report
-npm run test:e2e:sqlite
+npm run test:e2e:localdb
 npx playwright show-report
 ```
 
@@ -72,7 +83,7 @@ Tests workout list browsing and navigation
 npx playwright test -c playwright.sqlite.config.ts -g "user can browse workouts"
 ```
 
-## How SQLite Tests Work
+## How Local DB Tests Work
 
 1. **Isolated test data**: Each test creates its own user and workout data
 2. **Automatic cleanup**: `finally` blocks ensure test data is deleted after each test
@@ -91,7 +102,8 @@ const makeUsername = (projectName: string): string => {
 
 - **PR builds**: Run default mobile tests (fast feedback)
 - **Infrastructure pipeline** (separate repo): Runs real-db tests against pre-seeded Azure PostgreSQL
-- **Local development**: Run SQLite tests before committing
+- **Local development**: Run local-db tests before committing
+- **Closest CI mirror locally**: `npm run test:e2e:localdb:container`
 
 ## Troubleshooting
 
@@ -106,7 +118,7 @@ const makeUsername = (projectName: string): string => {
 
 **Issue**: Selectors can't find form inputs
 **Solution**: This often means the page didn't load. Check:
-- Local stack is running (`npm run dev:sqlite:stack`)
+- Local stack is running (`npm run dev:localdb:stack`)
 - Frontend was rebuilt (`npm run build`)
 - BASE_URL in error message matches your setup
 
@@ -115,14 +127,14 @@ const makeUsername = (projectName: string): string => {
 **Issue**: Tests take longer than expected
 **Solution**: 
 - Disable video recording: edit `playwright.sqlite.config.ts` and set `video: 'off'`
-- Run in parallel (default is serial for SQLite to avoid DB contention): edit workers in config
+- Run in parallel (default is serial for the local DB suite to avoid DB contention): edit workers in config
 - Close other applications consuming disk I/O
 
 ## Development Workflow
 
 1. **Make changes** to UI or API
 2. **Run unit tests**: `npm run test:web && npm run test:api`
-3. **Run SQLite E2E tests**: `npm run test:e2e:sqlite`
+3. **Run local-db E2E tests**: `npm run test:e2e:localdb`
 4. **Verify behavior** locally in browser: `npm run dev`
 5. **Commit and push** - PR will run default mobile tests
 6. **After merge** - Infrastructure pipeline runs real-db tests
@@ -132,7 +144,7 @@ const makeUsername = (projectName: string): string => {
 1. Create a new `.spec.ts` file in `tests/e2e/sqlite/`
 2. Follow the pattern: signup/create data → test behavior → cleanup in finally block
 3. Use unique identifiers for test data (include timestamp)
-4. Run locally: `npm run test:e2e:sqlite`
+4. Run locally: `npm run test:e2e:localdb`
 
 Example template:
 ```typescript

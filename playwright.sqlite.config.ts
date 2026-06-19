@@ -16,15 +16,15 @@ import { defineConfig, devices } from '@playwright/test'
  *      Run: npm run build:api    (compiles API TypeScript)
  *
  * Playwright auto-starts the full stack when you run:
- *   npm run test:e2e:sqlite
+ *   npm run test:e2e:localdb
  *
  * Or start it manually and reuse across runs:
  *   npm run db:local:prepare
- *   npm run dev:sqlite:stack
- *   BASE_URL=http://127.0.0.1:4280 npm run test:e2e:sqlite
+ *   npm run dev:localdb:stack
+ *   BASE_URL=http://127.0.0.1:4280 npm run test:e2e:localdb
  */
 
-const sqliteBaseURL = process.env.BASE_URL ?? 'http://127.0.0.1:4280'
+const localDbBaseURL = process.env.BASE_URL ?? 'http://127.0.0.1:4280'
 
 export default defineConfig({
   testDir: './tests/e2e/sqlite',
@@ -35,7 +35,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'html',
   use: {
-    baseURL: sqliteBaseURL,
+    baseURL: localDbBaseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -59,8 +59,8 @@ export default defineConfig({
     ? undefined
     : {
         command:
-          'npm run db:local:prepare && npm run build && npm run build:api && DISABLE_TIMER_TRIGGERS=true FUNCTIONS_WORKER_RUNTIME=node SESSION_SECRET=sqlite-local-session-secret npm run dev:sqlite:stack',
-        url: sqliteBaseURL,
+          'npm run db:localdb:stack:prepare && DISABLE_TIMER_TRIGGERS=true FUNCTIONS_WORKER_RUNTIME=node SESSION_SECRET=localdb-session-secret npm run dev:localdb:stack',
+        url: localDbBaseURL,
         reuseExistingServer: true,
         timeout: 120_000,
       },
