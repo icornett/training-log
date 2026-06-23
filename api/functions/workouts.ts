@@ -1,12 +1,15 @@
 import { app, type HttpRequest } from '@azure/functions'
 
 import { getSessionUser } from '../shared/auth.js'
+import { extractOperationId } from '../shared/idempotency.js'
 import { json, parseJsonBody } from '../shared/http.js'
 import {
   addWorkout,
   countWorkoutsByUsername,
   findUserIdByUsername,
   listWorkoutsByUsername,
+  getProcessedOperation,
+  storeProcessedOperation,
 } from '../shared/repository.js'
 import type { SessionUser, WorkoutRow } from '../shared/types.js'
 import { invalidWorkoutMessage, requireExistingUser } from '../shared/validation.js'
@@ -14,6 +17,7 @@ import { invalidWorkoutMessage, requireExistingUser } from '../shared/validation
 interface CreateWorkoutBody {
   name?: string
   date?: string
+  operationId?: string
 }
 
 interface WorkoutsDependencies {
@@ -61,6 +65,21 @@ export const createWorkoutsHandler = (deps: WorkoutsDependencies) => {
     const name = body.name?.trim() ?? ''
     const date = body.date ?? ''
 
+    // Extract operationId for deduplication
+    const operationId = await extractOperationId(request)
+
+    // Check for duplicate operation if operationId provided
+    if (operationId) {
+      const userId = await deps.findUserId(user.username)
+      if (userId) {
+        const cached = await getProcessedOperation(userId, operationId)
+        if (cached) {
+          // Return cached result for duplicate request
+          return json(200, cached.body)
+        }
+      }
+    }
+
     const invalidMsg = await deps.validateWorkout(name, date, user.username, null)
     if (invalidMsg) {
       return json(422, { error: invalidMsg })
@@ -72,11 +91,21 @@ export const createWorkoutsHandler = (deps: WorkoutsDependencies) => {
     }
 
     const newWorkoutId = await deps.createWorkout(name, date, userId)
-
-    return json(201, {
+    const result = {
       id: newWorkoutId,
       message: "You've successfully created a new workout.",
-    })
+    }
+
+    // Cache the result for future dedup checks
+    if (operationId) {
+      try {
+        await storeProcessedOperation(userId, operationId, result)
+      } catch {
+        // Silently fail if caching fails
+      }
+    }
+
+    return json(201, result)
   }
 }
 

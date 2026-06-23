@@ -1,8 +1,17 @@
 import { app, type HttpRequest } from '@azure/functions'
 
 import { getSessionUser } from '../shared/auth.js'
+import { extractOperationId } from '../shared/idempotency.js'
 import { getNumericPathParam, json, parseJsonBody } from '../shared/http.js'
-import { deleteExercise, getExerciseForWorkout, updateExercise, workoutExists } from '../shared/repository.js'
+import {
+  deleteExercise,
+  getExerciseForWorkout,
+  updateExercise,
+  workoutExists,
+  findUserIdByUsername,
+  getProcessedOperation,
+  storeProcessedOperation,
+} from '../shared/repository.js'
 import {
   invalidExerciseEditForWorkoutMessage,
   requireExistingUser,
@@ -21,6 +30,7 @@ interface UpdateExerciseBody {
   speedMph?: number
   speedKph?: number
   notes?: string
+  operationId?: string
 }
 
 // Skip registration during tests to avoid Azure Functions runtime detection warning
@@ -62,11 +72,55 @@ if (process.env.NODE_ENV !== 'test') {
     }
 
     if (request.method === 'DELETE') {
+      // Extract operationId for deduplication
+      const operationId = await extractOperationId(request)
+
+      // Check for duplicate operation if operationId provided
+      if (operationId) {
+        const userId = await findUserIdByUsername(user.username)
+        if (userId) {
+          const cached = await getProcessedOperation(userId, operationId)
+          if (cached) {
+            // Return cached result for duplicate request
+            return json(200, cached.body)
+          }
+        }
+      }
+
       await deleteExercise(exerciseId)
-      return json(200, { message: `You removed ${exercise.description} from this workout.` })
+      const result = { message: `You removed ${exercise.description} from this workout.` }
+
+      // Cache the result for future dedup checks
+      if (operationId) {
+        try {
+          const userId = await findUserIdByUsername(user.username)
+          if (userId) {
+            await storeProcessedOperation(userId, operationId, result)
+          }
+        } catch {
+          // Silently fail if caching fails
+        }
+      }
+
+      return json(200, result)
     }
 
     const body = await parseJsonBody<UpdateExerciseBody>(request)
+
+    // Extract operationId for deduplication (for PUT)
+    const operationId = await extractOperationId(request)
+
+    // Check for duplicate operation if operationId provided
+    if (operationId) {
+      const userId = await findUserIdByUsername(user.username)
+      if (userId) {
+        const cached = await getProcessedOperation(userId, operationId)
+        if (cached) {
+          // Return cached result for duplicate request
+          return json(200, cached.body)
+        }
+      }
+    }
     const description = body.description ?? ''
     const exerciseType = body.exerciseType ?? exercise.exerciseType
     const numSets = body.numSets !== undefined ? Number(body.numSets) : exercise.numSets
@@ -103,7 +157,21 @@ if (process.env.NODE_ENV !== 'test') {
       speedMph,
       notes,
     )
-    return json(200, { message: `You've successfully updated exercise #${exerciseId}` })
+    const result = { message: `You've successfully updated exercise #${exerciseId}` }
+
+    // Cache the result for future dedup checks
+    if (operationId) {
+      try {
+        const userId = await findUserIdByUsername(user.username)
+        if (userId) {
+          await storeProcessedOperation(userId, operationId, result)
+        }
+      } catch {
+        // Silently fail if caching fails
+      }
+    }
+
+    return json(200, result)
   },
   })
 }

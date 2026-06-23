@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals'
 import type { HttpRequest } from '@azure/functions'
 
 import { createWorkoutsHandler } from './workouts.js'
@@ -11,6 +12,7 @@ const makeRequest = (
     method,
     query: { get: (key: string) => options.query?.[key] ?? null } as URLSearchParams,
     json: async () => options.body ?? {},
+    headers: new Map(),
   }) as unknown as HttpRequest
 
 describe('createWorkoutsHandler', () => {
@@ -33,6 +35,10 @@ describe('createWorkoutsHandler', () => {
     createWorkout: async () => 42,
     validateWorkout: async (): Promise<string | null> => null,
   }
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
 
   it('returns 401 when session user is not present', async () => {
     const handler = createWorkoutsHandler({ ...baseDeps, getUser: () => null })
