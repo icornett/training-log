@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs'
 import { and, count, desc, eq, inArray, isNotNull, isNull, lte } from 'drizzle-orm'
 
 import { db } from './db.js'
-import { auditLogs, exercises, users, workouts } from './schema.js'
+import { auditLogs, exercises, operationDedup, users, workouts } from './schema.js'
 import type {
   AccountExportPayload,
   ExerciseRow,
@@ -441,4 +441,40 @@ export const workoutExists = async (workoutId: number): Promise<boolean> => {
 
 export const exerciseExists = async (exerciseId: number): Promise<boolean> => {
   return (await getExerciseById(exerciseId)) !== null
+}
+
+// Offline-first sync idempotency support
+
+export const getProcessedOperation = async (
+  userId: number,
+  operationId: string,
+): Promise<Record<string, unknown> | null> => {
+  const rows = await db
+    .select({ resultJson: operationDedup.resultJson })
+    .from(operationDedup)
+    .where(and(eq(operationDedup.userId, userId), eq(operationDedup.operationId, operationId)))
+    .limit(1)
+
+  if (rows.length === 0) {
+    return null
+  }
+
+  try {
+    const result = rows[0].resultJson
+    return typeof result === 'object' && result !== null ? (result as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
+}
+
+export const storeProcessedOperation = async (
+  userId: number,
+  operationId: string,
+  result: Record<string, unknown>,
+): Promise<void> => {
+  await db.insert(operationDedup).values({
+    userId,
+    operationId,
+    resultJson: result,
+  })
 }

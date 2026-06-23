@@ -244,3 +244,28 @@ ALTER TABLE exercises ADD COLUMN IF NOT EXISTS exercise_type varchar(20) NOT NUL
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS duration_minutes numeric(5,1);
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS speed_mph numeric(4,1);
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS notes varchar(200);
+
+-- Offline-first sync idempotency tracking
+CREATE TABLE IF NOT EXISTS operation_dedup (
+  id serial PRIMARY KEY,
+  user_id integer NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  operation_id varchar(36) NOT NULL,
+  result_json jsonb NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT NOW()
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'unique_user_operation_id'
+      AND conrelid = 'operation_dedup'::regclass
+  ) THEN
+    ALTER TABLE operation_dedup
+      ADD CONSTRAINT unique_user_operation_id UNIQUE (user_id, operation_id);
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_operation_dedup_user_id ON operation_dedup(user_id);
+CREATE INDEX IF NOT EXISTS idx_operation_dedup_created_at ON operation_dedup(created_at);

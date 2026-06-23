@@ -9,6 +9,7 @@ import {
   text,
   uniqueIndex,
   varchar,
+  index,
 } from 'drizzle-orm/pg-core'
 
 export const users = pgTable('users', {
@@ -66,7 +67,28 @@ export const auditLogs = pgTable('audit_logs', {
     .defaultNow(),
 })
 
+export const operationDedup = pgTable(
+  'operation_dedup',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    operationId: varchar('operation_id', { length: 36 }).notNull(),
+    resultJson: jsonb('result_json').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('unique_user_operation_id').on(t.userId, t.operationId),
+    index('idx_operation_dedup_user_id').on(t.userId),
+    index('idx_operation_dedup_created_at').on(t.createdAt),
+  ],
+)
+
 export type User = typeof users.$inferSelect
 export type Workout = typeof workouts.$inferSelect
 export type Exercise = typeof exercises.$inferSelect
 export type AuditLog = typeof auditLogs.$inferSelect
+export type OperationDedup = typeof operationDedup.$inferSelect
