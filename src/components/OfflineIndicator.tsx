@@ -1,7 +1,7 @@
 import { useSync } from '../context/SyncContext'
 
 export const OfflineIndicator = (): JSX.Element | null => {
-  const { isOnline, isSyncing, pendingCount, lastError } = useSync()
+  const { isOnline, isSyncing, pendingCount, lastError, retryAttempt } = useSync()
 
   // Hide when online with no pending operations
   if (isOnline && pendingCount === 0 && !lastError) {
@@ -12,7 +12,11 @@ export const OfflineIndicator = (): JSX.Element | null => {
     <div className="offline-indicator">
       {!isOnline && <div className="badge badge-offline">Offline</div>}
 
-      {isSyncing && <div className="badge badge-syncing">Syncing...</div>}
+      {isSyncing && retryAttempt > 0 && (
+        <div className="badge badge-retrying">Retrying... attempt {retryAttempt}</div>
+      )}
+
+      {isSyncing && retryAttempt === 0 && <div className="badge badge-syncing">Syncing...</div>}
 
       {isOnline && pendingCount > 0 && !isSyncing && (
         <div className="badge badge-pending">{pendingCount} pending</div>

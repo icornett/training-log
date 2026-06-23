@@ -1,0 +1,196 @@
+import { expect, test, type Page } from '@playwright/test'
+
+import { setupSqliteMockApi } from './helpers/sqliteMockApi'
+
+declare global {
+  interface Window {
+    __setTrainingLogOnline?: (value: boolean) => void
+  }
+}
+
+const installOnlineController = async (page: Page, initialOnline: boolean): Promise<void> => {
+  await page.addInitScript((online) => {
+    let currentOnline = online
+    Object.defineProperty(window.navigator, 'onLine', {
+      configurable: true,
+      get: () => currentOnline,
+    })
+    window.__setTrainingLogOnline = (value: boolean) => {
+      currentOnline = value
+      window.dispatchEvent(new Event(value ? 'online' : 'offline'))
+    }
+  }, initialOnline)
+}
+
+const seedPendingWorkoutForRetry = async (page: Page): Promise<void> => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'trainingLog:pendingOperations',
+      JSON.stringify([
+        {
+          operationId: 'op-retry-1',
+          deviceId: 'device-1',
+          entityType: 'workout',
+          action: 'create',
+          payload: {
+            clientId: 'workout-retry-1',
+            name: 'Retry Test',
+            date: '2026-06-22',
+            exercise: {
+              clientId: 'exercise-retry-1',
+              description: 'Deadlift',
+              exerciseType: 'strength',
+              numSets: 4,
+              numReps: 5,
+              weightDescription: '315 lbs',
+              notes: '',
+            },
+          },
+          createdAt: '2026-06-22T12:00:00.000Z',
+          retryCount: 0,
+        },
+      ]),
+    )
+
+    localStorage.setItem(
+      'trainingLog:workoutSnapshots',
+      JSON.stringify([
+        {
+          id: -501,
+          name: 'Retry Test',
+          date: '2026-06-22',
+          username: 'Playwright User',
+          numSets: 4,
+          numReps: 5,
+          weightDescription: '315 lbs',
+          clientId: 'workout-retry-1',
+          lastSyncedAt: null,
+          pendingState: 'pending',
+          exercises: [
+            {
+              id: -601,
+              description: 'Deadlift',
+              exerciseType: 'strength',
+              numSets: 4,
+              numReps: 5,
+              weightDescription: '315 lbs',
+              durationMinutes: null,
+              speedMph: null,
+              notes: '',
+              clientId: 'exercise-retry-1',
+              lastSyncedAt: null,
+              pendingState: 'pending',
+            },
+          ],
+        },
+      ]),
+    )
+  })
+}
+
+test.describe('mobile retry on transient failures', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupSqliteMockApi(page)
+  })
+
+  test('shows Retrying badge when sync encounters a 503 and retries automatically', async ({ page }) => {
+    await installOnlineController(page, false)
+    await seedPendingWorkoutForRetry(page)
+
+    let requestCount = 0
+
+    await page.route('**/api/workouts/with-first-exercise', async (route) => {
+      requestCount += 1
+      if (requestCount === 1) {
+        // First request fails with 503
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Service temporarily unavailable.' }),
+        })
+      } else {
+        // Subsequent requests succeed
+        await route.continue()
+      }
+    })
+
+    await page.goto('/training_log/1/workouts')
+
+    await expect(page.getByText('Offline', { exact: true })).toBeVisible()
+    await expect(page.getByText('1 pending')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Retry Test' })).toBeVisible()
+
+    // Come back online — triggers flush with retry logic
+    await page.evaluate(() => {
+      window.__setTrainingLogOnline?.(true)
+    })
+
+    // The OfflineIndicator should eventually show "Retrying..." during the retry
+    // and then clear once sync succeeds
+    await expect(page.getByText('1 pending')).toHaveCount(0, { timeout: 10_000 })
+    await expect(page.getByRole('link', { name: 'Retry Test' })).toBeVisible()
+
+    // Verify at least 2 requests were made (original + at least 1 retry)
+    expect(requestCount).toBeGreaterThanOrEqual(2)
+  })
+
+  test('shows Sync error after all retry attempts are exhausted', async ({ page }) => {
+    await installOnlineController(page, false)
+    await seedPendingWorkoutForRetry(page)
+
+    // All requests fail with 503
+    await page.route('**/api/workouts/with-first-exercise', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Service temporarily unavailable.' }),
+      })
+    })
+
+    await page.goto('/training_log/1/workouts')
+
+    await expect(page.getByText('Offline', { exact: true })).toBeVisible()
+    await expect(page.getByText('1 pending')).toBeVisible()
+
+    // Come back online — triggers flush, all retries will fail
+    await page.evaluate(() => {
+      window.__setTrainingLogOnline?.(true)
+    })
+
+    // After all retries exhausted, should show sync error
+    await expect(page.getByText(/sync error/i)).toBeVisible({ timeout: 15_000 })
+
+    // Workout should still show as pending (not removed since sync failed)
+    await expect(page.getByRole('link', { name: 'Retry Test' })).toBeVisible()
+  })
+
+  test('does not retry on 4xx client errors', async ({ page }) => {
+    await installOnlineController(page, false)
+    await seedPendingWorkoutForRetry(page)
+
+    let requestCount = 0
+
+    // 422 Unprocessable Entity — should NOT be retried
+    await page.route('**/api/workouts/with-first-exercise', async (route) => {
+      requestCount += 1
+      await route.fulfill({
+        status: 422,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid workout entry.' }),
+      })
+    })
+
+    await page.goto('/training_log/1/workouts')
+    await expect(page.getByText('1 pending')).toBeVisible()
+
+    await page.evaluate(() => {
+      window.__setTrainingLogOnline?.(true)
+    })
+
+    // Should fail fast without retrying
+    await expect(page.getByText(/sync error/i)).toBeVisible({ timeout: 10_000 })
+
+    // Only one request should have been made — no retries on 4xx
+    expect(requestCount).toBe(1)
+  })
+})

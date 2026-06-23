@@ -192,4 +192,27 @@ describe('SyncContext', () => {
       expect(result.current.pendingCount).toBe(0)
     })
   })
+
+  it('exposes retryAttempt count as 0 when not retrying', () => {
+    const { result } = renderHook(() => useSync(), { wrapper })
+    expect(result.current.retryAttempt).toBe(0)
+  })
+
+  it('resets retryAttempt to 0 after successful sync', async () => {
+    const flushSpy = vi.fn().mockResolvedValue({ processed: 1, conflicts: 0, lastError: null })
+
+    vi.mocked(createSyncService).mockReturnValue({
+      flush: flushSpy,
+    } as any)
+
+    const { result } = renderHook(() => useSync(), { wrapper })
+
+    await act(async () => {
+      await result.current.flushManually()
+    })
+
+    await waitFor(() => {
+      expect(result.current.retryAttempt).toBe(0)
+    })
+  })
 })

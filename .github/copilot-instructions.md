@@ -257,11 +257,31 @@ staticwebapp.config.json
 - Reason: Combine fast feedback (unit/integration) with end-to-end quality
   confidence (UI tests)
 
+### Playwright User Journey Requirement
+Every user-facing feature **must** include a Playwright user journey test. This is
+non-negotiable for feature completeness. A feature is not considered done until its
+user journey is covered by a Playwright test.
+
+What counts as a user-facing feature:
+- New pages or routes
+- New user interactions (forms, buttons, workflows)
+- Offline/sync behavior changes
+- Error states that users can encounter
+- New or changed data flows through the UI
+
+Playwright test location:
+- SQLite mock API tests: `tests/e2e/sqlite/` — preferred for new features (fast,
+  no real DB required)
+- Mobile user journey tests: `tests/e2e/mobile-*.spec.ts` — for mobile-specific flows
+- Real DB tests: `tests/e2e/real-db/` — for integration tests requiring live data
+
 ### Testing Approach by Context
 - Azure Function changes: Write Jest tests FIRST, then implement (RED-GREEN-REFACTOR)
 - Frontend component features: Write React Testing Library tests FIRST for component
   behavior, then implement (RED-GREEN-REFACTOR). Follow with manual browser testing
   for full UI flows.
+- **All new features:** Write Playwright user journey test covering the end-to-end
+  flow before the feature is considered complete.
 - This is true TDD: Test first, then code to pass the test
 
 ---

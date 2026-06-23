@@ -19,6 +19,7 @@ describe('OfflineIndicator', () => {
       isSyncing: false,
       pendingCount: 0,
       lastError: null,
+      retryAttempt: 0,
       flushManually: vi.fn(),
     } as any)
 
@@ -32,6 +33,7 @@ describe('OfflineIndicator', () => {
       isSyncing: false,
       pendingCount: 3,
       lastError: null,
+      retryAttempt: 0,
       flushManually: vi.fn(),
     } as any)
 
@@ -45,6 +47,7 @@ describe('OfflineIndicator', () => {
       isSyncing: true,
       pendingCount: 2,
       lastError: null,
+      retryAttempt: 0,
       flushManually: vi.fn(),
     } as any)
 
@@ -58,6 +61,7 @@ describe('OfflineIndicator', () => {
       isSyncing: false,
       pendingCount: 1,
       lastError: 'Server error: 500',
+      retryAttempt: 0,
       flushManually: vi.fn(),
     } as any)
 
@@ -72,6 +76,7 @@ describe('OfflineIndicator', () => {
       isSyncing: false,
       pendingCount: 0,
       lastError: null,
+      retryAttempt: 0,
       flushManually: vi.fn(),
     } as any)
 
@@ -81,5 +86,35 @@ describe('OfflineIndicator', () => {
       (node) => node.nodeType === 1, // 1 = ELEMENT_NODE
     )
     expect(hasVisibleElements).toBe(false)
+  })
+
+  it('shows retrying badge with attempt count when retryAttempt > 0', () => {
+    vi.mocked(useSync).mockReturnValue({
+      isOnline: true,
+      isSyncing: true,
+      pendingCount: 1,
+      lastError: null,
+      retryAttempt: 2,
+      flushManually: vi.fn(),
+    } as any)
+
+    render(<OfflineIndicator />)
+    expect(screen.getByText(/retrying/i)).toBeInTheDocument()
+    expect(screen.getByText(/attempt 2/i)).toBeInTheDocument()
+  })
+
+  it('does not show retrying badge when retryAttempt is 0', () => {
+    vi.mocked(useSync).mockReturnValue({
+      isOnline: true,
+      isSyncing: true,
+      pendingCount: 1,
+      lastError: null,
+      retryAttempt: 0,
+      flushManually: vi.fn(),
+    } as any)
+
+    render(<OfflineIndicator />)
+    expect(screen.queryByText(/retrying/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/syncing/i)).toBeInTheDocument()
   })
 })

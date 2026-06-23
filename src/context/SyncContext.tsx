@@ -9,6 +9,7 @@ interface SyncContextValue {
   isSyncing: boolean
   pendingCount: number
   lastError: string | null
+  retryAttempt: number
   flushManually: () => Promise<void>
 }
 
@@ -22,6 +23,7 @@ export const SyncProvider = ({ children }: PropsWithChildren): JSX.Element => {
   const [isSyncing, setIsSyncing] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [lastError, setLastError] = useState<string | null>(null)
+  const [retryAttempt, setRetryAttempt] = useState(0)
 
   // Initialize pending store and sync service
   const pendingStore = createPendingOperationStore(localStorage)
@@ -42,8 +44,13 @@ export const SyncProvider = ({ children }: PropsWithChildren): JSX.Element => {
     }
 
     setIsSyncing(true)
+    setRetryAttempt(0)
     try {
-      const result = await syncService.flush()
+      const result = await syncService.flush({
+        onRetry: ({ attempt }: { attempt: number }) => {
+          setRetryAttempt(attempt)
+        },
+      })
       if (result.lastError) {
         setLastError(result.lastError)
       } else {
@@ -52,6 +59,7 @@ export const SyncProvider = ({ children }: PropsWithChildren): JSX.Element => {
       updatePendingCount()
     } finally {
       setIsSyncing(false)
+      setRetryAttempt(0)
     }
   }, [isOnline, isSyncing, syncService, updatePendingCount])
 
@@ -115,6 +123,7 @@ export const SyncProvider = ({ children }: PropsWithChildren): JSX.Element => {
     isSyncing,
     pendingCount,
     lastError,
+    retryAttempt,
     flushManually,
   }
 
