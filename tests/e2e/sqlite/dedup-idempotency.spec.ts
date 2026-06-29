@@ -68,14 +68,11 @@ test.describe('idempotency and deduplication', () => {
       weight: '225 lbs',
     }
     await addStrengthExercise(page, exercise1)
-    await expect(page.getByText('Exercise added')).toBeVisible()
+    await expect(page.getByText('Exercise added.')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Workout Controls' })).toBeVisible()
 
-    // Verify the workout was saved
-    await page.getByRole('button', { name: 'Save Workout' }).click()
-    await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
-
-    // Click into the workout again
-    await page.getByRole('link', { name: workoutName }).click()
+    // Current UX auto-saves on first exercise and transitions to workout detail.
+    // Ensure we're on the persisted workout page before continuing.
     await expect(page.getByRole('heading', { name: workoutName })).toBeVisible()
 
     // Get initial exercise count
@@ -102,10 +99,11 @@ test.describe('idempotency and deduplication', () => {
       weight: '185 lbs',
     }
     await addStrengthExercise(page, exercise2)
-    await expect(page.getByText('Exercise added')).toBeVisible()
+    await expect(page.getByText('Exercise added.')).toBeVisible()
 
     // Verify exercise was added
-    await expect(page.getByText('Bench Press')).toBeVisible()
+    const benchRow = page.getByRole('listitem').filter({ hasText: 'Bench Press' })
+    await expect(benchRow).toHaveCount(1)
 
     // Get the updated count
     exerciseItems = page.getByRole('listitem').filter({ hasText: /strength|cardio/ })
@@ -141,7 +139,7 @@ test.describe('idempotency and deduplication', () => {
 
         // Reload and verify no duplicate was created
         await page.reload()
-        const benchPressItems = page.getByText('Bench Press')
+        const benchPressItems = page.getByRole('listitem').filter({ hasText: 'Bench Press' })
         await expect(benchPressItems).toHaveCount(1, { timeout: 5_000 })
       }
     }
