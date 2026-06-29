@@ -74,8 +74,8 @@ Add new patterns below this line as they are discovered.
 1. src/services/api.test.ts
 - Add tests for offline queueing, reconnect replay, and duplicate replay suppression.
 
-1. tests/e2e/helpers/sqliteMockApi.ts
-- Extend mock handlers to emulate reconnect behavior and conflict responses.
+1. tests/e2e/pgsql-docker/
+- Local PostgreSQL Docker tests for offline/reconnect behavior emulation.
 
 1. tests/e2e/mobile-user-workflows.spec.ts
 - Add scenario: offline create/edit/delete, app reload while offline, reconnect, then verify server parity.

@@ -27,7 +27,7 @@ import { defineConfig, devices } from '@playwright/test'
 const localDbBaseURL = process.env.BASE_URL ?? 'http://127.0.0.1:4280'
 
 export default defineConfig({
-  testDir: './tests/e2e/sqlite',
+  testDir: './tests/e2e/pgsql-docker',
   testIgnore: [],
   fullyParallel: false,
   forbidOnly: process.env.CI ? true : false,

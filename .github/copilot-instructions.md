@@ -270,10 +270,9 @@ What counts as a user-facing feature:
 - New or changed data flows through the UI
 
 Playwright test location:
-- SQLite mock API tests: `tests/e2e/sqlite/` — preferred for new features (fast,
-  no real DB required)
 - Mobile user journey tests: `tests/e2e/mobile-*.spec.ts` — for mobile-specific flows
 - Real DB tests: `tests/e2e/real-db/` — for integration tests requiring live data
+- Local DB tests: `tests/e2e/pgsql-docker/` — for local PostgreSQL Docker testing (run with `npm run test:e2e:localdb`)
 
 ### Testing Approach by Context
 - Azure Function changes: Write Jest tests FIRST, then implement (RED-GREEN-REFACTOR)
