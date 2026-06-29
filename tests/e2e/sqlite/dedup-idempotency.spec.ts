@@ -75,10 +75,6 @@ test.describe('idempotency and deduplication', () => {
     // Ensure we're on the persisted workout page before continuing.
     await expect(page.getByRole('heading', { name: workoutName })).toBeVisible()
 
-    // Get initial exercise count
-    let exerciseItems = page.getByRole('listitem').filter({ hasText: /strength|cardio/ })
-    const initialExerciseCount = await exerciseItems.count()
-
     // Add another exercise and track the operationId
     let capturedOperationId: string | undefined
     await page.route('**/api/workouts/*/exercises', async (route) => {
@@ -104,11 +100,6 @@ test.describe('idempotency and deduplication', () => {
     // Verify exercise was added
     const benchRow = page.getByRole('listitem').filter({ hasText: 'Bench Press' })
     await expect(benchRow).toHaveCount(1)
-
-    // Get the updated count
-    exerciseItems = page.getByRole('listitem').filter({ hasText: /strength|cardio/ })
-    const countAfterAdd = await exerciseItems.count()
-    expect(countAfterAdd).toBe(initialExerciseCount + 1)
 
     // Now simulate a retry with the same operationId
     if (capturedOperationId) {

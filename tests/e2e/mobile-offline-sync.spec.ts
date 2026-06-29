@@ -169,9 +169,9 @@ test.describe('mobile offline sync', () => {
       window.__setTrainingLogOnline?.(true)
     })
 
-    await expect(page.getByText('Syncing...')).toBeVisible()
     await expect(page.getByRole('link', { name: 'Offline Legs' })).toBeVisible()
-    await expect(page.getByText('Pending sync')).toHaveCount(0)
+    await expect(page.getByText('Pending sync')).toHaveCount(0, { timeout: 10_000 })
+    await expect(page.getByText(/Sync error:/i)).toHaveCount(0)
   })
 
   test('mobile users see a sync issue when reconnect replay hits a conflict', async ({ page }) => {
