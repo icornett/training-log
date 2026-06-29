@@ -33,6 +33,9 @@ describe('createWorkoutsHandler', () => {
     listWorkouts: async (): Promise<WorkoutRow[]> => [],
     findUserId: async () => 1,
     createWorkout: async () => 42,
+    extractOperationId: async () => null,
+    getProcessed: async () => null,
+    storeProcessed: async () => undefined,
     validateWorkout: async (): Promise<string | null> => null,
   }
 
@@ -94,5 +97,83 @@ describe('createWorkoutsHandler', () => {
     )
     expect(response.status).toBe(201)
     expect(response.jsonBody).toMatchObject({ id: 99 })
+  })
+
+  it('returns cached result for duplicate operation id', async () => {
+    const createWorkout = jest.fn(async () => 99)
+    const validateWorkout = jest.fn(async (): Promise<string | null> => null)
+    const getProcessed = jest.fn(async () => ({ id: 77, message: 'cached' }))
+
+    const handler = createWorkoutsHandler({
+      ...baseDeps,
+      findUserId: async () => 7,
+      createWorkout,
+      extractOperationId: async () => 'op-1',
+      getProcessed,
+      validateWorkout,
+    })
+
+    const response = await handler(
+      makeRequest('POST', {
+        body: { name: 'Legs Day', date: '2026-06-01', operationId: 'op-1' },
+      }),
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.jsonBody).toEqual({ id: 77, message: 'cached' })
+    expect(createWorkout).not.toHaveBeenCalled()
+    expect(validateWorkout).not.toHaveBeenCalled()
+    expect(getProcessed).toHaveBeenCalledWith(7, 'op-1')
+  })
+
+  it('stores processed operation on successful POST when operation id is provided', async () => {
+    const storeProcessed = jest.fn(async () => undefined)
+
+    const handler = createWorkoutsHandler({
+      ...baseDeps,
+      findUserId: async () => 5,
+      createWorkout: async () => 123,
+      extractOperationId: async () => 'op-2',
+      getProcessed: async () => null,
+      storeProcessed,
+    })
+
+    const response = await handler(
+      makeRequest('POST', {
+        body: { name: 'Legs Day', date: '2026-06-01', operationId: 'op-2' },
+      }),
+    )
+
+    expect(response.status).toBe(201)
+    expect(response.jsonBody).toMatchObject({ id: 123 })
+    expect(storeProcessed).toHaveBeenCalledWith(
+      5,
+      'op-2',
+      expect.objectContaining({ id: 123, message: expect.any(String) }),
+    )
+  })
+
+  it('still returns 201 when cache store fails', async () => {
+    const storeProcessed = jest.fn(async () => {
+      throw new Error('cache unavailable')
+    })
+
+    const handler = createWorkoutsHandler({
+      ...baseDeps,
+      findUserId: async () => 8,
+      createWorkout: async () => 456,
+      extractOperationId: async () => 'op-3',
+      getProcessed: async () => null,
+      storeProcessed,
+    })
+
+    const response = await handler(
+      makeRequest('POST', {
+        body: { name: 'Legs Day', date: '2026-06-01', operationId: 'op-3' },
+      }),
+    )
+
+    expect(response.status).toBe(201)
+    expect(response.jsonBody).toMatchObject({ id: 456 })
   })
 })

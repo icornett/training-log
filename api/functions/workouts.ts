@@ -27,6 +27,9 @@ interface WorkoutsDependencies {
   listWorkouts: (username: string, offset: number) => Promise<WorkoutRow[]>
   findUserId: (username: string) => Promise<number | null>
   createWorkout: (name: string, date: string, userId: number) => Promise<number>
+  extractOperationId: (request: HttpRequest) => Promise<string | null>
+  getProcessed: (userId: number, operationId: string) => Promise<Record<string, unknown> | null>
+  storeProcessed: (userId: number, operationId: string, body: Record<string, unknown>) => Promise<void>
   validateWorkout: (
     name: string,
     date: string,
@@ -66,16 +69,16 @@ export const createWorkoutsHandler = (deps: WorkoutsDependencies) => {
     const date = body.date ?? ''
 
     // Extract operationId for deduplication
-    const operationId = await extractOperationId(request)
+    const operationId = await deps.extractOperationId(request)
 
     // Check for duplicate operation if operationId provided
     if (operationId) {
       const userId = await deps.findUserId(user.username)
       if (userId) {
-        const cached = await getProcessedOperation(userId, operationId)
+        const cached = await deps.getProcessed(userId, operationId)
         if (cached) {
           // Return cached result for duplicate request
-          return json(200, cached.body)
+          return json(200, cached)
         }
       }
     }
@@ -99,7 +102,7 @@ export const createWorkoutsHandler = (deps: WorkoutsDependencies) => {
     // Cache the result for future dedup checks
     if (operationId) {
       try {
-        await storeProcessedOperation(userId, operationId, result)
+        await deps.storeProcessed(userId, operationId, result)
       } catch {
         // Silently fail if caching fails
       }
@@ -116,9 +119,13 @@ export const workoutsHandler = createWorkoutsHandler({
   listWorkouts: listWorkoutsByUsername,
   findUserId: findUserIdByUsername,
   createWorkout: (name, date, userId) => addWorkout(name, date, 0, 0, 'bodyweight', userId),
+  extractOperationId,
+  getProcessed: getProcessedOperation,
+  storeProcessed: storeProcessedOperation,
   validateWorkout: invalidWorkoutMessage,
 })
 
+/* istanbul ignore next -- runtime registration is environment-gated and not exercised in unit tests */
 // Skip registration during tests to avoid Azure Functions runtime detection warning
 if (process.env.NODE_ENV !== 'test') {
   app.http('workouts', {
