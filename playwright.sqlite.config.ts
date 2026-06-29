@@ -33,7 +33,13 @@ export default defineConfig({
   forbidOnly: process.env.CI ? true : false,
   retries: process.env.CI ? 1 : 0,
   workers: 1,
-  reporter: 'html',
+  reporter: process.env.CI
+    ? [
+        ['list'],
+        ['junit', { outputFile: 'test-results/e2e-junit.xml' }],
+        ['html', { open: 'never' }],
+      ]
+    : 'html',
   use: {
     baseURL: localDbBaseURL,
     trace: 'on-first-retry',
