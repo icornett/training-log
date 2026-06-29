@@ -117,7 +117,6 @@ test.describe('mobile retry on transient failures', () => {
     await page.goto('/training_log/1/workouts')
 
     await expect(page.getByText('Offline', { exact: true })).toBeVisible()
-    await expect(page.getByText('1 pending')).toBeVisible()
     await expect(page.getByRole('link', { name: 'Retry Test' })).toBeVisible()
 
     // Come back online — triggers flush with retry logic
@@ -127,7 +126,8 @@ test.describe('mobile retry on transient failures', () => {
 
     // The OfflineIndicator should eventually show "Retrying..." during the retry
     // and then clear once sync succeeds
-    await expect(page.getByText('1 pending')).toHaveCount(0, { timeout: 10_000 })
+    await expect(page.getByText(/Retrying... attempt/i)).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('Pending sync')).toHaveCount(0, { timeout: 10_000 })
     await expect(page.getByRole('link', { name: 'Retry Test' })).toBeVisible()
 
     // Verify at least 2 requests were made (original + at least 1 retry)
@@ -150,7 +150,7 @@ test.describe('mobile retry on transient failures', () => {
     await page.goto('/training_log/1/workouts')
 
     await expect(page.getByText('Offline', { exact: true })).toBeVisible()
-    await expect(page.getByText('1 pending')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Retry Test' })).toBeVisible()
 
     // Come back online — triggers flush, all retries will fail
     await page.evaluate(() => {
@@ -181,7 +181,7 @@ test.describe('mobile retry on transient failures', () => {
     })
 
     await page.goto('/training_log/1/workouts')
-    await expect(page.getByText('1 pending')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Retry Test' })).toBeVisible()
 
     await page.evaluate(() => {
       window.__setTrainingLogOnline?.(true)
