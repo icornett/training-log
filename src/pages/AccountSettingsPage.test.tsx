@@ -33,6 +33,11 @@ describe('AccountSettingsPage', () => {
       configurable: true,
     })
 
+    // Mock HTMLAnchorElement.click() to prevent jsdom navigation errors on blob URLs
+    HTMLAnchorElement.prototype.click = vi.fn(() => {
+      // Prevent jsdom navigation error
+    })
+
     vi.mocked(useAuth).mockReturnValue({
       currentUser: { username: 'demo' },
       loading: false,

@@ -1,0 +1,15 @@
+{
+  "cookies": [
+    {
+      "name": "training_log_session",
+      "value": "eyJ1c2VybmFtZSI6IlBsYXl3cmlnaHQgVXNlciIsImV4cCI6MTc4MzM3MjEyM30.Fg2r8URUgA8L0mZs565MvxASQzNTBs-BoHchGEROQl4",
+      "domain": "127.0.0.1",
+      "path": "/",
+      "expires": 1783372123.26559,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

@@ -7,8 +7,13 @@ const openUpperBodyWorkout = async (page: Page): Promise<void> => {
   await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
   await expect(page.getByText('Playwright User')).toBeVisible()
 
+  // Wait for workouts list to be fully rendered before interacting with it
   const upperBodyCard = page.getByRole('listitem').filter({ hasText: 'Upper Body' }).first()
-  await upperBodyCard.getByRole('link', { name: 'View Workout' }).click()
+  await expect(upperBodyCard).toBeVisible()
+
+  const viewLink = upperBodyCard.getByRole('link', { name: 'View Workout' })
+  await expect(viewLink).toBeVisible({ timeout: 30_000 })
+  await viewLink.click()
   await expect(page.getByRole('heading', { name: 'Upper Body' })).toBeVisible()
 }
 

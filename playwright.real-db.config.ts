@@ -10,7 +10,8 @@ if (!baseURL) {
 export default defineConfig({
   testDir: './tests/e2e/real-db',
   globalSetup: './tests/e2e/real-db/global-setup.ts',
-  testIgnore: ['**/global-setup.ts'],
+  globalTeardown: './tests/e2e/real-db/global-teardown.ts',
+  testIgnore: ['**/global-setup.ts', '**/global-teardown.ts'],
   timeout: 60_000,
   expect: {
     timeout: 15_000,
