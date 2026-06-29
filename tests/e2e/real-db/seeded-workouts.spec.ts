@@ -1,16 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
+import { loginAsSeededUser } from './auth'
 
 const openUpperBodyWorkout = async (page: Page): Promise<void> => {
   await page.goto('/training_log/1/workouts')
 
-  const loginHeading = page.getByRole('heading', { name: 'Login' })
-  if ((await loginHeading.count()) > 0) {
-    await page.getByLabel('Username').fill('Playwright User')
-    await page.getByLabel('Password').fill('playwright-pass-123')
-    await page.getByRole('button', { name: 'Login' }).click()
-  }
-
   await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
+  await expect(page.getByText('Playwright User')).toBeVisible()
 
   const upperBodyCard = page.getByRole('listitem').filter({ hasText: 'Upper Body' }).first()
   await upperBodyCard.getByRole('link', { name: 'View Workout' }).click()
@@ -34,11 +29,7 @@ const cleanupExerciseIfPresent = async (
 }
 
 test('seeded user can browse the real database', async ({ page }) => {
-  await page.goto('/login')
-
-  await page.getByLabel('Username').fill('Playwright User')
-  await page.getByLabel('Password').fill('playwright-pass-123')
-  await page.getByRole('button', { name: 'Login' }).click()
+  await loginAsSeededUser(page)
 
   await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible()
   await expect(page.getByText('Playwright User')).toBeVisible()

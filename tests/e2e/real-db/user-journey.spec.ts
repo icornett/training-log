@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { clearAuthState } from './auth'
 
 type StrengthExercise = {
   description: string
@@ -59,6 +60,7 @@ test('user can complete a full journey against the real database', async ({ page
   const exercises = buildStrengthExercises(3)
 
   try {
+    await clearAuthState(page)
     await page.goto('/signup')
 
     await page.getByLabel('Username').fill(username)
