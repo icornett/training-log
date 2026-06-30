@@ -58,8 +58,24 @@ jobs:
       - name: Install dependencies
         run: npm ci --include=dev
 
+      - name: Build API and Frontend
+        run: npm run build && npm run build:api
+
       - name: Mobile e2e tests
-        run: npm run test:e2e:mobile
+        run: |
+          npm run dev:api >/tmp/func.log 2>&1 &
+          API_PID=$!
+          cleanup() {
+            kill "${API_PID}" 2>/dev/null || true
+          }
+          trap cleanup EXIT INT TERM
+          npx wait-on http://127.0.0.1:7071 --timeout 90000
+          npm run test:e2e:mobile
+        env:
+          SESSION_SECRET: ci-mobile-session-secret
+          AzureWebJobsStorage: UseDevelopmentStorage=true
+          FUNCTIONS_WORKER_RUNTIME: node
+          DISABLE_TIMER_TRIGGERS: "true"
 
       - name: Publish test results
         if: always()
