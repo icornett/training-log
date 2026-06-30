@@ -76,6 +76,11 @@ jobs:
       - name: Install Azure Functions Core Tools
         run: npm i -g azure-functions-core-tools@4 --unsafe-perm true
 
+      - name: Install PostgreSQL client
+        run: |
+          apt-get update
+          apt-get install -y postgresql-client
+
       - name: Apply database schema
         run: |
           npm install -g wait-port
