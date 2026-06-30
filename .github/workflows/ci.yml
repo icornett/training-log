@@ -58,6 +58,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --include=dev
 
+      - name: Install Azure Functions Core Tools
+        run: npm i -g azure-functions-core-tools@4 --unsafe-perm true
+
       - name: Build API and Frontend
         run: npm run build && npm run build:api
 
