@@ -63,7 +63,7 @@ jobs:
 
       - name: Mobile e2e tests
         run: |
-          npm run dev:api >/tmp/func.log 2>&1 &
+          npm run dev:api:func >/tmp/func.log 2>&1 &
           API_PID=$!
           cleanup() {
             kill "${API_PID}" 2>/dev/null || true
