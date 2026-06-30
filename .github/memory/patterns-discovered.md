@@ -93,3 +93,13 @@ Add new patterns below this line as they are discovered.
 - Example: Test failed with "expect(getByText('Exercise added.')).toBeVisible()" timeout, but error context showed validation message "Invalid workout entry. You may only log 1 workout per day and the name of the workout must be within 4 & 15 characters long." The workout name "PostgreSQL Workout" (18 chars) exceeded the 15-char DB limit.
 - Fix: Change test data `workoutName = 'PgSQL Workout'` (13 chars - valid) instead of 'PostgreSQL Workout'.
 - Related Files: tests/e2e/pgsql-docker/user-workflow.spec.ts, tests/e2e/pgsql-docker/dedup-idempotency.spec.ts
+
+### Vite Dev Server Crash in CI Mobile E2E Tests
+- Context: Mobile E2E tests in CI fail with "502 Bad Gateway" errors when trying to reach http://127.0.0.1:4173.
+- Problem: Vite dev server startup is slow in CI environments (limited resources), timing out before tests can connect. Results in "Request failed with status 502" and cascading test timeouts.
+- Solution: Configure Playwright webServer with generous timeouts in CI mode:
+  - `readyTimeout: 90_000` (90 seconds to start, vs 30 locally)
+  - `timeout: 120_000` (120 seconds for process startup, vs 30 locally)
+  - Also increase test timeout to `60_000` in CI (vs 30 locally) to allow tests more time
+- Example: `playwright.config.ts` webServer config uses `process.env.CI` to apply different timeouts for CI vs local development.
+- Related Files: playwright.config.ts
