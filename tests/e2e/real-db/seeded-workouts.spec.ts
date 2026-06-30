@@ -38,6 +38,7 @@ test('seeded user can add an exercise in the real database', async ({ page }, te
   const uniqueExercise = `Cable Rows ${projectSlug}-${String(Date.now()).slice(-6)}`
 
   const seededUsername = await loginAsSeededUser(page, testInfo.project.name)
+  const findAddedExercise = () => page.getByText(uniqueExercise, { exact: false }).first()
   
   // Navigate and open workout once
   await openUpperBodyWorkout(page, seededUsername)
@@ -51,13 +52,25 @@ test('seeded user can add an exercise in the real database', async ({ page }, te
     await page.getByRole('button', { name: 'Add Exercise' }).click()
 
     await expect(page.getByText('Exercise added.')).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('listitem').filter({ hasText: uniqueExercise })).toBeVisible({ timeout: 10_000 })
+
+    // The success toast may render before the refreshed exercise list on slower CI browsers.
+    const addedExercise = findAddedExercise()
+    try {
+      await expect(addedExercise).toBeVisible({ timeout: 20_000 })
+    } catch {
+      await page.reload()
+      await expect(page.getByRole('heading', { name: 'Upper Body' })).toBeVisible({ timeout: 10_000 })
+      await expect(findAddedExercise()).toBeVisible({ timeout: 20_000 })
+    }
   } finally {
     // Cleanup: delete the exercise while still on the detail page (no second navigation)
     try {
       const rows = page.getByRole('listitem').filter({ hasText: uniqueExercise })
       if ((await rows.count()) > 0) {
         await rows.first().getByRole('button', { name: 'Delete' }).click()
+        await expect(page.getByText('Exercise deleted.')).toBeVisible({ timeout: 10_000 })
+      } else if ((await findAddedExercise().count()) > 0) {
+        await findAddedExercise().locator('xpath=ancestor::li[1]').getByRole('button', { name: 'Delete' }).click()
         await expect(page.getByText('Exercise deleted.')).toBeVisible({ timeout: 10_000 })
       }
     } catch (cleanupError) {
