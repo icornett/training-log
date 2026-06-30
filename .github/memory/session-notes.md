@@ -135,3 +135,106 @@ Date: 2026-06-29
 - Tests: No code changes in this session; no test execution required.
 - Lint: Not applicable for planning-only work.
 - Follow-up: Break the progress work into feature-sized GitHub issues covering backend aggregation, API endpoint, frontend route/UI, charting, and test coverage.
+
+---
+
+### Session: GDPR Compliance Implementation
+
+Date: 2026-06-15
+
+#### What Was Accomplished
+
+- Added soft delete (`users.deleted_at`) to account deletion — no immediate hard delete.
+- Implemented `GET /api/account/export?format=json|csv` via `api/functions/accountExport.ts`.
+- Added GDPR consent capture to signup (`gdprConsentAccepted` required) with consent metadata columns on `users`.
+- Added `audit_logs` table and `logGdprEvent` helper for consent/export/delete/purge events.
+- Added shared helpers in `api/shared/gdpr.ts` (retention constant, CSV serialization).
+- Added Account Settings page at `/training_log/:pageNumber/account` with JSON/CSV export and delete action.
+- Updated `requireExistingUser` to exclude soft-deleted users.
+
+#### Key Findings and Decisions
+
+- Decision: Scope audit logging to GDPR events only — not full auth telemetry.
+- Decision: Keep soft-deleted users in DB for 30-day retention before hard purge.
+- Decision: Purge execution path (`purgeDeletedUsers.ts`) implemented as a separate scheduled function.
+
+#### Outcomes
+
+- Tests: `npm run test:api` passed (40 tests), `npm run test:web` passed (49 tests), `npm run typecheck` passed.
+- Follow-up: E2E coverage for GDPR flows (pgsql-docker and real-db suites).
+
+---
+
+### Session: Speed Unit Support
+
+Date: 2026-06-16
+
+#### What Was Accomplished
+
+- Added `mph`/`km/h` unit selector on cardio exercise entry (defaulting to `mph`).
+- Frontend sends `speedUnit` + one of `speedMph`/`speedKph`; backend normalizes to `speedMph` for persistence.
+- Added shared conversion helpers: `src/utils/speed.ts` and `api/shared/speed.ts`.
+- Cardio list display now shows both units: `X mph (Y km/h)`.
+- Added weight unit selector for strength exercises (`lbs`/`kg`); normalization appends unit when omitted.
+- Validation accepts `lb`, `lbs`, `kg`, `kgs`.
+
+#### Key Findings and Decisions
+
+- Decision: Persist in `speedMph` always; derive `km/h` on display.
+- Decision: Default to imperial (`mph`, `lbs`) for UI selectors.
+
+#### Outcomes
+
+- Tests: All passing after implementation.
+- Follow-up: None — feature complete.
+
+---
+
+### Session: E2E Test Fixes for Mobile Browsers (PR #25)
+
+Date: 2026-06-15
+
+#### What Was Accomplished
+
+- Fixed real-db E2E tests timing out on ios-safari and android-chrome at 60s.
+- Removed stale import of `./functions/purgeDeletedUsersTimer.js` from `api/index.ts` that prevented Azure Functions routes from registering.
+- Modified `openUpperBodyWorkout()` helper to check auth state before navigating to login.
+- Changed form fill queries from `getByLabel()` to `locator('#exercise-description')` for mobile compatibility.
+
+#### Key Findings and Decisions
+
+- Finding: A deleted timer function still imported in `api/index.ts` caused all function routes to fail to register (404s).
+- Finding: `getByLabel()` is unreliable in Playwright mobile (ios/android) viewports; ID-based selectors are required.
+- Finding: Test helpers that unconditionally navigate to `/login` cause redirect loops in already-authenticated sessions.
+
+#### Outcomes
+
+- Tests: All local tests passed (Jest API 40, Vitest web 49). SQLite E2E validated locally.
+- Follow-up: Validate real-db E2E in CI pipeline with deployment slot credentials.
+
+---
+
+### Session: CI Pipeline Fixes for Phase 3 Retry Logic (PR #34)
+
+Date: 2026-06-30
+
+#### What Was Accomplished
+
+- Fixed mobile-e2e CI job: script name corrected from `dev:api` → `dev:api:func`.
+- Added 2-second backend initialization delay and diagnostic error logging.
+- Installed Azure Functions Core Tools v4 globally in CI container (root cause of backend timeout).
+- Added PostgreSQL service container to mobile-e2e job so signup endpoint has a database.
+- Added `postgresql-client` install step to Playwright container (required for `psql` schema init).
+- Fixed Docker networking: removed `--network host` (incompatible with `services:`), switched all hostnames to `postgres`.
+- Renamed `playwright.sqlite.config.ts` → `playwright.pgsql-docker.config.ts` and `tests/e2e/sqlite/` → `tests/e2e/pgsql-docker/`.
+
+#### Key Findings and Decisions
+
+- Finding: Azure Functions Core Tools v4 must be installed globally in CI — it is not bundled in the standard Playwright Docker image.
+- Finding: `--network host` in a GitHub Actions container job breaks service container DNS when `services:` are defined.
+- Decision: Always use service name (`postgres`) as hostname in DATABASE_URL and psql commands, not `localhost`.
+
+#### Outcomes
+
+- Tests: API 48/48 ✅, Web 110/110 ✅, Mobile E2E 38/38 ✅, LocalDB E2E 9/9 ✅.
+- Follow-up: Merge PR #34 after CI validation.

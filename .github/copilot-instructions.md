@@ -32,6 +32,7 @@
 - Systematic Debugging: Use test failures as guides
 - Validation Before Commit: All tests pass, no lint errors
 - All schema changes must be applied via SQL migration scripts
+- All schema changes must be **backward compatible** — no breaking changes (no column drops, no renames without aliases, no constraint additions on existing rows) to allow staging deployments without breaking production
 - TypeScript strict mode enabled — no use of `any` without explicit justification
 
 ---
@@ -110,6 +111,12 @@ DATABASE_URL="postgresql://user:password@host:5432/dbname?sslmode=require&pgboun
 ### Schema and Migrations
 - Schema is defined in `api/shared/schema.ts` using Drizzle table definitions
 - All schema changes must be applied via SQL migration scripts in `schema.sql`
+- **All schema changes must be backward compatible** — staging deploys must not break production. This means:
+  - No dropping columns or tables in the same migration that removes their usage
+  - No renaming columns without an intermediate alias/dual-write step
+  - No adding `NOT NULL` constraints to existing columns without a default value
+  - New columns must be nullable or have a default so old code can still write rows
+  - Remove old columns only after all code references are fully deployed
 - Use `npx drizzle-kit introspect` to regenerate the Drizzle schema from the DB
 - Never alter the database manually in production
 

@@ -111,3 +111,58 @@ Add new patterns below this line as they are discovered.
 - Example: `git commit -m "docs: add vite dev server crash debugging pattern to memory **skip ci**"`
 - Pattern: Use for commits that only modify `.github/memory/**`, README.md, docs/, or other non-testable content.
 - Related Files: Any documentation or memory bank updates
+
+### ESM Imports in api/ Must Use .js Extension
+- Context: `api/` uses `"moduleResolution": "NodeNext"` and `"type": "module"`.
+- Problem: Relative imports without `.js` fail at runtime even though the source files are `.ts`.
+- Solution: Always write `import { db } from './db.js'` — TypeScript resolves the `.ts` source; Node runs the compiled `.js`.
+- Related Files: api/shared/*.ts, api/functions/*.ts
+
+### Drizzle ORM: camelCase Key Inference
+- Context: Drizzle infers JavaScript property names in camelCase from the column definition name.
+- Problem: Interfaces written with snake_case keys don't match Drizzle query results.
+- Solution: Use camelCase in all TypeScript types that consume Drizzle results (e.g., `integer('num_sets')` → property `numSets`).
+- Related Files: api/shared/types.ts, api/shared/schema.ts, api/shared/repository.ts
+
+### Timezone Off-by-One: ISO Date Strings on the Client
+- Context: Displaying PostgreSQL `date` column values (returned as `"YYYY-MM-DD"` strings) in the browser.
+- Problem: `new Date('YYYY-MM-DD')` parses as UTC midnight, which shows the previous calendar day in timezones behind UTC.
+- Solution: Always use `formatWorkoutDate(isoDate)` from `src/utils/date.ts`, which constructs `new Date(year, month-1, day)` in local time.
+- Related Files: src/utils/date.ts, src/pages/WorkoutsPage.tsx, src/pages/WorkoutDetailPage.tsx
+
+### Shared pg Pool Singleton
+- Context: Azure Functions serverless/cold-start environment with PostgreSQL.
+- Problem: Creating a new `pg.Pool` per function invocation exhausts connection limits quickly.
+- Solution: Instantiate one `Pool` at module scope in `api/shared/db.ts` and export the `drizzle(pool, { schema })` instance. Never create a Pool inside a handler.
+- Related Files: api/shared/db.ts
+
+### Azure Functions v4: Side-Effect Imports Required for Route Discovery
+- Context: Azure Functions v4 registration model in `api/index.ts`.
+- Problem: If a function module is not imported (even without using its export), its routes are never registered and the endpoint returns 404.
+- Solution: Add a bare side-effect import (`import './functions/myFunction.js'`) in `api/index.ts` for every function file.
+- Related Files: api/index.ts
+
+### Backward-Compatible Schema Changes
+- Context: Staging and production share the same PostgreSQL instance with rolling deploys.
+- Problem: Breaking schema changes (column drops, renames, new NOT NULL constraints) can crash production while staging is deploying.
+- Solution: Every migration must be backward compatible — new columns must be nullable or have defaults; drop columns only after all code references are removed; never rename without an intermediate alias/dual-write step.
+- Related Files: schema.sql, api/shared/schema.ts
+
+### Mobile Playwright: Use ID/Role Selectors, Not getByLabel
+- Context: Running Playwright tests against ios/android device emulation.
+- Problem: `getByLabel('Description')` is unreliable on mobile viewports — accessibility label associations differ from desktop.
+- Solution: Use `locator('#exercise-description')` or role-based selectors (`getByRole`) instead of label-based queries for form inputs in mobile E2E tests.
+- Related Files: tests/e2e/mobile-user-workflows.spec.ts
+
+### Playwright Test Helpers: Detect Auth State Dynamically
+- Context: Helper functions (e.g., `openUpperBodyWorkout()`) that set up test preconditions.
+- Problem: Helpers that unconditionally navigate to `/login` cause redirect loops when the test session is already authenticated.
+- Solution: Check for the login heading before navigating; if already authenticated, go directly to the target route.
+- Example: `if (await page.getByRole('heading', { name: /log in/i }).isVisible()) { await page.goto('/login') }`
+- Related Files: tests/e2e/real-db/helpers.ts
+
+### CI: Docker Service Containers and Network Host Incompatibility
+- Context: GitHub Actions jobs using `services:` (e.g., postgres service container) plus a containerized Playwright job.
+- Problem: Adding `--network host` to container options is incompatible with `services:` — the service hostname (`postgres`) becomes unreachable and connections time out.
+- Solution: Remove `--network host`; use the service name (`postgres`) as the hostname in `DATABASE_URL` and `psql` commands (e.g., `postgres://user:pass@postgres:5432/db`).
+- Related Files: .github/workflows/*.yml
