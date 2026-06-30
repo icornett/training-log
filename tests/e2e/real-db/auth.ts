@@ -23,10 +23,20 @@ export const loginAsSeededUser = async (page: Page, projectName?: string): Promi
   const seededUsername = getSeededUsername(projectName)
 
   await page.goto('/login')
+  const workoutsHeading = page.getByRole('heading', { name: 'Workouts' })
+  if (await workoutsHeading.isVisible().catch(() => false)) {
+    await expect(page.getByText(seededUsername)).toBeVisible({ timeout: 10_000 })
+    return seededUsername
+  }
+
   await expect(page.getByRole('heading', { name: 'Login' })).toBeVisible()
 
-  await page.getByLabel('Username').fill(seededUsername)
-  await page.getByLabel('Password').fill(SEEDED_PASSWORD)
+  const usernameInput = page.getByLabel('Username')
+  const passwordInput = page.getByLabel('Password')
+  await expect(usernameInput).toBeVisible({ timeout: 10_000 })
+  await expect(passwordInput).toBeVisible({ timeout: 10_000 })
+  await usernameInput.fill(seededUsername)
+  await passwordInput.fill(SEEDED_PASSWORD)
   
   // Wait for the button to be stable before clicking
   const loginButton = page.getByRole('button', { name: 'Login' })
