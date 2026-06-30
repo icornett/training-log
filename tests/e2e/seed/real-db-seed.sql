@@ -1,12 +1,16 @@
 BEGIN;
 
-WITH seeded_users(username) AS (
-  VALUES
-    ('Playwright User iOS'),
-    ('Playwright User Android'),
-    ('Playwright User Chromium'),
-    ('Playwright User Safari')
-)
+CREATE TEMP TABLE seeded_users (
+  username text PRIMARY KEY
+) ON COMMIT DROP;
+
+INSERT INTO seeded_users (username)
+VALUES
+  ('Playwright User iOS'),
+  ('Playwright User Android'),
+  ('Playwright User Chromium'),
+  ('Playwright User Safari');
+
 DELETE FROM exercises
 WHERE workout_id IN (
   SELECT id
@@ -38,12 +42,7 @@ FROM seeded_users;
 WITH seed_user AS (
   SELECT id, username
   FROM users
-  WHERE username IN (
-    'Playwright User iOS',
-    'Playwright User Android',
-    'Playwright User Chromium',
-    'Playwright User Safari'
-  )
+  WHERE username IN (SELECT username FROM seeded_users)
 ),
 seeded_workouts(name, workout_date, num_sets, num_reps, weight_description) AS (
   VALUES
