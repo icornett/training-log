@@ -70,6 +70,7 @@ jobs:
           }
           trap cleanup EXIT INT TERM
           npx wait-on http://127.0.0.1:7071 --timeout 90000
+          sleep 2
           npm run test:e2e:mobile
         env:
           SESSION_SECRET: ci-mobile-session-secret
