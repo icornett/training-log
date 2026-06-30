@@ -44,22 +44,6 @@ jobs:
     name: Mobile E2E Tests
     runs-on: ubuntu-latest
     needs: [validate]
-    container:
-      image: mcr.microsoft.com/playwright:v1.61.0-jammy
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: traininglog
-          POSTGRES_PASSWORD: traininglog
-          POSTGRES_DB: training_log
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
     steps:
       - uses: actions/checkout@v7
 
@@ -72,6 +56,62 @@ jobs:
       - name: Install dependencies
         run: npm ci --include=dev
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Compute Postgres image manifest fingerprint
+        id: docker-manifest-hash-mobile
+        run: |
+          set -eu
+          POSTGRES_IMAGE="postgres:16-alpine"
+          postgres_hash="$(docker manifest inspect "${POSTGRES_IMAGE}" | sha256sum | awk '{print $1}')"
+          echo "postgres_hash=${postgres_hash}" >> "${GITHUB_OUTPUT}"
+
+      - name: Restore cached Postgres image
+        id: docker-cache-postgres-mobile
+        uses: actions/cache@v6
+        with:
+          path: /tmp/.docker-cache/postgres
+          key: docker-${{ runner.os }}-postgres-16-alpine-${{ steps.docker-manifest-hash-mobile.outputs.postgres_hash }}
+
+      - name: Load or pull Postgres image
+        run: |
+          mkdir -p /tmp/.docker-cache/postgres
+          if [ -f /tmp/.docker-cache/postgres/postgres-16-alpine.tar ]; then
+            docker load -i /tmp/.docker-cache/postgres/postgres-16-alpine.tar
+          else
+            docker pull postgres:16-alpine
+          fi
+
+      - name: Save Postgres image to cache
+        if: steps.docker-cache-postgres-mobile.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /tmp/.docker-cache/postgres
+          docker save postgres:16-alpine -o /tmp/.docker-cache/postgres/postgres-16-alpine.tar
+
+      - name: Start Postgres container
+        run: |
+          docker run -d --rm \
+            --name training-log-mobile-postgres \
+            -e POSTGRES_USER=traininglog \
+            -e POSTGRES_PASSWORD=traininglog \
+            -e POSTGRES_DB=training_log \
+            -p 5432:5432 \
+            postgres:16-alpine
+
+      - name: Wait for Postgres readiness
+        run: |
+          for i in $(seq 1 30); do
+            if docker exec training-log-mobile-postgres pg_isready -U traininglog -d training_log >/dev/null 2>&1; then
+              echo "Postgres is ready."
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Timed out waiting for Postgres."
+          docker logs training-log-mobile-postgres || true
+          exit 1
+
       - name: Install Azure Functions Core Tools
         run: npm i -g azure-functions-core-tools@4 --unsafe-perm true
 
@@ -83,8 +123,8 @@ jobs:
       - name: Apply database schema
         run: |
           npm install -g wait-port
-          wait-port postgres:5432 --timeout 30000
-          PGPASSWORD=traininglog psql -h postgres -U traininglog -d training_log -f schema.sql
+          wait-port 127.0.0.1:5432 --timeout 30000
+          PGPASSWORD=traininglog psql -h 127.0.0.1 -U traininglog -d training_log -f schema.sql
 
       - name: Build API and Frontend
         run: npm run build && npm run build:api
@@ -109,7 +149,11 @@ jobs:
           AzureWebJobsStorage: UseDevelopmentStorage=true
           FUNCTIONS_WORKER_RUNTIME: node
           DISABLE_TIMER_TRIGGERS: "true"
-          DATABASE_URL: postgresql://traininglog:traininglog@postgres:5432/training_log?sslmode=disable
+          DATABASE_URL: postgresql://traininglog:traininglog@127.0.0.1:5432/training_log?sslmode=disable
+
+      - name: Stop Postgres container
+        if: always()
+        run: docker stop training-log-mobile-postgres || true
 
       - name: Publish test results
         if: always()
@@ -162,6 +206,38 @@ jobs:
 
       - name: Install Azure Functions Core Tools
         run: npm i -g azure-functions-core-tools@4 --unsafe-perm true
+
+      - name: Compute Postgres image manifest fingerprint
+        id: docker-manifest-hash
+        run: |
+          set -eu
+          POSTGRES_IMAGE="postgres:16-alpine"
+
+          postgres_hash="$(docker manifest inspect "${POSTGRES_IMAGE}" | sha256sum | awk '{print $1}')"
+
+          echo "postgres_hash=${postgres_hash}" >> "${GITHUB_OUTPUT}"
+
+      - name: Restore cached Postgres image
+        id: docker-cache-postgres
+        uses: actions/cache@v6
+        with:
+          path: /tmp/.docker-cache/postgres
+          key: docker-${{ runner.os }}-postgres-16-alpine-${{ steps.docker-manifest-hash.outputs.postgres_hash }}
+
+      - name: Load or pull Postgres image
+        run: |
+          mkdir -p /tmp/.docker-cache/postgres
+          if [ -f /tmp/.docker-cache/postgres/postgres-16-alpine.tar ]; then
+            docker load -i /tmp/.docker-cache/postgres/postgres-16-alpine.tar
+          else
+            docker pull postgres:16-alpine
+          fi
+
+      - name: Save Postgres image to cache
+        if: steps.docker-cache-postgres.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /tmp/.docker-cache/postgres
+          docker save postgres:16-alpine -o /tmp/.docker-cache/postgres/postgres-16-alpine.tar
 
       - name: Local DB E2E tests
         run: |
