@@ -69,7 +69,11 @@ jobs:
             kill "${API_PID}" 2>/dev/null || true
           }
           trap cleanup EXIT INT TERM
-          npx wait-on http://127.0.0.1:7071 --timeout 90000
+          if ! npx wait-on http://127.0.0.1:7071 --timeout 90000; then
+            echo "Backend failed to start. Function logs:"
+            cat /tmp/func.log
+            exit 1
+          fi
           sleep 2
           npm run test:e2e:mobile
         env:
