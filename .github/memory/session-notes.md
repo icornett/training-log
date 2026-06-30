@@ -238,3 +238,33 @@ Date: 2026-06-30
 
 - Tests: API 48/48 ✅, Web 110/110 ✅, Mobile E2E 38/38 ✅, LocalDB E2E 9/9 ✅.
 - Follow-up: Merge PR #34 after CI validation.
+
+---
+
+### Session: Team Theme Scope Refinement (Seattle-First)
+
+Date: 2026-06-30
+
+#### What Was Accomplished
+
+- Refined the team-color profile plan to an initial Seattle-first subset for faster rollout.
+- Locked initial team keys by league: NFL `nfl:seahawks`, MLB `mlb:mariners`, MLS `mls:sounders`, NHL `nhl:kraken`.
+- Defined NBA fallback as `nba:supersonics` using Seattle SuperSonics throwback colors.
+- Added planning-only starter SuperSonics palette tokens: accent `#FFC72C`, accent-strong `#FFE08A`, panel `#0F2F23`, line `#2E6F56`, background `#061A12`, ink `#EAF6EE`.
+- Expanded planning palette to all Seattle teams:
+  - Seahawks (`nfl:seahawks`): accent `#69BE28`, accent-strong `#8DD657`, panel `#1B2636`, line `#3D4A5D`, bg `#0A1526`, ink `#EAF2FF`
+  - Mariners (`mlb:mariners`): accent `#0C2C56`, accent-strong `#1F4B85`, panel `#0F3B3A`, line `#1D6160`, bg `#071D1C`, ink `#E8F7F6`
+  - Sounders (`mls:sounders`): accent `#5D9732`, accent-strong `#78B64A`, panel `#1C2A2A`, line `#3E5A52`, bg `#0B1716`, ink `#EAF5EF`
+  - Kraken (`nhl:kraken`): accent `#99D9D9`, accent-strong `#B5E8E8`, panel `#23314A`, line `#3B5A7A`, bg `#0A1730`, ink `#E7F3FF`
+  - SuperSonics (`nba:supersonics`): accent `#FFC72C`, accent-strong `#FFE08A`, panel `#0F2F23`, line `#2E6F56`, bg `#061A12`, ink `#EAF6EE`
+
+#### Key Findings and Decisions
+
+- Decision: Keep one team selection total (global theme), not one team per league.
+- Decision: Use Seattle Seahawks as the app-wide default when no preference is saved.
+- Decision: Phase 1 ships curated subset only; expand to full league catalogs later.
+
+#### Outcomes
+
+- Tests: Not run (planning/documentation update only).
+- Follow-up: Implement account preference field and Seattle-first catalog in profile settings.
