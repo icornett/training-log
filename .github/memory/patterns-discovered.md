@@ -103,3 +103,11 @@ Add new patterns below this line as they are discovered.
   - Also increase test timeout to `60_000` in CI (vs 30 locally) to allow tests more time
 - Example: `playwright.config.ts` webServer config uses `process.env.CI` to apply different timeouts for CI vs local development.
 - Related Files: playwright.config.ts
+
+### Skip CI for Documentation-Only Changes
+- Context: Documentation, memory bank, and config-only commits should not trigger CI/CD pipelines.
+- Problem: Unnecessary CI runs waste resources and slow down feedback loops for non-code changes.
+- Solution: Add `**skip ci**` or `[skip ci]` to the commit message. GitHub Actions and most CI systems recognize these markers.
+- Example: `git commit -m "docs: add vite dev server crash debugging pattern to memory **skip ci**"`
+- Pattern: Use for commits that only modify `.github/memory/**`, README.md, docs/, or other non-testable content.
+- Related Files: Any documentation or memory bank updates
