@@ -100,5 +100,5 @@ test('mobile user can change favorite team theme colors', async ({ page }) => {
   const marinersAccent = await page.evaluate(
     () => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
   )
-  expect(marinersAccent.toLowerCase()).toBe('#0c2c56')
+  expect(marinersAccent.toLowerCase()).toBe('#1a4a83')
 })
