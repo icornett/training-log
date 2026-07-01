@@ -197,16 +197,27 @@ h2 {
 }
 
 input,
+select,
 button {
   font: inherit;
 }
 
-input {
+input,
+select {
   padding: 0.5rem 0.6rem;
   border-radius: 8px;
   border: 1px solid var(--line);
   background: #0b1422;
   color: var(--ink);
+}
+
+select {
+  min-height: 2.2rem;
+}
+
+label {
+  display: inline-block;
+  margin-bottom: 0.35rem;
 }
 
 button {
@@ -395,6 +406,12 @@ button:hover {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+  }
+
+  .nav-links {
+    width: auto;
+    margin-left: auto;
+    justify-content: flex-end;
   }
 
   .title-row {

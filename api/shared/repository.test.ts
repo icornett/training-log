@@ -137,6 +137,11 @@ describe('getUserFavoriteTeam', () => {
     limit.mockResolvedValue([])
     await expect(getUserFavoriteTeam('unknown')).resolves.toBeNull()
   })
+
+  it('returns null when favorite_team_key column is unavailable', async () => {
+    limit.mockRejectedValue({ code: '42703', message: 'column "favorite_team_key" does not exist' })
+    await expect(getUserFavoriteTeam('jane')).resolves.toBeNull()
+  })
 })
 
 describe('updateUserFavoriteTeam', () => {
@@ -163,5 +168,10 @@ describe('updateUserFavoriteTeam', () => {
     for (const key of keys) {
       await expect(updateUserFavoriteTeam('jane', key)).resolves.toBeUndefined()
     }
+  })
+
+  it('gracefully no-ops when favorite_team_key column is unavailable', async () => {
+    updateWhere.mockRejectedValue({ code: '42703', message: 'column "favorite_team_key" does not exist' })
+    await expect(updateUserFavoriteTeam('jane', 'nfl:seahawks')).resolves.toBeUndefined()
   })
 })
