@@ -148,3 +148,28 @@ describe('AuthContext sync status', () => {
     })
   })
 })
+
+describe('AuthContext team theme', () => {
+  beforeEach(() => {
+    vi.stubGlobal('navigator', {
+      onLine: true,
+    })
+    document.documentElement.removeAttribute('data-theme')
+  })
+
+  it('applies data-theme from the authenticated user preference', async () => {
+    const { api } = await import('../services/api')
+    vi.mocked(api.getCurrentUser).mockResolvedValue({
+      username: 'Jane Doe',
+      favoriteTeamKey: 'nhl:kraken',
+    })
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'nhl:kraken')
+  })
+})

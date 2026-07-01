@@ -75,6 +75,7 @@ export const setupSqliteMockApi = async (page: Page, options: MockApiOptions = {
   const SQL = await initSqlJs()
   const db = new SQL.Database()
   let sessionUser: string | null = options.authenticatedAs === undefined ? 'Playwright User' : options.authenticatedAs
+  const favoriteTeamByUser = new Map<string, string | null>()
 
   const seedSqlPath = join(process.cwd(), 'tests/e2e/seed/playwright-seed.sql')
   const seedSql = readFileSync(seedSqlPath, 'utf8')
@@ -137,6 +138,7 @@ export const setupSqliteMockApi = async (page: Page, options: MockApiOptions = {
       db.run(
         `INSERT INTO users (id, username, password) VALUES (${maxId + 1}, '${esc(username)}', '${esc(password)}');`,
       )
+      favoriteTeamByUser.set(username, null)
       sessionUser = username
       await json(201, { ok: true, username })
       return
@@ -156,6 +158,9 @@ export const setupSqliteMockApi = async (page: Page, options: MockApiOptions = {
       }
 
       sessionUser = user.username
+      if (!favoriteTeamByUser.has(user.username)) {
+        favoriteTeamByUser.set(user.username, null)
+      }
       await json(200, { ok: true, username: user.username })
       return
     }
@@ -232,7 +237,32 @@ export const setupSqliteMockApi = async (page: Page, options: MockApiOptions = {
           return
         }
 
-        await json(200, { username: sessionUser })
+        const favoriteTeamKey = favoriteTeamByUser.get(sessionUser) ?? null
+        await json(200, { username: sessionUser, favoriteTeamKey })
+        return
+      }
+
+      if (method === 'PUT') {
+        if (!(await requireSession())) {
+          return
+        }
+
+        const teamKey = String(body.teamKey ?? '').trim()
+        const validTeamKeys = new Set([
+          'nfl:seahawks',
+          'mlb:mariners',
+          'mls:sounders',
+          'nhl:kraken',
+          'nba:supersonics',
+        ])
+
+        if (!validTeamKeys.has(teamKey)) {
+          await json(400, { error: 'Invalid team key.' })
+          return
+        }
+
+        favoriteTeamByUser.set(sessionUser ?? '', teamKey)
+        await json(200, { ok: true })
         return
       }
 
@@ -245,6 +275,7 @@ export const setupSqliteMockApi = async (page: Page, options: MockApiOptions = {
         db.run(`DELETE FROM exercises WHERE workout_id IN (SELECT id FROM workouts WHERE username = '${username}');`)
         db.run(`DELETE FROM workouts WHERE username = '${username}';`)
         db.run(`DELETE FROM users WHERE username = '${username}';`)
+        favoriteTeamByUser.delete(sessionUser ?? '')
         sessionUser = null
         await json(200, { ok: true })
         return
