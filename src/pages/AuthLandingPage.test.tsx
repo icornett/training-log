@@ -38,6 +38,7 @@ describe("AuthLandingPage", () => {
       logout: vi.fn(),
       deleteAccount: vi.fn(),
       exportAccountData: vi.fn(),
+      updateFavoriteTeam: vi.fn(async () => undefined),
     });
 
     render(
@@ -73,6 +74,7 @@ describe("AuthLandingPage", () => {
       logout: vi.fn(),
       deleteAccount: vi.fn(),
       exportAccountData: vi.fn(),
+      updateFavoriteTeam: vi.fn(async () => undefined),
     });
 
     render(

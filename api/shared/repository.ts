@@ -478,3 +478,32 @@ export const storeProcessedOperation = async (
     resultJson: result,
   })
 }
+
+// ── Team preference ──────────────────────────────────────────────────────────
+
+export const VALID_TEAM_KEYS = new Set([
+  'nfl:seahawks',
+  'mlb:mariners',
+  'mls:sounders',
+  'nhl:kraken',
+  'nba:supersonics',
+])
+
+export const getUserFavoriteTeam = async (username: string): Promise<string | null> => {
+  const rows = await db
+    .select({ favoriteTeamKey: users.favoriteTeamKey })
+    .from(users)
+    .where(eq(users.username, username))
+    .limit(1)
+  return rows.length > 0 ? (rows[0].favoriteTeamKey ?? null) : null
+}
+
+export const updateUserFavoriteTeam = async (username: string, teamKey: string): Promise<void> => {
+  if (!VALID_TEAM_KEYS.has(teamKey)) {
+    throw new Error(`Invalid team key: ${teamKey}`)
+  }
+  await db
+    .update(users)
+    .set({ favoriteTeamKey: teamKey })
+    .where(eq(users.username, username))
+}

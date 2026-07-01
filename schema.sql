@@ -19,6 +19,9 @@ ALTER TABLE users
 ALTER TABLE users
   ADD COLUMN IF NOT EXISTS gdpr_consent_user_agent varchar(255);
 
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS favorite_team_key varchar(32);
+
 CREATE TABLE IF NOT EXISTS audit_logs (
   id serial PRIMARY KEY,
   event_type varchar(40) NOT NULL,

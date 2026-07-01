@@ -5,6 +5,7 @@ export interface User {
 
 export interface SessionUser {
   username: string
+  favoriteTeamKey?: string | null
 }
 
 export type SyncState = 'synced' | 'pending' | 'conflict'

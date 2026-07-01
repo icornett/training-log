@@ -1,15 +1,61 @@
 :root {
-  --base-bg: #0d1520;
-  --panel: #162030;
-  --ink: #e2eaf3;
+  --base-bg: #0A1526;
+  --panel: #1B2636;
+  --ink: #EAF2FF;
   --ink-soft: #7fa4c4;
-  --accent: #5aabff;
-  --accent-strong: #93c5fd;
-  --line: #1e3045;
+  --accent: #69BE28;
+  --accent-strong: #8DD657;
+  --line: #3D4A5D;
   --danger: #ff6b7a;
-  --seahawks-green: #69be28;
   --headline: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
   --body: "Instrument Sans", "Gill Sans", "Trebuchet MS", sans-serif;
+}
+
+/* ── Team themes ─────────────────────────────────────────────────────────── */
+
+[data-theme="nfl:seahawks"] {
+  --accent: #69BE28;
+  --accent-strong: #8DD657;
+  --panel: #1B2636;
+  --line: #3D4A5D;
+  --base-bg: #0A1526;
+  --ink: #EAF2FF;
+}
+
+[data-theme="mlb:mariners"] {
+  --accent: #0C2C56;
+  --accent-strong: #1F4B85;
+  --panel: #0F3B3A;
+  --line: #1D6160;
+  --base-bg: #071D1C;
+  --ink: #E8F7F6;
+}
+
+[data-theme="mls:sounders"] {
+  --accent: #5D9732;
+  --accent-strong: #78B64A;
+  --panel: #1C2A2A;
+  --line: #3E5A52;
+  --base-bg: #0B1716;
+  --ink: #EAF5EF;
+}
+
+[data-theme="nhl:kraken"] {
+  --accent: #99D9D9;
+  --accent-strong: #B5E8E8;
+  --panel: #23314A;
+  --line: #3B5A7A;
+  --base-bg: #0A1730;
+  --ink: #E7F3FF;
+}
+
+[data-theme="nba:supersonics"] {
+  --accent: #FFC72C;
+  --accent-strong: #FFE08A;
+  --panel: #0F2F23;
+  --line: #2E6F56;
+  --base-bg: #061A12;
+  --ink: #EAF6EE;
 }
 
 * {
@@ -43,7 +89,7 @@ a {
   align-items: flex-start;
   gap: 0.7rem;
   padding: 1rem 1.2rem;
-  border-bottom: 2px solid var(--seahawks-green);
+  border-bottom: 2px solid var(--accent);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }

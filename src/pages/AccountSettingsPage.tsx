@@ -3,10 +3,20 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { useAuth } from '../context/AuthContext'
 
+const TEAM_OPTIONS = [
+  { league: 'NFL', key: 'nfl:seahawks', label: 'Seattle Seahawks' },
+  { league: 'MLB', key: 'mlb:mariners', label: 'Seattle Mariners' },
+  { league: 'MLS', key: 'mls:sounders', label: 'Seattle Sounders FC' },
+  { league: 'NHL', key: 'nhl:kraken', label: 'Seattle Kraken' },
+  { league: 'NBA', key: 'nba:supersonics', label: 'Seattle SuperSonics' },
+] as const
+
+const LEAGUES = ['NFL', 'MLB', 'MLS', 'NHL', 'NBA'] as const
+
 export const AccountSettingsPage = (): JSX.Element => {
   const navigate = useNavigate()
   const { pageNumber = '1' } = useParams()
-  const { currentUser, exportAccountData, deleteAccount, logout } = useAuth()
+  const { currentUser, exportAccountData, deleteAccount, logout, updateFavoriteTeam } = useAuth()
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -51,10 +61,41 @@ export const AccountSettingsPage = (): JSX.Element => {
     navigate('/login')
   }
 
+  const handleTeamChange = async (teamKey: string): Promise<void> => {
+    setError(null)
+    try {
+      await updateFavoriteTeam(teamKey)
+      setStatus('Team theme updated.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to update team preference')
+    }
+  }
+
   return (
     <section className="card">
       <h1>Account Settings</h1>
       <p>Manage privacy rights, exports, and account lifecycle controls.</p>
+
+      <div className="panel-block">
+        <h2>Favorite Team Theme</h2>
+        <p>Choose your Seattle team to theme the app with their colors.</p>
+        <label htmlFor="favorite-team-select">Favorite Team</label>
+        <select
+          id="favorite-team-select"
+          value={currentUser?.favoriteTeamKey ?? 'nfl:seahawks'}
+          onChange={(e) => void handleTeamChange(e.target.value)}
+        >
+          {LEAGUES.map((league) => (
+            <optgroup key={league} label={league}>
+              {TEAM_OPTIONS.filter((t) => t.league === league).map((t) => (
+                <option key={t.key} value={t.key}>
+                  {t.label}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </div>
 
       <div className="panel-block">
         <h2>Data Export</h2>

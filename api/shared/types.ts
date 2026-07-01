@@ -1,5 +1,6 @@
 export interface SessionUser {
   username: string
+  favoriteTeamKey?: string | null
 }
 
 export type GdprAuditEvent =

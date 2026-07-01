@@ -12,6 +12,7 @@ vi.mock('../services/api', () => ({
     logout: vi.fn().mockResolvedValue(undefined),
     deleteAccount: vi.fn().mockResolvedValue(undefined),
     exportAccountData: vi.fn().mockResolvedValue('{}'),
+    updateFavoriteTeam: vi.fn().mockResolvedValue(undefined),
   },
 }))
 
