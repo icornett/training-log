@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { setupSqliteMockApi } from './helpers/sqliteMockApi'
+import { getTeamPalette } from '../../src/constants/teamPalettes'
 
 test.beforeEach(async ({ page }) => {
   await setupSqliteMockApi(page, { authenticatedAs: null })
@@ -84,7 +85,10 @@ test('mobile user can change favorite team theme colors', async ({ page }) => {
   await page.getByRole('link', { name: 'Account' }).click()
   await expect(page.getByRole('heading', { name: 'Account Settings' })).toBeVisible()
 
+  const leagueSelect = page.getByRole('combobox', { name: 'League' })
   const teamSelect = page.getByRole('combobox', { name: 'Favorite Team' })
+
+  await leagueSelect.selectOption('NHL')
   await teamSelect.selectOption('nhl:kraken')
   await expect(page.getByText('Team theme updated.')).toBeVisible()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'nhl:kraken')
@@ -92,13 +96,14 @@ test('mobile user can change favorite team theme colors', async ({ page }) => {
   const krakenAccent = await page.evaluate(
     () => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
   )
-  expect(krakenAccent.toLowerCase()).toBe('#99d9d9')
+  expect(krakenAccent.toLowerCase()).toBe(getTeamPalette('nhl:kraken').accent.toLowerCase())
 
+  await leagueSelect.selectOption('MLB')
   await teamSelect.selectOption('mlb:mariners')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'mlb:mariners')
 
   const marinersAccent = await page.evaluate(
     () => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
   )
-  expect(marinersAccent.toLowerCase()).toBe('#1a4a83')
+  expect(marinersAccent.toLowerCase()).toBe(getTeamPalette('mlb:mariners').accent.toLowerCase())
 })
