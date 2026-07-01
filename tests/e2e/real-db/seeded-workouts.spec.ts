@@ -35,10 +35,11 @@ test('seeded user can browse the real database', async ({ page }, testInfo) => {
 
 test('seeded user can add an exercise in the real database', async ({ page }, testInfo) => {
   const projectSlug = testInfo.project.name.replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 10)
-  const uniqueExercise = `Cable Rows ${projectSlug}-${String(Date.now()).slice(-6)}`
+  const uniqueExercise = `Cable Rows ${projectSlug} ${String(Date.now()).slice(-6)}`
+  const expectedExerciseText = uniqueExercise.replace(/[\p{P}\p{S}]/gu, '')
 
   const seededUsername = await loginAsSeededUser(page, testInfo.project.name)
-  const findAddedExercise = () => page.getByText(uniqueExercise, { exact: false }).first()
+  const findAddedExercise = () => page.getByText(expectedExerciseText, { exact: false }).first()
   
   // Navigate and open workout once
   await openUpperBodyWorkout(page, seededUsername)
@@ -65,7 +66,7 @@ test('seeded user can add an exercise in the real database', async ({ page }, te
   } finally {
     // Cleanup: delete the exercise while still on the detail page (no second navigation)
     try {
-      const rows = page.getByRole('listitem').filter({ hasText: uniqueExercise })
+      const rows = page.getByRole('listitem').filter({ hasText: expectedExerciseText })
       if ((await rows.count()) > 0) {
         await rows.first().getByRole('button', { name: 'Delete' }).click()
         await expect(page.getByText('Exercise deleted.')).toBeVisible({ timeout: 10_000 })
