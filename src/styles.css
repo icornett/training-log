@@ -6,6 +6,8 @@
   --accent: #69BE28;
   --accent-strong: #8DD657;
   --brand-color: #BDE8FF;
+  --brand-surface: rgba(8, 25, 45, 0.72);
+  --brand-surface-border: rgba(189, 232, 255, 0.42);
   --on-accent: #041320;
   --on-accent-strong: #041320;
   --link: #BDE8FF;
@@ -41,6 +43,8 @@
   --accent: #1A4A83;
   --accent-strong: #2A6BB8;
   --brand-color: #D8FFFD;
+  --brand-surface: rgba(7, 41, 56, 0.78);
+  --brand-surface-border: rgba(216, 255, 253, 0.5);
   --on-accent: #F6FCFF;
   --on-accent-strong: #F6FCFF;
   --link: #C9FAF6;
@@ -146,6 +150,17 @@ a:hover {
   font-weight: 700;
   letter-spacing: 0.02em;
   text-decoration: none;
+  color: var(--brand-color);
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.5rem;
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-surface-border);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.brand:visited,
+.brand:hover,
+.brand:active {
   color: var(--brand-color);
 }
 
