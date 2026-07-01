@@ -21,7 +21,7 @@
 /* ── Team themes ─────────────────────────────────────────────────────────── */
 
 [data-theme="nfl:seahawks"] {
-  --headline: "Avenir Next Condensed", "Arial Narrow", "Space Grotesk", "Segoe UI", sans-serif;
+  --headline: "Archivo Narrow", "Avenir Next Condensed", "Arial Narrow", "Space Grotesk", "Segoe UI", sans-serif;
   --body: "Avenir Next", "Instrument Sans", "Trebuchet MS", sans-serif;
   --accent: #69BE28;
   --accent-strong: #8DD657;
@@ -36,7 +36,7 @@
 }
 
 [data-theme="mlb:mariners"] {
-  --headline: "Copperplate", "Trajan Pro", "Space Grotesk", "Segoe UI", sans-serif;
+  --headline: "Cinzel", "Copperplate", "Trajan Pro", "Space Grotesk", "Segoe UI", sans-serif;
   --body: "Avenir Next", "Instrument Sans", "Gill Sans", sans-serif;
   --accent: #1A4A83;
   --accent-strong: #2A6BB8;
@@ -54,7 +54,7 @@
 }
 
 [data-theme="mls:sounders"] {
-  --headline: "DIN Condensed", "Franklin Gothic Medium", "Space Grotesk", "Segoe UI", sans-serif;
+  --headline: "Oswald", "DIN Condensed", "Franklin Gothic Medium", "Space Grotesk", "Segoe UI", sans-serif;
   --body: "Source Sans Pro", "Instrument Sans", "Trebuchet MS", sans-serif;
   --accent: #5D9732;
   --accent-strong: #78B64A;
@@ -69,7 +69,7 @@
 }
 
 [data-theme="nhl:kraken"] {
-  --headline: "Eurostile", "Bank Gothic", "Space Grotesk", "Segoe UI", sans-serif;
+  --headline: "Orbitron", "Eurostile", "Bank Gothic", "Space Grotesk", "Segoe UI", sans-serif;
   --body: "Avenir Next", "Instrument Sans", "Trebuchet MS", sans-serif;
   --accent: #99D9D9;
   --accent-strong: #E9072B;
@@ -86,7 +86,7 @@
 }
 
 [data-theme="nba:supersonics"] {
-  --headline: "Futura Condensed ExtraBold", "Futura", "Space Grotesk", "Segoe UI", sans-serif;
+  --headline: "Barlow Condensed", "Futura Condensed ExtraBold", "Futura", "Space Grotesk", "Segoe UI", sans-serif;
   --body: "Century Gothic", "Instrument Sans", "Trebuchet MS", sans-serif;
   --accent: #FFC72C;
   --accent-strong: #FFE08A;
