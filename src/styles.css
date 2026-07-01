@@ -5,6 +5,9 @@
   --ink-soft: #7fa4c4;
   --accent: #69BE28;
   --accent-strong: #8DD657;
+  --brand-color: #BDE8FF;
+  --on-accent: #041320;
+  --on-accent-strong: #041320;
   --link: #BDE8FF;
   --link-hover: #E6F7FF;
   --bg-glow-a: rgba(0, 60, 140, 0.35);
@@ -31,10 +34,13 @@
 }
 
 [data-theme="mlb:mariners"] {
-  --accent: #0C2C56;
-  --accent-strong: #4FA3D1;
-  --link: #9CE7E3;
-  --link-hover: #D8FFFD;
+  --accent: #1A4A83;
+  --accent-strong: #2A6BB8;
+  --brand-color: #D8FFFD;
+  --on-accent: #F6FCFF;
+  --on-accent-strong: #F6FCFF;
+  --link: #C9FAF6;
+  --link-hover: #EEFFFE;
   --bg-glow-a: rgba(9, 73, 89, 0.48);
   --bg-glow-b: rgba(37, 117, 123, 0.34);
   --panel: #0F3B3A;
@@ -59,6 +65,8 @@
 [data-theme="nhl:kraken"] {
   --accent: #99D9D9;
   --accent-strong: #E9072B;
+  --on-accent: #041320;
+  --on-accent-strong: #FFFFFF;
   --link: #D7ECFF;
   --link-hover: #FFE4EC;
   --bg-glow-a: rgba(32, 58, 102, 0.46);
@@ -128,7 +136,7 @@ a:hover {
   font-weight: 700;
   letter-spacing: 0.02em;
   text-decoration: none;
-  color: var(--accent);
+  color: var(--brand-color);
 }
 
 .nav-links {
@@ -254,13 +262,14 @@ button {
   border: 0;
   border-radius: 8px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-weight: 600;
   cursor: pointer;
 }
 
 button:hover {
   background: var(--accent-strong);
+  color: var(--on-accent-strong);
 }
 
 .ghost-button {
@@ -386,13 +395,14 @@ button:hover {
   border-radius: 8px;
   border: 1px solid var(--line);
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-weight: 600;
   text-decoration: none;
 }
 
 .cta-link:hover {
   background: var(--accent-strong);
+  color: var(--on-accent-strong);
 }
 
 .panel-block {
