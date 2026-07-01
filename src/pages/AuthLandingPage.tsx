@@ -17,6 +17,10 @@ export const AuthLandingPage = (): JSX.Element => {
     <section className="card auth-card">
       <h1>Welcome to Training Log</h1>
       <p>Choose how you want to continue.</p>
+      <p>
+        On first login, your theme starts with Seattle Seahawks colors. You can change it any time in
+        Account Settings under Favorite Team Theme.
+      </p>
       <div className="row-actions">
         <Link className="cta-link" to="/login">
           Login

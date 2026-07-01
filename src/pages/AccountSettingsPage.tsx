@@ -105,7 +105,10 @@ export const AccountSettingsPage = (): JSX.Element => {
 
       <div className="panel-block">
         <h2>Favorite Team Theme</h2>
-        <p>Choose your favorite team to theme the app with league-inspired colors.</p>
+        <p>
+          Choose your favorite team to theme the app with league-inspired colors. This is where you can adjust
+          the theme you received at first login.
+        </p>
         <label htmlFor="favorite-team-league">League</label>
         <select
           id="favorite-team-league"
