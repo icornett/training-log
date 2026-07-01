@@ -12,6 +12,7 @@ Training Log is now a TypeScript application with a React frontend and an Azure 
 ## Features
 
 - Signup, login, logout, and delete-account flows
+- Favorite team theme preference across NFL, MLB, MLS, NHL, and NBA catalogs
 - Paginated workout list
 - Workout detail page with owner-only workout edit/delete controls
 - Owner-only exercise create, edit, and delete controls

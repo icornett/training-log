@@ -8,6 +8,7 @@ import {
 } from 'react'
 
 import { api } from '../services/api'
+import { getTeamPalette } from '../constants/teamPalettes'
 import { createPendingOperationStore, syncStatusChangedEventName } from '../services/localStore'
 import { syncService } from '../services/sync'
 import type { SessionUser } from '../types/domain'
@@ -116,6 +117,10 @@ export const AuthProvider = ({ children }: PropsWithChildren): JSX.Element => {
   useEffect(() => {
     const teamKey = currentUser?.favoriteTeamKey ?? 'nfl:seahawks'
     document.documentElement.setAttribute('data-theme', teamKey)
+    const palette = getTeamPalette(teamKey)
+    for (const [token, value] of Object.entries(palette)) {
+      document.documentElement.style.setProperty(`--${token}`, value)
+    }
   }, [currentUser])
 
   useEffect(() => {

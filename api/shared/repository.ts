@@ -3,6 +3,7 @@ import { and, count, desc, eq, inArray, isNotNull, isNull, lte } from 'drizzle-o
 
 import { db } from './db.js'
 import { auditLogs, exercises, operationDedup, users, workouts } from './schema.js'
+import { VALID_TEAM_KEYS } from './teamCatalog.js'
 import type {
   AccountExportPayload,
   ExerciseRow,
@@ -10,6 +11,8 @@ import type {
   WorkoutDetails,
   WorkoutRow,
 } from './types.js'
+
+export { VALID_TEAM_KEYS } from './teamCatalog.js'
 
 const normalizeExerciseRow = (
   row: Omit<ExerciseRow, 'durationMinutes' | 'speedMph'> & {
@@ -480,14 +483,6 @@ export const storeProcessedOperation = async (
 }
 
 // ── Team preference ──────────────────────────────────────────────────────────
-
-export const VALID_TEAM_KEYS = new Set([
-  'nfl:seahawks',
-  'mlb:mariners',
-  'mls:sounders',
-  'nhl:kraken',
-  'nba:supersonics',
-])
 
 const isMissingFavoriteTeamColumnError = (error: unknown): boolean => {
   if (!error || typeof error !== 'object') {

@@ -24,7 +24,7 @@ describe('createAccountHandler', () => {
     const response = await handler(request)
 
     expect(response.status).toBe(200)
-    expect(response.jsonBody).toEqual({ username: 'demo', favoriteTeamKey: null })
+    expect(response.jsonBody).toEqual({ username: 'demo', favoriteTeamKey: 'nfl:seahawks' })
   })
 
   it('includes the stored favoriteTeamKey in GET response', async () => {
@@ -77,7 +77,7 @@ describe('createAccountHandler', () => {
       setFavoriteTeam: async () => undefined,
     })
 
-    const request = baseRequest('PUT', { teamKey: 'nfl:giants' })
+    const request = baseRequest('PUT', { teamKey: 'nfl:not-a-team' })
     const response = await handler(request)
 
     expect(response.status).toBe(400)

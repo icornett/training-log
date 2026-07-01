@@ -268,3 +268,28 @@ Date: 2026-06-30
 
 - Tests: Not run (planning/documentation update only).
 - Follow-up: Implement account preference field and Seattle-first catalog in profile settings.
+
+---
+
+### Session: Full League Theme Expansion and League Filter UX
+
+Date: 2026-07-01
+
+#### What Was Accomplished
+
+- Added league-first selection UX on Account Settings with a dedicated League dropdown and a filtered Favorite Team dropdown.
+- Updated account settings tests to cover league filtering behavior and team update flow with filtered options.
+- Expanded backend validation tests to reflect full-catalog keys (not Seattle-only keys).
+- Preserved compatibility for account handler imports by re-exporting `VALID_TEAM_KEYS` from repository.
+- Added README feature note for multi-league favorite-team theming.
+
+#### Key Findings and Decisions
+
+- Finding: Existing account function imports depended on `VALID_TEAM_KEYS` being exported from repository; moving catalog ownership required a compatibility re-export.
+- Decision: Keep Seahawks (`nfl:seahawks`) as the global fallback theme, while exposing full league catalogs for user preference selection.
+- Decision: League dropdown should shorten the team list by filtering teams, with the first team in the selected league becoming the active select value until user chooses another option.
+
+#### Outcomes
+
+- Tests: `npm run test:web -- src/pages/AccountSettingsPage.test.tsx src/styles.contrast.test.ts` passed; `npm run test:api -- api/functions/account.test.ts api/shared/repository.test.ts` passed; `npm run typecheck` passed.
+- Follow-up: Run mobile E2E theme flow after final catalog/CSS polish to confirm persisted behavior on device emulation.

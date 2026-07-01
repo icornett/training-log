@@ -1,17 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import { LEAGUES, TEAM_OPTIONS, type League } from '../constants/teamCatalog'
 import { useAuth } from '../context/AuthContext'
 
-const TEAM_OPTIONS = [
-  { league: 'NFL', key: 'nfl:seahawks', label: 'Seattle Seahawks' },
-  { league: 'MLB', key: 'mlb:mariners', label: 'Seattle Mariners' },
-  { league: 'MLS', key: 'mls:sounders', label: 'Seattle Sounders FC' },
-  { league: 'NHL', key: 'nhl:kraken', label: 'Seattle Kraken' },
-  { league: 'NBA', key: 'nba:supersonics', label: 'Seattle SuperSonics' },
-] as const
+const DEFAULT_TEAM_KEY = 'nfl:seahawks'
 
-const LEAGUES = ['NFL', 'MLB', 'MLS', 'NHL', 'NBA'] as const
+const leagueFromTeamKey = (teamKey: string | null | undefined): League => {
+  const prefix = teamKey?.split(':')[0]?.toUpperCase()
+  if (prefix === 'NFL' || prefix === 'MLB' || prefix === 'MLS' || prefix === 'NHL' || prefix === 'NBA') {
+    return prefix
+  }
+  return 'NFL'
+}
 
 export const AccountSettingsPage = (): JSX.Element => {
   const navigate = useNavigate()
@@ -19,6 +20,18 @@ export const AccountSettingsPage = (): JSX.Element => {
   const { currentUser, exportAccountData, deleteAccount, logout, updateFavoriteTeam } = useAuth()
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [selectedLeague, setSelectedLeague] = useState<League>(
+    leagueFromTeamKey(currentUser?.favoriteTeamKey ?? DEFAULT_TEAM_KEY),
+  )
+  const [selectedTeamKey, setSelectedTeamKey] = useState<string>(
+    currentUser?.favoriteTeamKey ?? DEFAULT_TEAM_KEY,
+  )
+
+  useEffect(() => {
+    const nextTeamKey = currentUser?.favoriteTeamKey ?? DEFAULT_TEAM_KEY
+    setSelectedTeamKey(nextTeamKey)
+    setSelectedLeague(leagueFromTeamKey(nextTeamKey))
+  }, [currentUser?.favoriteTeamKey])
 
   const download = async (format: 'json' | 'csv'): Promise<void> => {
     setError(null)
@@ -71,6 +84,20 @@ export const AccountSettingsPage = (): JSX.Element => {
     }
   }
 
+  const teamsForLeague = TEAM_OPTIONS.filter((team) => team.league === selectedLeague).sort((left, right) =>
+    left.label.localeCompare(right.label),
+  )
+
+  const handleLeagueChange = (league: League): void => {
+    setSelectedLeague(league)
+    const firstTeam = TEAM_OPTIONS.filter((team) => team.league === league).sort((left, right) =>
+      left.label.localeCompare(right.label),
+    )[0]
+    if (firstTeam) {
+      setSelectedTeamKey(firstTeam.key)
+    }
+  }
+
   return (
     <section className="card">
       <h1>Account Settings</h1>
@@ -78,21 +105,32 @@ export const AccountSettingsPage = (): JSX.Element => {
 
       <div className="panel-block">
         <h2>Favorite Team Theme</h2>
-        <p>Choose your Seattle team to theme the app with their colors.</p>
+        <p>Choose your favorite team to theme the app with league-inspired colors.</p>
+        <label htmlFor="favorite-team-league">League</label>
+        <select
+          id="favorite-team-league"
+          value={selectedLeague}
+          onChange={(e) => handleLeagueChange(e.target.value as League)}
+        >
+          {LEAGUES.map((league) => (
+            <option key={league} value={league}>
+              {league}
+            </option>
+          ))}
+        </select>
         <label htmlFor="favorite-team-select">Favorite Team</label>
         <select
           id="favorite-team-select"
-          value={currentUser?.favoriteTeamKey ?? 'nfl:seahawks'}
-          onChange={(e) => void handleTeamChange(e.target.value)}
+          value={selectedTeamKey}
+          onChange={(e) => {
+            setSelectedTeamKey(e.target.value)
+            void handleTeamChange(e.target.value)
+          }}
         >
-          {LEAGUES.map((league) => (
-            <optgroup key={league} label={league}>
-              {TEAM_OPTIONS.filter((t) => t.league === league).map((t) => (
-                <option key={t.key} value={t.key}>
-                  {t.label}
-                </option>
-              ))}
-            </optgroup>
+          {teamsForLeague.map((team) => (
+            <option key={team.key} value={team.key}>
+              {team.label}
+            </option>
           ))}
         </select>
       </div>

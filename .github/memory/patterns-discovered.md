@@ -166,3 +166,10 @@ Add new patterns below this line as they are discovered.
 - Problem: Adding `--network host` to container options is incompatible with `services:` — the service hostname (`postgres`) becomes unreachable and connections time out.
 - Solution: Remove `--network host`; use the service name (`postgres`) as the hostname in `DATABASE_URL` and `psql` commands (e.g., `postgres://user:pass@postgres:5432/db`).
 - Related Files: .github/workflows/*.yml
+
+### Team Theme Catalog: Shared Keys + League-Filtered UI
+- Context: Favorite team theming across multiple leagues in account settings.
+- Problem: Hardcoded team lists and mismatched validation sources lead to drift between frontend options and backend allowlist checks.
+- Solution: Keep a centralized catalog per layer (`src/constants/teamCatalog.ts` for UI metadata, `api/shared/teamCatalog.ts` for API allowlist), filter UI options by selected league, and keep a stable fallback theme key (`nfl:seahawks`).
+- Example: League dropdown (`NFL|MLB|MLS|NHL|NBA`) drives filtered team options; backend `updateUserFavoriteTeam` validates via `VALID_TEAM_KEYS` from shared team catalog.
+- Related Files: src/pages/AccountSettingsPage.tsx, src/pages/AccountSettingsPage.test.tsx, src/constants/teamCatalog.ts, api/shared/teamCatalog.ts, api/shared/repository.ts, api/shared/repository.test.ts

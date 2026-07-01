@@ -154,8 +154,27 @@ describe("AccountSettingsPage", () => {
   it("renders the Favorite Team selector", () => {
     renderPage();
     expect(
+      screen.getByRole("combobox", { name: /league/i }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("combobox", { name: /favorite team/i }),
     ).toBeInTheDocument();
+  });
+
+  it("filters the team list by selected league", async () => {
+    renderPage();
+
+    const leagueSelect = screen.getByRole("combobox", { name: /league/i });
+    const teamSelect = screen.getByRole("combobox", { name: /favorite team/i }) as HTMLSelectElement;
+
+    expect(screen.getByRole("option", { name: "Seattle Seahawks" })).toBeInTheDocument();
+
+    await userEvent.selectOptions(leagueSelect, "NHL");
+
+    expect(teamSelect.value).toBe("nhl:anaheim-ducks");
+    expect(screen.getByRole("option", { name: "Anaheim Ducks" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Seattle Kraken" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Seattle Seahawks" })).not.toBeInTheDocument();
   });
 
   it("pre-selects the stored team preference", () => {
@@ -195,6 +214,11 @@ describe("AccountSettingsPage", () => {
     });
 
     renderPage();
+
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: /league/i }),
+      "MLB",
+    );
 
     await userEvent.selectOptions(
       screen.getByRole("combobox", { name: /favorite team/i }),

@@ -16,6 +16,7 @@
     "@types/jest": "^29.5.14",
     "@types/node": "^22.20.0",
     "@types/pg": "^8.11.10",
+    "azure-functions-core-tools": "^4.12.1",
     "drizzle-kit": "^0.31.10",
     "typescript": "^5.6.3"
   },
@@ -25,5 +26,8 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "allowScripts": {
+    "azure-functions-core-tools@4.12.1": true
   }
 }

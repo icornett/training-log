@@ -158,13 +158,20 @@ describe('updateUserFavoriteTeam', () => {
   })
 
   it('rejects an unknown team key without querying the database', async () => {
-    await expect(updateUserFavoriteTeam('jane', 'nfl:giants')).rejects.toThrow()
+    await expect(updateUserFavoriteTeam('jane', 'nfl:not-a-team')).rejects.toThrow()
     expect(update).not.toHaveBeenCalled()
   })
 
-  it('accepts all five Seattle team keys', async () => {
+  it('accepts valid keys from each supported league', async () => {
     updateWhere.mockResolvedValue(undefined)
-    const keys = ['nfl:seahawks', 'mlb:mariners', 'mls:sounders', 'nhl:kraken', 'nba:supersonics']
+    const keys = [
+      'nfl:kansas-city-chiefs',
+      'mlb:st-louis-cardinals',
+      'mls:orlando-city',
+      'nhl:vegas-golden-knights',
+      'nba:los-angeles-lakers',
+      'nba:supersonics',
+    ]
     for (const key of keys) {
       await expect(updateUserFavoriteTeam('jane', key)).resolves.toBeUndefined()
     }

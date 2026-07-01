@@ -21,6 +21,8 @@ interface AccountDependencies {
   setFavoriteTeam: (username: string, teamKey: string) => Promise<void>
 }
 
+const DEFAULT_FAVORITE_TEAM_KEY = 'nfl:seahawks'
+
 export const createAccountHandler = (dependencies: AccountDependencies) => {
   return async (request: HttpRequest) => {
     const user = dependencies.getUser(request)
@@ -29,7 +31,7 @@ export const createAccountHandler = (dependencies: AccountDependencies) => {
     }
 
     if (request.method === 'GET') {
-      const favoriteTeamKey = await dependencies.getFavoriteTeam(user.username)
+      const favoriteTeamKey = (await dependencies.getFavoriteTeam(user.username)) ?? DEFAULT_FAVORITE_TEAM_KEY
       return json(200, { username: user.username, favoriteTeamKey })
     }
 
