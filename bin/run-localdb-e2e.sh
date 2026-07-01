@@ -4,6 +4,7 @@ set -eu
 BASE_URL="${BASE_URL:-http://127.0.0.1:4280}"
 API_LOG="${API_LOG:-/tmp/func.log}"
 SWA_LOG="${SWA_LOG:-/tmp/swa.log}"
+TEST_COMMAND="${TEST_COMMAND:-npm run test:e2e:localdb}"
 
 npm run dev:api:func:localdb >"${API_LOG}" 2>&1 &
 API_PID=$!
@@ -23,7 +24,7 @@ for i in $(seq 1 30); do
   http_code=$(curl -s -o /dev/null -w "%{http_code}" "${BASE_URL}/api/account" || true)
   if [ "${http_code}" = "401" ]; then
     echo "API is ready (GET /api/account -> 401)."
-    BASE_URL="${BASE_URL}" npm run test:e2e:localdb
+    eval "BASE_URL='${BASE_URL}' ${TEST_COMMAND}"
     exit 0
   fi
 

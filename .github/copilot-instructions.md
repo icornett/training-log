@@ -32,6 +32,7 @@
 - Systematic Debugging: Use test failures as guides
 - Validation Before Commit: All tests pass, no lint errors
 - All schema changes must be applied via SQL migration scripts
+- All schema changes must be **backward compatible** — no breaking changes (no column drops, no renames without aliases, no constraint additions on existing rows) to allow staging deployments without breaking production
 - TypeScript strict mode enabled — no use of `any` without explicit justification
 
 ---
@@ -110,6 +111,12 @@ DATABASE_URL="postgresql://user:password@host:5432/dbname?sslmode=require&pgboun
 ### Schema and Migrations
 - Schema is defined in `api/shared/schema.ts` using Drizzle table definitions
 - All schema changes must be applied via SQL migration scripts in `schema.sql`
+- **All schema changes must be backward compatible** — staging deploys must not break production. This means:
+  - No dropping columns or tables in the same migration that removes their usage
+  - No renaming columns without an intermediate alias/dual-write step
+  - No adding `NOT NULL` constraints to existing columns without a default value
+  - New columns must be nullable or have a default so old code can still write rows
+  - Remove old columns only after all code references are fully deployed
 - Use `npx drizzle-kit introspect` to regenerate the Drizzle schema from the DB
 - Never alter the database manually in production
 
@@ -257,11 +264,30 @@ staticwebapp.config.json
 - Reason: Combine fast feedback (unit/integration) with end-to-end quality
   confidence (UI tests)
 
+### Playwright User Journey Requirement
+Every user-facing feature **must** include a Playwright user journey test. This is
+non-negotiable for feature completeness. A feature is not considered done until its
+user journey is covered by a Playwright test.
+
+What counts as a user-facing feature:
+- New pages or routes
+- New user interactions (forms, buttons, workflows)
+- Offline/sync behavior changes
+- Error states that users can encounter
+- New or changed data flows through the UI
+
+Playwright test location:
+- Mobile user journey tests: `tests/e2e/mobile-*.spec.ts` — for mobile-specific flows
+- Real DB tests: `tests/e2e/real-db/` — for integration tests requiring live data
+- Local DB tests: `tests/e2e/pgsql-docker/` — for local PostgreSQL Docker testing (run with `npm run test:e2e:localdb`)
+
 ### Testing Approach by Context
 - Azure Function changes: Write Jest tests FIRST, then implement (RED-GREEN-REFACTOR)
 - Frontend component features: Write React Testing Library tests FIRST for component
   behavior, then implement (RED-GREEN-REFACTOR). Follow with manual browser testing
   for full UI flows.
+- **All new features:** Write Playwright user journey test covering the end-to-end
+  flow before the feature is considered complete.
 - This is true TDD: Test first, then code to pass the test
 
 ---

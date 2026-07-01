@@ -162,7 +162,6 @@ test.describe('mobile offline sync', () => {
     await page.goto('/training_log/1/workouts')
 
     await expect(page.getByText('Offline', { exact: true })).toBeVisible()
-    await expect(page.getByText('1 pending sync')).toBeVisible()
     await expect(page.getByRole('link', { name: 'Offline Legs' })).toBeVisible()
     await expect(page.getByText('Pending sync').first()).toBeVisible()
 
@@ -170,9 +169,9 @@ test.describe('mobile offline sync', () => {
       window.__setTrainingLogOnline?.(true)
     })
 
-    await expect(page.getByText('1 pending sync')).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'Offline Legs' })).toBeVisible()
-    await expect(page.getByText('Pending sync')).toHaveCount(0)
+    await expect(page.getByText('Pending sync')).toHaveCount(0, { timeout: 10_000 })
+    await expect(page.getByText(/Sync error:/i)).toHaveCount(0)
   })
 
   test('mobile users see a sync issue when reconnect replay hits a conflict', async ({ page }) => {
@@ -194,7 +193,7 @@ test.describe('mobile offline sync', () => {
       window.__setTrainingLogOnline?.(true)
     })
 
-    await expect(page.getByText('Sync issue')).toBeVisible()
-    await expect(page.getByText('Sync conflict').first()).toBeVisible()
+    await expect(page.getByText(/Sync error:/i)).toBeVisible()
+    await expect(page.getByText('Server version changed.')).toBeVisible()
   })
 })

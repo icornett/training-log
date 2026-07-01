@@ -7,6 +7,7 @@ import {
   type PendingOperationStore,
   type WorkoutSnapshotStore,
 } from './localStore'
+import { isRetryableError, withRetry } from './retry'
 
 const jsonHeaders = {
   'Content-Type': 'application/json',
@@ -104,6 +105,10 @@ interface FlushResult {
   processed: number
   conflicts: number
   lastError: string | null
+}
+
+interface FlushOptions {
+  onRetry?: (info: { attempt: number }) => void
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -230,15 +235,30 @@ export const createSyncService = (deps: Partial<SyncServiceDeps> = {}) => {
   }
 
   return {
-    async flush(): Promise<FlushResult> {
+    async flush(options: FlushOptions = {}): Promise<FlushResult> {
       if (!isOnline()) {
         return { processed: 0, conflicts: 0, lastError: null }
       }
 
+      const onRetry = options.onRetry
       let processed = 0
       let conflicts = 0
       let lastError: string | null = null
       const workoutIdMap = new Map<string, number>()
+
+      const retryOperation = <T>(fn: () => Promise<T>, operationId: string): Promise<T> =>
+        withRetry(fn, {
+          maxAttempts: 3,
+          isRetryable: (error: unknown) => {
+            if (error instanceof Error) {
+              const match = error.message.match(/\b([45]\d{2})\b/)
+              return match ? isRetryableError(parseInt(match[1], 10)) : false
+            }
+            return false
+          },
+          operationId,
+          onRetry: onRetry ? (info) => { onRetry({ attempt: info.attempt }) } : undefined,
+        })
 
       for (const operation of pendingStore.list()) {
         try {
@@ -252,38 +272,45 @@ export const createSyncService = (deps: Partial<SyncServiceDeps> = {}) => {
                 : snapshotStore.list().find((snapshot) => snapshot.clientId === workoutClientId) ?? null
 
             if (isRecord(payload.exercise)) {
-              const createdWorkout = await request<WorkoutDetails>('/api/workouts/with-first-exercise', {
-                method: 'POST',
-                headers: jsonHeaders,
-                body: JSON.stringify({
-                  name: payload.name,
-                  date: payload.date,
-                  exercise: {
-                    description: payload.exercise.description,
-                    exerciseType: payload.exercise.exerciseType,
-                    numSets: payload.exercise.numSets,
-                    numReps: payload.exercise.numReps,
-                    weightDescription: payload.exercise.weightDescription,
-                    durationMinutes: payload.exercise.durationMinutes,
-                    speedMph: payload.exercise.speedMph,
-                    notes: payload.exercise.notes,
-                  },
+              const exercise = payload.exercise
+              const createdWorkout = await retryOperation(
+                () => request<WorkoutDetails>('/api/workouts/with-first-exercise', {
+                  method: 'POST',
+                  headers: jsonHeaders,
+                  body: JSON.stringify({
+                    name: payload.name,
+                    date: payload.date,
+                    exercise: {
+                      description: exercise.description,
+                      exerciseType: exercise.exerciseType,
+                      numSets: exercise.numSets,
+                      numReps: exercise.numReps,
+                      weightDescription: exercise.weightDescription,
+                      durationMinutes: exercise.durationMinutes,
+                      speedMph: exercise.speedMph,
+                      notes: exercise.notes,
+                    },
+                  }),
                 }),
-              })
+                operation.operationId,
+              )
 
               if (workoutClientId) {
                 workoutIdMap.set(workoutClientId, createdWorkout.id)
                 rewriteQueuedWorkoutReferences(workoutClientId, createdWorkout.id, snapshotBefore)
               }
             } else {
-              const created = await request<{ id: number; message: string }>('/api/workouts', {
-                method: 'POST',
-                headers: jsonHeaders,
-                body: JSON.stringify({
-                  name: payload.name,
-                  date: payload.date,
+              const created = await retryOperation(
+                () => request<{ id: number; message: string }>('/api/workouts', {
+                  method: 'POST',
+                  headers: jsonHeaders,
+                  body: JSON.stringify({
+                    name: payload.name,
+                    date: payload.date,
+                  }),
                 }),
-              })
+                operation.operationId,
+              )
 
               if (workoutClientId) {
                 workoutIdMap.set(workoutClientId, created.id)
@@ -302,20 +329,23 @@ export const createSyncService = (deps: Partial<SyncServiceDeps> = {}) => {
 
           if (operation.entityType === 'exercise' && operation.action === 'create') {
             const workoutId = resolveWorkoutId(payload, workoutIdMap)
-            await request<{ id: number; message: string }>(`/api/workouts/${workoutId}/exercises`, {
-              method: 'POST',
-              headers: jsonHeaders,
-              body: JSON.stringify({
-                description: payload.description,
-                exerciseType: payload.exerciseType,
-                numSets: payload.numSets,
-                numReps: payload.numReps,
-                weightDescription: payload.weightDescription,
-                durationMinutes: payload.durationMinutes,
-                speedMph: payload.speedMph,
-                notes: payload.notes,
+            await retryOperation(
+              () => request<{ id: number; message: string }>(`/api/workouts/${workoutId}/exercises`, {
+                method: 'POST',
+                headers: jsonHeaders,
+                body: JSON.stringify({
+                  description: payload.description,
+                  exerciseType: payload.exerciseType,
+                  numSets: payload.numSets,
+                  numReps: payload.numReps,
+                  weightDescription: payload.weightDescription,
+                  durationMinutes: payload.durationMinutes,
+                  speedMph: payload.speedMph,
+                  notes: payload.notes,
+                }),
               }),
-            })
+              operation.operationId,
+            )
             await request<WorkoutDetails>(`/api/workouts/${workoutId}`)
 
             pendingStore.remove(operation.operationId)
@@ -330,20 +360,23 @@ export const createSyncService = (deps: Partial<SyncServiceDeps> = {}) => {
 
           if (operation.entityType === 'exercise' && operation.action === 'update') {
             const workoutId = resolveWorkoutId(payload, workoutIdMap)
-            await request<{ message: string }>(`/api/workouts/${workoutId}/exercises/${payload.exerciseId}`, {
-              method: 'PUT',
-              headers: jsonHeaders,
-              body: JSON.stringify({
-                description: payload.description,
-                exerciseType: payload.exerciseType,
-                numSets: payload.numSets,
-                numReps: payload.numReps,
-                weightDescription: payload.weightDescription,
-                durationMinutes: payload.durationMinutes,
-                speedMph: payload.speedMph,
-                notes: payload.notes,
+            await retryOperation(
+              () => request<{ message: string }>(`/api/workouts/${workoutId}/exercises/${payload.exerciseId}`, {
+                method: 'PUT',
+                headers: jsonHeaders,
+                body: JSON.stringify({
+                  description: payload.description,
+                  exerciseType: payload.exerciseType,
+                  numSets: payload.numSets,
+                  numReps: payload.numReps,
+                  weightDescription: payload.weightDescription,
+                  durationMinutes: payload.durationMinutes,
+                  speedMph: payload.speedMph,
+                  notes: payload.notes,
+                }),
               }),
-            })
+              operation.operationId,
+            )
             await request<WorkoutDetails>(`/api/workouts/${workoutId}`)
 
             pendingStore.remove(operation.operationId)
@@ -358,9 +391,12 @@ export const createSyncService = (deps: Partial<SyncServiceDeps> = {}) => {
 
           if (operation.entityType === 'exercise' && operation.action === 'delete') {
             const workoutId = resolveWorkoutId(payload, workoutIdMap)
-            await request<{ message: string }>(`/api/workouts/${workoutId}/exercises/${payload.exerciseId}`, {
-              method: 'DELETE',
-            })
+            await retryOperation(
+              () => request<{ message: string }>(`/api/workouts/${workoutId}/exercises/${payload.exerciseId}`, {
+                method: 'DELETE',
+              }),
+              operation.operationId,
+            )
             await request<WorkoutDetails>(`/api/workouts/${workoutId}`)
 
             pendingStore.remove(operation.operationId)

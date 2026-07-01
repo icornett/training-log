@@ -1,25 +1,48 @@
 BEGIN;
 
+CREATE TEMP TABLE seeded_users (
+  username text PRIMARY KEY
+) ON COMMIT DROP;
+
+INSERT INTO seeded_users (username)
+VALUES
+  ('Playwright User iOS'),
+  ('Playwright User Android'),
+  ('Playwright User Chromium'),
+  ('Playwright User Safari');
+
 DELETE FROM exercises
 WHERE workout_id IN (
   SELECT id
   FROM workouts
-  WHERE user_id = (SELECT id FROM users WHERE username = 'Playwright User')
+  WHERE user_id IN (
+    SELECT u.id
+    FROM users u
+    JOIN seeded_users su ON su.username = u.username
+  )
 );
 
 DELETE FROM workouts
-WHERE user_id = (SELECT id FROM users WHERE username = 'Playwright User');
+WHERE user_id IN (
+  SELECT u.id
+  FROM users u
+  JOIN seeded_users su ON su.username = u.username
+);
 
 DELETE FROM users
-WHERE username = 'Playwright User';
+WHERE username IN (
+  SELECT username
+  FROM seeded_users
+);
 
 INSERT INTO users (username, password)
-VALUES ('Playwright User', '$2a$12$5L6hTF9nEzj40gFkieIVauw99aSmcMEHyoLL/QiGkQOgHq3N6QDBO');
+SELECT username, '$2a$12$5L6hTF9nEzj40gFkieIVauw99aSmcMEHyoLL/QiGkQOgHq3N6QDBO'
+FROM seeded_users;
 
 WITH seed_user AS (
-  SELECT id
+  SELECT id, username
   FROM users
-  WHERE username = 'Playwright User'
+  WHERE username IN (SELECT username FROM seeded_users)
 ),
 seeded_workouts(name, workout_date, num_sets, num_reps, weight_description) AS (
   VALUES
@@ -31,7 +54,7 @@ inserted_workouts AS (
   SELECT sw.name, sw.workout_date, sw.num_sets, sw.num_reps, sw.weight_description, su.id
   FROM seeded_workouts sw
   CROSS JOIN seed_user su
-  RETURNING id, name, "date"
+  RETURNING id, name, "date", user_id
 )
 INSERT INTO exercises (description, num_sets, num_reps, weight_description, workout_id)
 SELECT 'Bench Press', 3, 8, '65 lbs', iw.id

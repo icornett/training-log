@@ -4,12 +4,14 @@ const baseURL = process.env.BASE_URL ?? 'http://127.0.0.1:4173'
 
 export default defineConfig({
   testDir: './tests/e2e',
-  testIgnore: ['**/real-db/**', '**/sqlite/**'],
-  timeout: 30_000,
+  testIgnore: ['**/real-db/**'],
+  timeout: process.env.CI ? 60_000 : 30_000,
   expect: {
     timeout: process.env.CI ? 10_000 : 5_000,
   },
   retries: process.env.CI ? 2 : 0,
+  fullyParallel: !process.env.CI,
+  workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI
     ? [
         ['list'],
@@ -43,5 +45,7 @@ export default defineConfig({
         command: 'npm run dev:web -- --host 127.0.0.1 --port 4173',
         port: 4173,
         reuseExistingServer: !process.env.CI,
+        readyTimeout: process.env.CI ? 90_000 : 30_000,
+        timeout: process.env.CI ? 120_000 : 30_000,
       },
 })

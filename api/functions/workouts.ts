@@ -1,12 +1,15 @@
 import { app, type HttpRequest } from '@azure/functions'
 
 import { getSessionUser } from '../shared/auth.js'
+import { extractOperationId } from '../shared/idempotency.js'
 import { json, parseJsonBody } from '../shared/http.js'
 import {
   addWorkout,
   countWorkoutsByUsername,
   findUserIdByUsername,
   listWorkoutsByUsername,
+  getProcessedOperation,
+  storeProcessedOperation,
 } from '../shared/repository.js'
 import type { SessionUser, WorkoutRow } from '../shared/types.js'
 import { invalidWorkoutMessage, requireExistingUser } from '../shared/validation.js'
@@ -14,6 +17,7 @@ import { invalidWorkoutMessage, requireExistingUser } from '../shared/validation
 interface CreateWorkoutBody {
   name?: string
   date?: string
+  operationId?: string
 }
 
 interface WorkoutsDependencies {
@@ -23,6 +27,9 @@ interface WorkoutsDependencies {
   listWorkouts: (username: string, offset: number) => Promise<WorkoutRow[]>
   findUserId: (username: string) => Promise<number | null>
   createWorkout: (name: string, date: string, userId: number) => Promise<number>
+  extractOperationId: (request: HttpRequest) => Promise<string | null>
+  getProcessed: (userId: number, operationId: string) => Promise<Record<string, unknown> | null>
+  storeProcessed: (userId: number, operationId: string, body: Record<string, unknown>) => Promise<void>
   validateWorkout: (
     name: string,
     date: string,
@@ -61,6 +68,21 @@ export const createWorkoutsHandler = (deps: WorkoutsDependencies) => {
     const name = body.name?.trim() ?? ''
     const date = body.date ?? ''
 
+    // Extract operationId for deduplication
+    const operationId = await deps.extractOperationId(request)
+
+    // Check for duplicate operation if operationId provided
+    if (operationId) {
+      const userId = await deps.findUserId(user.username)
+      if (userId) {
+        const cached = await deps.getProcessed(userId, operationId)
+        if (cached) {
+          // Return cached result for duplicate request
+          return json(200, cached)
+        }
+      }
+    }
+
     const invalidMsg = await deps.validateWorkout(name, date, user.username, null)
     if (invalidMsg) {
       return json(422, { error: invalidMsg })
@@ -72,11 +94,21 @@ export const createWorkoutsHandler = (deps: WorkoutsDependencies) => {
     }
 
     const newWorkoutId = await deps.createWorkout(name, date, userId)
-
-    return json(201, {
+    const result = {
       id: newWorkoutId,
       message: "You've successfully created a new workout.",
-    })
+    }
+
+    // Cache the result for future dedup checks
+    if (operationId) {
+      try {
+        await deps.storeProcessed(userId, operationId, result)
+      } catch {
+        // Silently fail if caching fails
+      }
+    }
+
+    return json(201, result)
   }
 }
 
@@ -87,9 +119,13 @@ export const workoutsHandler = createWorkoutsHandler({
   listWorkouts: listWorkoutsByUsername,
   findUserId: findUserIdByUsername,
   createWorkout: (name, date, userId) => addWorkout(name, date, 0, 0, 'bodyweight', userId),
+  extractOperationId,
+  getProcessed: getProcessedOperation,
+  storeProcessed: storeProcessedOperation,
   validateWorkout: invalidWorkoutMessage,
 })
 
+/* istanbul ignore next -- runtime registration is environment-gated and not exercised in unit tests */
 // Skip registration during tests to avoid Azure Functions runtime detection warning
 if (process.env.NODE_ENV !== 'test') {
   app.http('workouts', {

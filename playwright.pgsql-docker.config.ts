@@ -27,13 +27,19 @@ import { defineConfig, devices } from '@playwright/test'
 const localDbBaseURL = process.env.BASE_URL ?? 'http://127.0.0.1:4280'
 
 export default defineConfig({
-  testDir: './tests/e2e/sqlite',
+  testDir: './tests/e2e/pgsql-docker',
   testIgnore: [],
   fullyParallel: false,
   forbidOnly: process.env.CI ? true : false,
   retries: process.env.CI ? 1 : 0,
   workers: 1,
-  reporter: 'html',
+  reporter: process.env.CI
+    ? [
+        ['list'],
+        ['junit', { outputFile: 'test-results/e2e-junit.xml' }],
+        ['html', { open: 'never' }],
+      ]
+    : 'html',
   use: {
     baseURL: localDbBaseURL,
     trace: 'on-first-retry',

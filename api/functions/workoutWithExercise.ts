@@ -135,6 +135,7 @@ export const workoutWithExerciseHandler = createWorkoutWithExerciseHandler({
   getWorkout: getWorkoutWithExercisesForUser,
 })
 
+/* istanbul ignore next -- runtime registration is environment-gated and not exercised in unit tests */
 // Skip registration during tests to avoid Azure Functions runtime detection warning
 if (process.env.NODE_ENV !== 'test') {
   app.http('workoutWithFirstExercise', {

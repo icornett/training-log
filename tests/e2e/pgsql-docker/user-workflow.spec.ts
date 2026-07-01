@@ -9,12 +9,12 @@ type StrengthExercise = {
 
 const makeUsername = (projectName: string): string => {
   const projectSlug = projectName.replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 8)
-  return `sqlite-${projectSlug}-${String(Date.now()).slice(-4)}`
+  return `pgsql-${projectSlug}-${String(Date.now()).slice(-4)}`
 }
 
 const buildStrengthExercises = (totalExercises: number): StrengthExercise[] =>
   Array.from({ length: totalExercises }, (_, index) => ({
-    description: `SQLite Exercise ${index + 1}`,
+    description: `PostgreSQL Exercise ${index + 1}`,
     sets: String(3 + index),
     reps: String(12 + index),
     weight: 'bodyweight',
@@ -72,11 +72,11 @@ const cleanupUserIfPresent = async (
   }
 }
 
-test('sqlite user can complete a full workflow', async ({ page }, testInfo) => {
+test('pgsql user can complete a full workflow', async ({ page }, testInfo) => {
   const username = makeUsername(testInfo.project.name)
-  const password = 'sqlite-password-123'
+  const password = 'pgsql-password-123'
   const exercises = buildStrengthExercises(3)
-  const workoutName = 'SQLite Workout'
+  const workoutName = 'PgSQL Workout'
 
   try {
     // Signup
@@ -135,9 +135,9 @@ test('sqlite user can complete a full workflow', async ({ page }, testInfo) => {
   }
 })
 
-test('sqlite user can browse workouts', async ({ page }, testInfo) => {
+test('pgsql user can browse workouts', async ({ page }, testInfo) => {
   const username = makeUsername(testInfo.project.name)
-  const password = 'sqlite-password-123'
+  const password = 'pgsql-password-123'
 
   try {
     // Signup and create workout
