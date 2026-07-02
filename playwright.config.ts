@@ -45,7 +45,6 @@ export default defineConfig({
         command: 'npm run dev:web -- --host 127.0.0.1 --port 4173',
         port: 4173,
         reuseExistingServer: !process.env.CI,
-        readyTimeout: process.env.CI ? 90_000 : 30_000,
         timeout: process.env.CI ? 120_000 : 30_000,
       },
 })

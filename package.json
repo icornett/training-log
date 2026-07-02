@@ -29,6 +29,7 @@
     "test:web": "vitest run",
     "test:web:ci": "vitest run --coverage",
     "test:e2e:mobile": "playwright test --project=ios-safari --project=android-chrome",
+    "test:e2e:mobile:container": "sh ./bin/run-mobile-e2e-container.sh",
     "test:e2e:real-db": "playwright test -c playwright.real-db.config.ts --project=ios-safari --project=android-chrome",
     "test:e2e:localdb": "playwright test -c playwright.pgsql-docker.config.ts",
     "test:e2e:localdb:container": "sh ./bin/run-localdb-e2e-container.sh",

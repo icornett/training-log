@@ -2,7 +2,7 @@
 set -eu
 
 if ! command -v docker >/dev/null 2>&1; then
-  echo "Docker is required to run the local-db E2E suite in a container." >&2
+  echo "Docker is required to run the mobile E2E suite in a container." >&2
   exit 1
 fi
 
@@ -19,7 +19,8 @@ docker run --rm --init \
   -e NPM_CONFIG_PREFIX="${NPM_PREFIX}" \
   -e PATH="${NPM_PREFIX}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
   -e LOCAL_DB_HOST=host.docker.internal \
-  -e SESSION_SECRET="${SESSION_SECRET:-container-local-session-secret}" \
+  -e DATABASE_URL="postgresql://traininglog:traininglog@host.docker.internal:55432/training_log?sslmode=disable" \
+  -e SESSION_SECRET="${SESSION_SECRET:-container-mobile-session-secret}" \
   -e AzureWebJobsStorage="${AzureWebJobsStorage:-UseDevelopmentStorage=true}" \
   -e FUNCTIONS_WORKER_RUNTIME="${FUNCTIONS_WORKER_RUNTIME:-node}" \
   -e DISABLE_TIMER_TRIGGERS="${DISABLE_TIMER_TRIGGERS:-true}" \
@@ -38,7 +39,12 @@ docker run --rm --init \
 exec npx -y node@22 "$NPM_CONFIG_PREFIX/lib/node_modules/azure-functions-core-tools/lib/main.js" "$@"
 EOF
     chmod +x "$NPM_CONFIG_PREFIX/bin/func"
-    npm run build
-    npm run build:api
-    sh ./bin/run-localdb-e2e.sh
+    npm run dev:api:func:localdb >/tmp/func.log 2>&1 &
+    API_PID=$!
+    cleanup() {
+      kill "$API_PID" 2>/dev/null || true
+    }
+    trap cleanup EXIT INT TERM
+    npx wait-on http://127.0.0.1:7071 --timeout 90000
+    npm run test:e2e:mobile
   '
