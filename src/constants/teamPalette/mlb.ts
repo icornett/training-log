@@ -290,11 +290,11 @@ export const MLB_TEAM_OVERRIDES: Readonly<Record<string, Partial<TeamPalette>>> 
     body: '"Roboto Condensed", "Montserrat", "Segoe UI", sans-serif',
   },
   'mlb:mariners': {
-    'base-bg': '#081927',
+    'base-bg': '#005C5C',
     panel: '#0E263A',
     line: '#C4CED4',
     accent: '#0C2C56',
-    'accent-strong': '#005C5C',
+    'accent-strong': '#2AA3A3',
     'brand-color': '#FFFFFF',
     'bg-glow-a': 'rgba(12, 44, 86, 0.34)',
     'bg-glow-b': 'rgba(196, 206, 212, 0.24)',
