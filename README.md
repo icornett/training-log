@@ -48,6 +48,17 @@ The real-database Playwright lane seeds a dedicated `Playwright User` account fr
 
 To run the same lane manually, set `BASE_URL` to the preview URL and run `npm run test:e2e:real-db`.
 
+## Playwright Container Notes
+
+Containerized Playwright runs use the image defined in [docker/playwright/Dockerfile](docker/playwright/Dockerfile).
+
+That image installs `ffmpeg` explicitly because Playwright video workflows depend on media tooling being present in the container runtime.
+
+Container test entry points:
+
+- `npm run test:e2e:mobile:container`
+- `npm run test:e2e:localdb:container`
+
 ## Git Hooks
 
 Git hooks are installed with `simple-git-hooks`. Run [bin/setup-hooks](/Users/iancornett/src/ae-bootcamp-demo/training-log/bin/setup-hooks) once after cloning, or run `npm run prepare` directly.

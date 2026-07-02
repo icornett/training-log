@@ -9,9 +9,12 @@ LABEL org.opencontainers.image.title="training-log-playwright" \
 
 # Keep an explicit Playwright CLI available and verify required browsers.
 RUN set -eu; \
-    npm install -g playwright@${PLAYWRIGHT_VERSION}; \
-    playwright install chromium firefox webkit; \
-    playwright install --list | grep -Eq \
+      apt-get update; \
+      apt-get install -y --no-install-recommends ffmpeg; \
+      rm -rf /var/lib/apt/lists/*; \
+      npm install -g playwright@${PLAYWRIGHT_VERSION}; \
+      playwright install chromium firefox webkit; \
+      playwright install --list | grep -Eq \
       '/ms-playwright/chromium-|/ms-playwright/firefox-|/ms-playwright/webkit-'
 
 USER pwuser
