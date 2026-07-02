@@ -76,6 +76,7 @@ describe("WorkoutDetailPage", () => {
       logout: vi.fn(),
       deleteAccount: vi.fn(),
       exportAccountData: vi.fn(),
+      updateFavoriteTeam: vi.fn(async () => undefined),
     });
     vi.mocked(api.getWorkout).mockResolvedValue(workoutFixture);
   });
@@ -612,6 +613,7 @@ describe("WorkoutDetailPage — pending mode", () => {
       logout: vi.fn(),
       deleteAccount: vi.fn(),
       exportAccountData: vi.fn(),
+      updateFavoriteTeam: vi.fn(async () => undefined),
     });
   });
 

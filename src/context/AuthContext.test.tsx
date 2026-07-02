@@ -12,6 +12,7 @@ vi.mock('../services/api', () => ({
     logout: vi.fn().mockResolvedValue(undefined),
     deleteAccount: vi.fn().mockResolvedValue(undefined),
     exportAccountData: vi.fn().mockResolvedValue('{}'),
+    updateFavoriteTeam: vi.fn().mockResolvedValue(undefined),
   },
 }))
 
@@ -145,5 +146,30 @@ describe('AuthContext sync status', () => {
     await waitFor(() => {
       expect(result.current.lastSyncError).toBe('Resolve sync conflicts to continue.')
     })
+  })
+})
+
+describe('AuthContext team theme', () => {
+  beforeEach(() => {
+    vi.stubGlobal('navigator', {
+      onLine: true,
+    })
+    document.documentElement.removeAttribute('data-theme')
+  })
+
+  it('applies data-theme from the authenticated user preference', async () => {
+    const { api } = await import('../services/api')
+    vi.mocked(api.getCurrentUser).mockResolvedValue({
+      username: 'Jane Doe',
+      favoriteTeamKey: 'nhl:kraken',
+    })
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'nhl:kraken')
   })
 })

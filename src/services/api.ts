@@ -269,6 +269,14 @@ export const createApiClient = (deps: Partial<ApiClientDeps> = {}) => {
     })
   },
 
+  async updateFavoriteTeam(teamKey: string): Promise<void> {
+    await request<void>('/api/account', {
+      method: 'PUT',
+      headers: jsonHeaders,
+      body: JSON.stringify({ teamKey }),
+    })
+  },
+
     async exportAccountData(format: 'json' | 'csv'): Promise<AccountExportData | string> {
       const response = await getFetch()(`/api/account/export?format=${format}`, {
         credentials: 'same-origin',

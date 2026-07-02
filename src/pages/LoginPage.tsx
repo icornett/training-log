@@ -34,6 +34,10 @@ export const LoginPage = (): JSX.Element => {
     <section className="card auth-card">
       <h1>Login</h1>
       <p>Access your workout history and keep progressing.</p>
+      <p>
+        After first login, set your team theme in Account Settings - Favorite Team Theme, and update it any
+        time.
+      </p>
       <form onSubmit={submit} className="stack-form">
         <label htmlFor="login-username">Username</label>
         <input

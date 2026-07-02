@@ -1,8 +1,14 @@
 import { app, type HttpRequest } from '@azure/functions'
 
 import { clearSessionCookie, getSessionUser } from '../shared/auth.js'
-import { json } from '../shared/http.js'
-import { logGdprEvent, softDeleteUserByUsername } from '../shared/repository.js'
+import { json, parseJsonBody } from '../shared/http.js'
+import {
+  getUserFavoriteTeam,
+  logGdprEvent,
+  softDeleteUserByUsername,
+  updateUserFavoriteTeam,
+  VALID_TEAM_KEYS,
+} from '../shared/repository.js'
 import { requireExistingUser } from '../shared/validation.js'
 
 interface AccountDependencies {
@@ -11,7 +17,11 @@ interface AccountDependencies {
   deleteUser: (username: string) => Promise<void>
   auditEvent: (username: string) => Promise<void>
   clearCookie: () => string
+  getFavoriteTeam: (username: string) => Promise<string | null>
+  setFavoriteTeam: (username: string, teamKey: string) => Promise<void>
 }
+
+const DEFAULT_FAVORITE_TEAM_KEY = 'nfl:seahawks'
 
 export const createAccountHandler = (dependencies: AccountDependencies) => {
   return async (request: HttpRequest) => {
@@ -21,7 +31,18 @@ export const createAccountHandler = (dependencies: AccountDependencies) => {
     }
 
     if (request.method === 'GET') {
-      return json(200, { username: user.username })
+      const favoriteTeamKey = (await dependencies.getFavoriteTeam(user.username)) ?? DEFAULT_FAVORITE_TEAM_KEY
+      return json(200, { username: user.username, favoriteTeamKey })
+    }
+
+    if (request.method === 'PUT') {
+      const body = await parseJsonBody<{ teamKey?: unknown }>(request)
+      const teamKey = body?.teamKey
+      if (typeof teamKey !== 'string' || !VALID_TEAM_KEYS.has(teamKey)) {
+        return json(400, { error: 'Invalid team key.' })
+      }
+      await dependencies.setFavoriteTeam(user.username, teamKey)
+      return json(200, { favoriteTeamKey: teamKey })
     }
 
     if (request.method !== 'DELETE') {
@@ -51,13 +72,15 @@ export const accountHandler = createAccountHandler({
     })
   },
   clearCookie: clearSessionCookie,
+  getFavoriteTeam: getUserFavoriteTeam,
+  setFavoriteTeam: updateUserFavoriteTeam,
 })
 
 /* istanbul ignore next -- runtime registration is environment-gated and not exercised in unit tests */
 // Skip registration during tests to avoid Azure Functions runtime detection warning
 if (process.env.NODE_ENV !== 'test') {
   app.http('account', {
-    methods: ['GET', 'DELETE'],
+    methods: ['GET', 'PUT', 'DELETE'],
     authLevel: 'anonymous',
     route: 'account',
     handler: accountHandler,

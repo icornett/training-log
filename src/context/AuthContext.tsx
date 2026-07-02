@@ -8,6 +8,7 @@ import {
 } from 'react'
 
 import { api } from '../services/api'
+import { getTeamPalette } from '../constants/teamPalettes'
 import { createPendingOperationStore, syncStatusChangedEventName } from '../services/localStore'
 import { syncService } from '../services/sync'
 import type { SessionUser } from '../types/domain'
@@ -22,6 +23,7 @@ interface AuthContextValue {
   logout: () => Promise<void>
   deleteAccount: () => Promise<void>
   exportAccountData: (format: 'json' | 'csv') => Promise<string>
+  updateFavoriteTeam: (teamKey: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -84,6 +86,11 @@ export const AuthProvider = ({ children }: PropsWithChildren): JSX.Element => {
     return typeof data === 'string' ? data : JSON.stringify(data, null, 2)
   }
 
+  const updateFavoriteTeam = async (teamKey: string): Promise<void> => {
+    await api.updateFavoriteTeam(teamKey)
+    await refresh()
+  }
+
   useEffect(() => {
     let disposed = false
 
@@ -106,6 +113,15 @@ export const AuthProvider = ({ children }: PropsWithChildren): JSX.Element => {
       disposed = true
     }
   }, [])
+
+  useEffect(() => {
+    const teamKey = currentUser?.favoriteTeamKey ?? 'nfl:seahawks'
+    document.documentElement.setAttribute('data-theme', teamKey)
+    const palette = getTeamPalette(teamKey)
+    for (const [token, value] of Object.entries(palette)) {
+      document.documentElement.style.setProperty(`--${token}`, value)
+    }
+  }, [currentUser])
 
   useEffect(() => {
     const handleOnline = (): void => {
@@ -155,6 +171,7 @@ export const AuthProvider = ({ children }: PropsWithChildren): JSX.Element => {
       logout,
       deleteAccount,
       exportAccountData,
+      updateFavoriteTeam,
     }),
     [currentUser, loading, isOffline, pendingCount, lastSyncError],
   )

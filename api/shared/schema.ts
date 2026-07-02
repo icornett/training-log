@@ -21,6 +21,7 @@ export const users = pgTable('users', {
   gdprConsentVersion: varchar('gdpr_consent_version', { length: 20 }),
   gdprConsentIp: varchar('gdpr_consent_ip', { length: 64 }),
   gdprConsentUserAgent: varchar('gdpr_consent_user_agent', { length: 255 }),
+  favoriteTeamKey: varchar('favorite_team_key', { length: 32 }),
 })
 
 export const workouts = pgTable(

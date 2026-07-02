@@ -3,6 +3,7 @@ import { and, count, desc, eq, inArray, isNotNull, isNull, lte } from 'drizzle-o
 
 import { db } from './db.js'
 import { auditLogs, exercises, operationDedup, users, workouts } from './schema.js'
+import { VALID_TEAM_KEYS } from './teamCatalog.js'
 import type {
   AccountExportPayload,
   ExerciseRow,
@@ -10,6 +11,8 @@ import type {
   WorkoutDetails,
   WorkoutRow,
 } from './types.js'
+
+export { VALID_TEAM_KEYS } from './teamCatalog.js'
 
 const normalizeExerciseRow = (
   row: Omit<ExerciseRow, 'durationMinutes' | 'speedMph'> & {
@@ -477,4 +480,53 @@ export const storeProcessedOperation = async (
     operationId,
     resultJson: result,
   })
+}
+
+// ── Team preference ──────────────────────────────────────────────────────────
+
+const isMissingFavoriteTeamColumnError = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  const code = 'code' in error ? error.code : undefined
+  if (code === '42703') {
+    return true
+  }
+
+  const message = 'message' in error ? error.message : undefined
+  return typeof message === 'string' && message.includes('favorite_team_key')
+}
+
+export const getUserFavoriteTeam = async (username: string): Promise<string | null> => {
+  try {
+    const rows = await db
+      .select({ favoriteTeamKey: users.favoriteTeamKey })
+      .from(users)
+      .where(eq(users.username, username))
+      .limit(1)
+    return rows.length > 0 ? (rows[0].favoriteTeamKey ?? null) : null
+  } catch (error) {
+    if (isMissingFavoriteTeamColumnError(error)) {
+      return null
+    }
+    throw error
+  }
+}
+
+export const updateUserFavoriteTeam = async (username: string, teamKey: string): Promise<void> => {
+  if (!VALID_TEAM_KEYS.has(teamKey)) {
+    throw new Error(`Invalid team key: ${teamKey}`)
+  }
+  try {
+    await db
+      .update(users)
+      .set({ favoriteTeamKey: teamKey })
+      .where(eq(users.username, username))
+  } catch (error) {
+    if (isMissingFavoriteTeamColumnError(error)) {
+      return
+    }
+    throw error
+  }
 }

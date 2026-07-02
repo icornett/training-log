@@ -54,6 +54,7 @@ describe("AccountSettingsPage", () => {
       logout: vi.fn(),
       deleteAccount: vi.fn(),
       exportAccountData: vi.fn(async () => '{"ok":true}'),
+      updateFavoriteTeam: vi.fn(async () => undefined),
     });
   });
 
@@ -69,6 +70,7 @@ describe("AccountSettingsPage", () => {
       logout: vi.fn(),
       deleteAccount: vi.fn(),
       exportAccountData,
+      updateFavoriteTeam: vi.fn(async () => undefined),
     });
 
     render(
@@ -107,6 +109,7 @@ describe("AccountSettingsPage", () => {
       logout: vi.fn(),
       deleteAccount,
       exportAccountData: vi.fn(async () => '{"ok":true}'),
+      updateFavoriteTeam: vi.fn(async () => undefined),
     });
 
     render(
@@ -130,6 +133,100 @@ describe("AccountSettingsPage", () => {
     await waitFor(() => {
       expect(deleteAccount).toHaveBeenCalled();
       expect(navigateMock).toHaveBeenCalledWith("/signup");
+    });
+  });
+
+  const renderPage = () =>
+    render(
+      <MemoryRouter
+        initialEntries={["/training_log/1/account"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <Routes>
+          <Route
+            path="/training_log/:pageNumber/account"
+            element={<AccountSettingsPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+  it("renders the Favorite Team selector", () => {
+    renderPage();
+    expect(
+      screen.getByRole("combobox", { name: /league/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: /favorite team/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("filters the team list by selected league", async () => {
+    renderPage();
+
+    const leagueSelect = screen.getByRole("combobox", { name: /league/i });
+    const teamSelect = screen.getByRole("combobox", { name: /favorite team/i }) as HTMLSelectElement;
+
+    expect(screen.getByRole("option", { name: "Seattle Seahawks" })).toBeInTheDocument();
+
+    await userEvent.selectOptions(leagueSelect, "NHL");
+
+    expect(teamSelect.value).toBe("nhl:anaheim-ducks");
+    expect(screen.getByRole("option", { name: "Anaheim Ducks" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Seattle Kraken" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Seattle Seahawks" })).not.toBeInTheDocument();
+  });
+
+  it("pre-selects the stored team preference", () => {
+    vi.mocked(useAuth).mockReturnValue({
+      currentUser: { username: "demo", favoriteTeamKey: "nhl:kraken" },
+      loading: false,
+      isOffline: false,
+      pendingCount: 0,
+      lastSyncError: null,
+      refresh: vi.fn(),
+      logout: vi.fn(),
+      deleteAccount: vi.fn(),
+      exportAccountData: vi.fn(async () => "{}"),
+      updateFavoriteTeam: vi.fn(async () => undefined),
+    });
+
+    renderPage();
+
+    expect(
+      (screen.getByRole("combobox", { name: /favorite team/i }) as HTMLSelectElement).value,
+    ).toBe("nhl:kraken");
+  });
+
+  it("calls updateFavoriteTeam when user picks a new team", async () => {
+    const updateFavoriteTeam = vi.fn(async () => undefined);
+    vi.mocked(useAuth).mockReturnValue({
+      currentUser: { username: "demo" },
+      loading: false,
+      isOffline: false,
+      pendingCount: 0,
+      lastSyncError: null,
+      refresh: vi.fn(),
+      logout: vi.fn(),
+      deleteAccount: vi.fn(),
+      exportAccountData: vi.fn(async () => "{}"),
+      updateFavoriteTeam,
+    });
+
+    renderPage();
+
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: /league/i }),
+      "MLB",
+    );
+
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: /favorite team/i }),
+      "mlb:mariners",
+    );
+
+    await waitFor(() => {
+      expect(updateFavoriteTeam).toHaveBeenCalledWith("mlb:mariners");
     });
   });
 });

@@ -1,16 +1,31 @@
 :root {
-  --base-bg: #0d1520;
-  --panel: #162030;
-  --ink: #e2eaf3;
+  --base-bg: #0A1526;
+  --panel: #1B2636;
+  --ink: #EAF2FF;
   --ink-soft: #7fa4c4;
-  --accent: #5aabff;
-  --accent-strong: #93c5fd;
-  --line: #1e3045;
+  --accent: #69BE28;
+  --accent-strong: #8DD657;
+  --brand-color: #BDE8FF;
+  --brand-surface: rgba(8, 25, 45, 0.72);
+  --brand-surface-border: rgba(189, 232, 255, 0.42);
+  --on-accent: #041320;
+  --on-accent-strong: #041320;
+  --link: #BDE8FF;
+  --link-hover: #E6F7FF;
+  --bg-glow-a: rgba(0, 60, 140, 0.35);
+  --bg-glow-b: rgba(80, 160, 20, 0.18);
+  --line: #3D4A5D;
   --danger: #ff6b7a;
-  --seahawks-green: #69be28;
+  --danger-button-bg: #E9072B;
+  --danger-button-fg: #FFFFFF;
+  --danger-button-border: #FF5E78;
+  --danger-button-hover-bg: #C30024;
+  --danger-button-hover-fg: #FFFFFF;
   --headline: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
   --body: "Instrument Sans", "Gill Sans", "Trebuchet MS", sans-serif;
 }
+
+/* Theme tokens are applied at runtime from src/constants/teamPalettes.ts via AuthContext. */
 
 * {
   box-sizing: border-box;
@@ -21,16 +36,20 @@ body {
   font-family: var(--body);
   color: var(--ink);
   background:
-    radial-gradient(circle at 15% 20%, rgba(0, 60, 140, 0.35) 0%, transparent 40%),
-    radial-gradient(circle at 85% 10%, rgba(80, 160, 20, 0.18) 0%, transparent 35%),
+    radial-gradient(circle at 15% 20%, var(--bg-glow-a) 0%, transparent 42%),
+    radial-gradient(circle at 85% 10%, var(--bg-glow-b) 0%, transparent 36%),
     var(--base-bg);
   min-height: 100vh;
   color-scheme: dark;
 }
 
 a {
-  color: var(--accent-strong);
+  color: var(--link);
   text-decoration-thickness: 0.09rem;
+}
+
+a:hover {
+  color: var(--link-hover);
 }
 
 .app-bg {
@@ -43,7 +62,7 @@ a {
   align-items: flex-start;
   gap: 0.7rem;
   padding: 1rem 1.2rem;
-  border-bottom: 2px solid var(--seahawks-green);
+  border-bottom: 2px solid var(--accent);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
@@ -54,7 +73,18 @@ a {
   font-weight: 700;
   letter-spacing: 0.02em;
   text-decoration: none;
-  color: var(--accent);
+  color: var(--brand-color);
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.5rem;
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-surface-border);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.brand:visited,
+.brand:hover,
+.brand:active {
+  color: var(--brand-color);
 }
 
 .nav-links {
@@ -151,16 +181,27 @@ h2 {
 }
 
 input,
+select,
 button {
   font: inherit;
 }
 
-input {
+input,
+select {
   padding: 0.5rem 0.6rem;
   border-radius: 8px;
   border: 1px solid var(--line);
   background: #0b1422;
   color: var(--ink);
+}
+
+select {
+  min-height: 2.2rem;
+}
+
+label {
+  display: inline-block;
+  margin-bottom: 0.35rem;
 }
 
 button {
@@ -169,31 +210,37 @@ button {
   border: 0;
   border-radius: 8px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-weight: 600;
   cursor: pointer;
 }
 
 button:hover {
   background: var(--accent-strong);
+  color: var(--on-accent-strong);
 }
 
 .ghost-button {
-  background: transparent;
-  color: var(--accent-strong);
-  border: 1px solid var(--line);
+  background: var(--brand-surface);
+  color: var(--ink);
+  border: 1px solid var(--accent-strong);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .ghost-button:hover {
-  background: rgba(90, 171, 255, 0.12);
+  background: var(--accent-strong);
+  color: var(--on-accent-strong);
 }
 
 .danger-button {
-  color: var(--danger);
+  background: var(--danger-button-bg);
+  color: var(--danger-button-fg);
+  border-color: var(--danger-button-border);
 }
 
 .danger-button:hover {
-  background: rgba(255, 107, 122, 0.12);
+  background: var(--danger-button-hover-bg);
+  color: var(--danger-button-hover-fg);
 }
 
 .error-text {
@@ -250,7 +297,7 @@ button:hover {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  border-left: 3px solid var(--seahawks-green);
+  border-left: 3px solid var(--accent-strong);
   padding-left: 0.6rem;
 }
 
@@ -301,13 +348,14 @@ button:hover {
   border-radius: 8px;
   border: 1px solid var(--line);
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-weight: 600;
   text-decoration: none;
 }
 
 .cta-link:hover {
   background: var(--accent-strong);
+  color: var(--on-accent-strong);
 }
 
 .panel-block {
@@ -349,6 +397,12 @@ button:hover {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+  }
+
+  .nav-links {
+    width: auto;
+    margin-left: auto;
+    justify-content: flex-end;
   }
 
   .title-row {
