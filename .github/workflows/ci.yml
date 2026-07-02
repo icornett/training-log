@@ -64,9 +64,13 @@ jobs:
           if docker pull "${PLAYWRIGHT_IMAGE}"; then
             echo "image=${PLAYWRIGHT_IMAGE}" >> "${GITHUB_OUTPUT}"
           else
-            fallback="mcr.microsoft.com/playwright:v1.61.1-noble"
-            docker pull "${fallback}"
-            echo "image=${fallback}" >> "${GITHUB_OUTPUT}"
+            local_image="training-log-playwright:ci-mobile"
+            docker build \
+              --build-arg PLAYWRIGHT_VERSION=1.61.1 \
+              -f docker/playwright/Dockerfile \
+              -t "${local_image}" \
+              .
+            echo "image=${local_image}" >> "${GITHUB_OUTPUT}"
           fi
 
       - name: Run Mobile E2E in Playwright container
@@ -123,9 +127,13 @@ jobs:
           if docker pull "${PLAYWRIGHT_IMAGE}"; then
             echo "image=${PLAYWRIGHT_IMAGE}" >> "${GITHUB_OUTPUT}"
           else
-            fallback="mcr.microsoft.com/playwright:v1.61.1-noble"
-            docker pull "${fallback}"
-            echo "image=${fallback}" >> "${GITHUB_OUTPUT}"
+            local_image="training-log-playwright:ci-localdb"
+            docker build \
+              --build-arg PLAYWRIGHT_VERSION=1.61.1 \
+              -f docker/playwright/Dockerfile \
+              -t "${local_image}" \
+              .
+            echo "image=${local_image}" >> "${GITHUB_OUTPUT}"
           fi
 
       - name: Run Local DB E2E in Playwright container
