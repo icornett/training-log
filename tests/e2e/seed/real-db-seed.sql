@@ -47,7 +47,9 @@ WITH seed_user AS (
 seeded_workouts(name, workout_date, num_sets, num_reps, weight_description) AS (
   VALUES
     ('Upper Body', '2026-06-01'::date, 3, 8, 'bodyweight'),
-    ('Lower Body', '2026-06-03'::date, 4, 10, '95 lbs')
+    ('Lower Body', '2026-06-03'::date, 4, 10, '95 lbs'),
+    ('Upper Body', '2026-06-08'::date, 3, 8, 'bodyweight'),
+    ('Lower Body', '2026-06-10'::date, 4, 10, '105 lbs')
 ),
 inserted_workouts AS (
   INSERT INTO workouts (name, "date", num_sets, num_reps, weight_description, user_id)
@@ -56,17 +58,38 @@ inserted_workouts AS (
   CROSS JOIN seed_user su
   RETURNING id, name, "date", user_id
 )
-INSERT INTO exercises (description, num_sets, num_reps, weight_description, workout_id)
-SELECT 'Bench Press', 3, 8, '65 lbs', iw.id
+INSERT INTO exercises (
+  description,
+  num_sets,
+  num_reps,
+  weight_description,
+  exercise_type,
+  duration_minutes,
+  speed_mph,
+  workout_id
+)
+SELECT 'Bench Press', 3, 8, '65 lbs', 'strength', NULL, NULL, iw.id
 FROM inserted_workouts iw
-WHERE iw.name = 'Upper Body' AND iw."date" = '2026-06-01'::date
+WHERE iw.name = 'Upper Body' AND iw."date" IN ('2026-06-01'::date, '2026-06-08'::date)
 UNION ALL
-SELECT 'Treadmill Warmup', 10, 1, 'bodyweight', iw.id
+SELECT 'Treadmill Warmup', 1, 1, NULL, 'cardio', 10.0, 5.2, iw.id
 FROM inserted_workouts iw
-WHERE iw.name = 'Upper Body' AND iw."date" = '2026-06-01'::date
+WHERE iw.name = 'Upper Body' AND iw."date" IN ('2026-06-01'::date, '2026-06-08'::date)
 UNION ALL
-SELECT 'Deadlift', 4, 5, '95 lbs', iw.id
+SELECT 'Seated Row', 3, 10, '75 lbs', 'strength', NULL, NULL, iw.id
 FROM inserted_workouts iw
-WHERE iw.name = 'Lower Body' AND iw."date" = '2026-06-03'::date;
+WHERE iw.name = 'Upper Body' AND iw."date" IN ('2026-06-01'::date, '2026-06-08'::date)
+UNION ALL
+SELECT 'Deadlift', 4, 5, CASE WHEN iw."date" = '2026-06-10'::date THEN '115 lbs' ELSE '95 lbs' END, 'strength', NULL, NULL, iw.id
+FROM inserted_workouts iw
+WHERE iw.name = 'Lower Body' AND iw."date" IN ('2026-06-03'::date, '2026-06-10'::date)
+UNION ALL
+SELECT 'Goblet Squat', 4, 10, CASE WHEN iw."date" = '2026-06-10'::date THEN '65 lbs' ELSE '55 lbs' END, 'strength', NULL, NULL, iw.id
+FROM inserted_workouts iw
+WHERE iw.name = 'Lower Body' AND iw."date" IN ('2026-06-03'::date, '2026-06-10'::date)
+UNION ALL
+SELECT 'Walking Lunges', 3, 12, 'bodyweight', 'strength', NULL, NULL, iw.id
+FROM inserted_workouts iw
+WHERE iw.name = 'Lower Body' AND iw."date" IN ('2026-06-03'::date, '2026-06-10'::date);
 
 COMMIT;
