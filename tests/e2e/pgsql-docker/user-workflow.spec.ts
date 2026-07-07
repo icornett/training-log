@@ -9,7 +9,8 @@ type StrengthExercise = {
 
 const makeUsername = (projectName: string): string => {
   const projectSlug = projectName.replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 8)
-  return `pgsql-${projectSlug}-${String(Date.now()).slice(-4)}`
+  const nonce = `${Date.now()}${Math.floor(Math.random() * 1_000_000)}`.slice(-8)
+  return `pgsql-${projectSlug}-${nonce}`
 }
 
 const buildStrengthExercises = (totalExercises: number): StrengthExercise[] =>
@@ -24,8 +25,8 @@ const addStrengthExercise = async (page: Page, exercise: StrengthExercise): Prom
   await page.getByLabel('Description').fill(exercise.description)
   await page.getByLabel('Exercise Type').selectOption('strength')
   await page.getByLabel('Sets').fill(exercise.sets)
-  await page.getByLabel('Reps').fill(exercise.reps)
-  await page.getByRole('textbox', { name: 'Weight' }).fill(exercise.weight)
+  await page.getByRole('spinbutton', { name: 'Reps', exact: true }).fill(exercise.reps)
+  await page.getByRole('textbox', { name: 'Weight', exact: true }).fill(exercise.weight)
   await page.getByRole('button', { name: 'Add Exercise' }).click()
 }
 
@@ -159,8 +160,8 @@ test('pgsql user can browse workouts', async ({ page }, testInfo) => {
     await page.getByLabel('Description').fill('Bench Press')
     await page.getByLabel('Exercise Type').selectOption('strength')
     await page.getByLabel('Sets').fill('5')
-    await page.getByLabel('Reps').fill('5')
-    await page.getByRole('textbox', { name: 'Weight' }).fill('225 lbs')
+    await page.getByRole('spinbutton', { name: 'Reps', exact: true }).fill('5')
+    await page.getByRole('textbox', { name: 'Weight', exact: true }).fill('225 lbs')
     await page.getByRole('button', { name: 'Add Exercise' }).click()
     await expect(page.getByRole('heading', { name: 'Workout Controls' })).toBeVisible()
 
