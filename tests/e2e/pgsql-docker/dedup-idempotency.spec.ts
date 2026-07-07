@@ -9,15 +9,19 @@ type StrengthExercise = {
 
 const makeUsername = (projectName: string): string => {
   const projectSlug = projectName.replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 8)
-  return `dedup-${projectSlug}-${String(Date.now()).slice(-4)}`
+  const timeToken = Date.now().toString(36).slice(-4).padStart(4, '0')
+  const nonce = Math.floor(Math.random() * 1_679_616)
+    .toString(36)
+    .padStart(4, '0')
+  return `dedup-${projectSlug}-${timeToken}-${nonce}`
 }
 
 const addStrengthExercise = async (page: Page, exercise: StrengthExercise): Promise<void> => {
   await page.getByLabel('Description').fill(exercise.description)
   await page.getByLabel('Exercise Type').selectOption('strength')
   await page.getByLabel('Sets').fill(exercise.sets)
-  await page.getByLabel('Reps').fill(exercise.reps)
-  await page.getByRole('textbox', { name: 'Weight' }).fill(exercise.weight)
+  await page.getByRole('spinbutton', { name: 'Reps', exact: true }).fill(exercise.reps)
+  await page.getByRole('textbox', { name: 'Weight', exact: true }).fill(exercise.weight)
   await page.getByRole('button', { name: 'Add Exercise' }).click()
 }
 
