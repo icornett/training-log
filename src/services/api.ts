@@ -1,6 +1,8 @@
 import type {
   AccountExportData,
   Credentials,
+  ExerciseProgressPayload,
+  ExerciseProgressQuery,
   ExerciseInput,
   ExerciseUpdateInput,
   PendingOperation,
@@ -300,6 +302,43 @@ export const createApiClient = (deps: Partial<ApiClientDeps> = {}) => {
 
       return (await response.json()) as AccountExportData
     },
+
+  async getExerciseProgress(query: ExerciseProgressQuery): Promise<ExerciseProgressPayload> {
+    const params = new URLSearchParams({ exercise: query.exercise })
+
+    if (query.from) {
+      params.set('from', query.from)
+    }
+
+    if (query.to) {
+      params.set('to', query.to)
+    }
+
+    if (typeof query.limit === 'number') {
+      params.set('limit', String(query.limit))
+    }
+
+    const payload = await request<ExerciseProgressPayload>(`/api/exercise-progress?${params.toString()}`)
+
+    return {
+      exerciseDescription: payload.exerciseDescription,
+      points: payload.points.map((point) => ({
+        workoutId: point.workoutId,
+        workoutDate: point.workoutDate,
+        exerciseDescription: point.exerciseDescription,
+        numSets: point.numSets,
+        numReps: point.numReps,
+        weightDescription: point.weightDescription,
+        durationMinutes: point.durationMinutes,
+        speedMph: point.speedMph,
+      })),
+      summary: {
+        totalPoints: payload.summary.totalPoints,
+        firstSeenDate: payload.summary.firstSeenDate,
+        lastSeenDate: payload.summary.lastSeenDate,
+      },
+    }
+  },
 
   async listWorkouts(pageNumber: number): Promise<{ items: WorkoutListItem[]; totalPages: number }> {
     const response = await request<{ items: WorkoutListItem[]; totalPages: number }>(

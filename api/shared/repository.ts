@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { and, count, desc, eq, inArray, isNotNull, isNull, lte, asc } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNotNull, isNull, lte, asc, sql } from 'drizzle-orm'
 
 import { db } from './db.js'
 import { auditLogs, exercises, operationDedup, users, workouts } from './schema.js'
@@ -552,6 +552,7 @@ export const getExerciseProgressHistory = async (
   exerciseDescription: string,
 ): Promise<ExerciseProgressPoint[]> => {
   const normalizedDescription = normalizeDescription(exerciseDescription)
+  const normalizedDescriptionExpr = sql<string>`regexp_replace(lower(${exercises.description}), '\\s+', '', 'g')`
 
   const rows = await db
     .select({
@@ -569,8 +570,8 @@ export const getExerciseProgressHistory = async (
     .where(
       and(
         eq(workouts.userId, userId),
-        // Match normalized exercise description
-        eq(exercises.description, normalizedDescription),
+        // Match exercise descriptions case-insensitively while collapsing whitespace.
+        eq(normalizedDescriptionExpr, normalizedDescription),
       ),
     )
     .orderBy(asc(workouts.date))

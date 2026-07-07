@@ -125,3 +125,33 @@ export interface AccountExportData {
     exercises: Exercise[]
   }>
 }
+
+export interface ExerciseProgressPoint {
+  workoutId: number
+  workoutDate: string
+  exerciseDescription: string
+  numSets: number | null
+  numReps: number | null
+  weightDescription: string | null
+  durationMinutes: number | null
+  speedMph: number | null
+}
+
+export interface ExerciseProgressSummary {
+  totalPoints: number
+  firstSeenDate: string | null
+  lastSeenDate: string | null
+}
+
+export interface ExerciseProgressPayload {
+  exerciseDescription: string
+  points: ExerciseProgressPoint[]
+  summary: ExerciseProgressSummary
+}
+
+export interface ExerciseProgressQuery {
+  exercise: string
+  from?: string
+  to?: string
+  limit?: number
+}

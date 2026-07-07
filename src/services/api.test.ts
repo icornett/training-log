@@ -549,6 +549,48 @@ describe('api service', () => {
     expect(result).toContain('Legs Day')
   })
 
+  it('fetches exercise progress with query parameters and maps payload', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      jsonResponse({
+        exerciseDescription: 'bench press',
+        points: [
+          {
+            workoutId: 1,
+            workoutDate: '2026-06-01',
+            exerciseDescription: 'bench press',
+            numSets: 3,
+            numReps: 8,
+            weightDescription: '135 lbs',
+            durationMinutes: null,
+            speedMph: null,
+          },
+        ],
+        summary: {
+          totalPoints: 1,
+          firstSeenDate: '2026-06-01',
+          lastSeenDate: '2026-06-01',
+        },
+      }),
+    )
+
+    const result = await api.getExerciseProgress({
+      exercise: 'bench press',
+      from: '2026-06-01',
+      to: '2026-06-30',
+      limit: 90,
+    })
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/exercise-progress?exercise=bench+press&from=2026-06-01&to=2026-06-30&limit=90',
+      expect.any(Object),
+    )
+    expect(result).toMatchObject({
+      exerciseDescription: 'bench press',
+      summary: { totalPoints: 1 },
+      points: [expect.objectContaining({ workoutId: 1, weightDescription: '135 lbs' })],
+    })
+  })
+
   it('queues workout with first exercise when offline and returns a pending workout draft', async () => {
     const fetchFn = vi.fn()
     const createId = vi
