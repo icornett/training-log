@@ -107,3 +107,22 @@ test('mobile user can change favorite team theme colors', async ({ page }) => {
   )
   expect(marinersAccent.toLowerCase()).toBe(getTeamPalette('mlb:mariners').accent.toLowerCase())
 })
+
+test('mobile user can open exercise history from workout details', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel('Username').fill('Playwright User')
+  await page.getByLabel('Password').fill('playwright-pass-123')
+  await page.getByRole('button', { name: 'Login' }).click()
+
+  await page.goto('/training_log/1/workouts/101')
+
+  await expect(page.getByRole('heading', { name: 'Upper Body' })).toBeVisible()
+  await page.getByRole('link', { name: 'View history for Bench Press' }).click()
+
+  await expect(page).toHaveURL(/\/training_log\/1\/exercise-history\?exercise=Bench(\+|%20)Press$/)
+  await expect(page.getByRole('heading', { name: 'Exercise History' })).toBeVisible()
+  await expect(page.getByLabel('Exercise name')).toHaveValue('Bench Press')
+  await expect(page.getByRole('heading', { name: 'Weight Over Time' })).toBeVisible()
+  await expect(page.getByLabel(/Weight trend chart for/i)).toBeVisible()
+  await expect(page.getByText('65 lbs - 3 x 8')).toBeVisible()
+})

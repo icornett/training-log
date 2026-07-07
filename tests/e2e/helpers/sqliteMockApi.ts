@@ -10,6 +10,10 @@ interface MockApiOptions {
   authenticatedAs?: string | null
 }
 
+const normalizeExerciseDescription = (value: string): string => value.trim().toLowerCase().replace(/\s+/g, ' ')
+
+const normalizeExerciseForMatch = (value: string): string => value.toLowerCase().replace(/\s+/g, '')
+
 const asRows = <T extends Record<string, unknown>>(result: {
   columns: string[]
   values: unknown[][]
@@ -162,6 +166,65 @@ export const setupSqliteMockApi = async (page: Page, options: MockApiOptions = {
         favoriteTeamByUser.set(user.username, null)
       }
       await json(200, { ok: true, username: user.username })
+      return
+    }
+
+    if (url.pathname === '/api/exercise-progress') {
+      if (!(await requireSession())) {
+        return
+      }
+
+      if (method !== 'GET') {
+        await json(405, { error: 'Method not allowed.' })
+        return
+      }
+
+      const exerciseRaw = String(url.searchParams.get('exercise') ?? '')
+      const normalizedExercise = normalizeExerciseDescription(exerciseRaw)
+      const normalizedExerciseMatch = normalizeExerciseForMatch(normalizedExercise)
+      if (!normalizedExercise || normalizedExercise.length < 3) {
+        await json(400, { error: 'Invalid request parameters for exercise progress.' })
+        return
+      }
+
+      const userName = esc(sessionUser ?? '')
+      const queryResult = db.exec(
+        `SELECT
+           exercises.workout_id AS workoutId,
+           workouts.date AS workoutDate,
+           exercises.description AS exerciseDescription,
+           exercises.num_sets AS numSets,
+           exercises.num_reps AS numReps,
+           exercises.weight_description AS weightDescription,
+           exercises.duration_minutes AS durationMinutes,
+           exercises.speed_mph AS speedMph
+         FROM exercises
+         INNER JOIN workouts ON workouts.id = exercises.workout_id
+         WHERE workouts.username = '${userName}'
+           AND REPLACE(LOWER(exercises.description), ' ', '') = '${esc(normalizedExerciseMatch)}'
+         ORDER BY workouts.date ASC, exercises.workout_id ASC;`,
+      )[0] ?? null
+
+      const points = asRows<{
+        workoutId: number
+        workoutDate: string
+        exerciseDescription: string
+        numSets: number | null
+        numReps: number | null
+        weightDescription: string | null
+        durationMinutes: number | null
+        speedMph: number | null
+      }>(queryResult)
+
+      await json(200, {
+        exerciseDescription: points[0]?.exerciseDescription ?? normalizedExercise,
+        points,
+        summary: {
+          totalPoints: points.length,
+          firstSeenDate: points[0]?.workoutDate ?? null,
+          lastSeenDate: points[points.length - 1]?.workoutDate ?? null,
+        },
+      })
       return
     }
 

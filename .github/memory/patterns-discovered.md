@@ -194,3 +194,10 @@ Add new patterns below this line as they are discovered.
 - Solution: Add a per-row `View History` deep link that preserves the current page number and URL-encodes the exercise description into `/training_log/:pageNumber/exercise-history?exercise=...`.
 - Example: `to={\`/training_log/${page}/exercise-history?exercise=${encodeURIComponent(exercise.description)}\`}` on each exercise row action group.
 - Related Files: src/pages/WorkoutDetailPage.tsx, src/pages/WorkoutDetailPage.test.tsx, src/router.tsx
+
+### UI Feature Completion Gate: Add Playwright Coverage
+- Context: Any new user-facing UI feature (new route, interaction, workflow, or visible state) in the Training Log app.
+- Problem: Features can ship with only unit/component tests, leaving user-journey regressions undetected in mobile E2E.
+- Solution: Treat Playwright user-journey coverage as part of definition-of-done for UI work; add or update at least one relevant `tests/e2e/mobile-*.spec.ts` scenario with the feature change.
+- Example: New Exercise History visualization required adding mobile tests for Workout Detail -> View History deep link and chart/empty-state behavior.
+- Related Files: tests/e2e/mobile-user-workflows.spec.ts, tests/e2e/mobile-edge-paths.spec.ts

@@ -37,6 +37,21 @@ test.describe('authenticated mobile edge paths', () => {
     await expect(page.getByText('Workout not found.')).toBeVisible()
   })
 
+  test('loads exercise history when the query uses inconsistent casing and spaces', async ({ page }) => {
+    await page.goto('/training_log/1/exercise-history?exercise=%20%20bEnCh%20%20PrEsS%20%20')
+
+    await expect(page.getByRole('heading', { name: 'Exercise History' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Weight Over Time' })).toBeVisible()
+    await expect(page.getByText(/No history available yet for/i)).toHaveCount(0)
+  })
+
+  test('shows empty state for exercises with no history', async ({ page }) => {
+    await page.goto('/training_log/1/exercise-history?exercise=Nonexistent%20Move')
+
+    await expect(page.getByRole('heading', { name: 'Exercise History' })).toBeVisible()
+    await expect(page.getByText('No history available yet for nonexistent move.')).toBeVisible()
+  })
+
   test('allows deleting account and prevents subsequent login', async ({ page }) => {
     await page.goto('/training_log/1/workouts')
 
@@ -94,5 +109,12 @@ test.describe('unauthenticated mobile auth error paths', () => {
     await page.getByLabel('Password').fill('valid-password-123')
     await page.getByRole('button', { name: 'Create Account' }).click()
     await expect(page.getByText('Username already exists.')).toBeVisible()
+  })
+
+  test('shows login-required error when loading exercise history unauthenticated', async ({ page }) => {
+    await page.goto('/training_log/1/exercise-history?exercise=bench%20press')
+
+    await expect(page.getByRole('heading', { name: 'Exercise History' })).toBeVisible()
+    await expect(page.getByText('Please login to access the Training Log App.')).toBeVisible()
   })
 })
