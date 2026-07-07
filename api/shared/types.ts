@@ -80,3 +80,41 @@ export interface AccountExportPayload {
   exportedAt: string
   workouts: ExportWorkout[]
 }
+
+/**
+ * A single data point in an exercise's progress time series.
+ * Represents one occurrence of an exercise in a historical workout.
+ */
+export interface ExerciseProgressPoint {
+  /** Source workout ID, for future reference back to full workout details */
+  workoutId: number
+  /** Workout date (ISO 8601 calendar date, no time component) */
+  workoutDate: string
+  /** Normalized exercise description for grouping */
+  exerciseDescription: string
+  /** Number of sets performed; null if not recorded */
+  numSets: number | null
+  /** Number of reps per set; null if not recorded */
+  numReps: number | null
+  /** Weight description (e.g., 'bodyweight', '135 lbs'); null if not recorded */
+  weightDescription: string | null
+  /** Duration in minutes (for cardio exercises); null for strength or if not recorded */
+  durationMinutes: number | null
+  /** Speed in mph (for cardio exercises); null for strength or if not recorded */
+  speedMph: number | null
+}
+
+/**
+ * Lightweight summary metadata for an exercise's progress history.
+ * Used to populate exercise dropdowns and overview information.
+ */
+export interface ExerciseProgressSummary {
+  /** Normalized exercise description */
+  exerciseDescription: string
+  /** First date this exercise was recorded (ISO 8601 calendar date) */
+  firstSeenDate: string
+  /** Most recent date this exercise was recorded (ISO 8601 calendar date) */
+  lastSeenDate: string
+  /** Number of times this exercise has been performed */
+  totalOccurrences: number
+}

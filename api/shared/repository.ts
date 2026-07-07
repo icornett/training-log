@@ -1,11 +1,13 @@
 import bcrypt from 'bcryptjs'
-import { and, count, desc, eq, inArray, isNotNull, isNull, lte } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNotNull, isNull, lte, asc } from 'drizzle-orm'
 
 import { db } from './db.js'
 import { auditLogs, exercises, operationDedup, users, workouts } from './schema.js'
 import { VALID_TEAM_KEYS } from './teamCatalog.js'
 import type {
   AccountExportPayload,
+  ExerciseProgressPoint,
+  ExerciseProgressSummary,
   ExerciseRow,
   GdprAuditEvent,
   WorkoutDetails,
@@ -529,4 +531,111 @@ export const updateUserFavoriteTeam = async (username: string, teamKey: string):
     }
     throw error
   }
+}
+
+/**
+ * Retrieve the complete exercise progress history for a user and exercise.
+ *
+ * @param userId - The user ID
+ * @param exerciseDescription - Exercise description to match (normalized internally)
+ * @returns Array of ExerciseProgressPoint, ordered by workoutDate ascending
+ *
+ * This method:
+ * - Normalizes the exercise description for matching (lowercase, no extra whitespace)
+ * - Joins workouts and exercises to get date + metrics
+ * - Filters to only the specified user (prevents data leakage)
+ * - Orders results by workout date ascending
+ * - Preserves both strength and cardio metric fields for future compatibility
+ */
+export const getExerciseProgressHistory = async (
+  userId: number,
+  exerciseDescription: string,
+): Promise<ExerciseProgressPoint[]> => {
+  const normalizedDescription = normalizeDescription(exerciseDescription)
+
+  const rows = await db
+    .select({
+      workoutId: exercises.workoutId,
+      workoutDate: workouts.date,
+      exerciseDescription: exercises.description,
+      numSets: exercises.numSets,
+      numReps: exercises.numReps,
+      weightDescription: exercises.weightDescription,
+      durationMinutes: exercises.durationMinutes,
+      speedMph: exercises.speedMph,
+    })
+    .from(exercises)
+    .innerJoin(workouts, eq(exercises.workoutId, workouts.id))
+    .where(
+      and(
+        eq(workouts.userId, userId),
+        // Match normalized exercise description
+        eq(exercises.description, normalizedDescription),
+      ),
+    )
+    .orderBy(asc(workouts.date))
+
+  // Normalize numeric fields and return as ExerciseProgressPoint
+  return rows.map((row) => ({
+    workoutId: row.workoutId,
+    workoutDate: row.workoutDate,
+    exerciseDescription: row.exerciseDescription,
+    numSets: row.numSets,
+    numReps: row.numReps,
+    weightDescription: row.weightDescription,
+    durationMinutes: row.durationMinutes !== null ? Number(row.durationMinutes) : null,
+    speedMph: row.speedMph !== null ? Number(row.speedMph) : null,
+  }))
+}
+
+/**
+ * Retrieve a summary of all unique exercises for a user's exercise history.
+ *
+ * @param userId - The user ID
+ * @returns Array of ExerciseProgressSummary, one per unique normalized exercise
+ *
+ * This method:
+ * - Groups exercises by normalized description
+ * - Calculates first/last seen dates and occurrence count
+ * - Returns summaries suitable for exercise dropdown population
+ * - Useful for building UI to select which exercise to view progress for
+ */
+export const getExerciseProgressSummaries = async (userId: number): Promise<ExerciseProgressSummary[]> => {
+  // Get all exercises for this user, ordered by workout date ascending
+  const exerciseRecords = await db
+    .select({
+      exerciseDescription: exercises.description,
+      workoutDate: workouts.date,
+    })
+    .from(exercises)
+    .innerJoin(workouts, eq(exercises.workoutId, workouts.id))
+    .where(eq(workouts.userId, userId))
+    .orderBy(asc(workouts.date))
+
+  // Group by normalized description and compute summaries
+  const summariesMap = new Map<string, ExerciseProgressSummary>()
+
+  for (const record of exerciseRecords) {
+    const normalized = normalizeDescription(record.exerciseDescription)
+    const existing = summariesMap.get(normalized)
+
+    if (existing) {
+      // Update existing summary with latest date and increment count
+      existing.lastSeenDate = record.workoutDate
+      existing.totalOccurrences += 1
+    } else {
+      // Create new summary
+      summariesMap.set(normalized, {
+        exerciseDescription: normalized,
+        firstSeenDate: record.workoutDate,
+        lastSeenDate: record.workoutDate,
+        totalOccurrences: 1,
+      })
+    }
+  }
+
+  // Return as sorted array
+  return Array.from(summariesMap.values()).sort((a, b) =>
+    a.exerciseDescription.localeCompare(b.exerciseDescription),
+  )
 }
