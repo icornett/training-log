@@ -3,7 +3,34 @@ import { Link, useSearchParams, useParams } from 'react-router-dom'
 
 import { ExerciseProgressChart } from '../components/ExerciseProgressChart'
 import { api } from '../services/api'
-import type { ExerciseProgressPayload } from '../types/domain'
+import type { ExerciseProgressPayload, ExerciseProgressPoint } from '../types/domain'
+
+const isCardioPoint = (point: ExerciseProgressPoint): boolean => {
+  return point.speedMph !== null || point.durationMinutes !== null
+}
+
+const formatRecentEntry = (point: ExerciseProgressPoint): string => {
+  if (isCardioPoint(point)) {
+    const cardioParts: string[] = []
+    if (point.speedMph !== null) {
+      cardioParts.push(`${point.speedMph} mph`)
+    }
+    if (point.durationMinutes !== null) {
+      cardioParts.push(`${point.durationMinutes} min`)
+    }
+
+    return cardioParts.length > 0 ? cardioParts.join(' - ') : 'Cardio entry'
+  }
+
+  if (point.weightDescription === null && (point.numSets === null || point.numReps === null)) {
+    return 'No strength details'
+  }
+
+  const repsPart =
+    point.numSets !== null && point.numReps !== null ? `${point.numSets} x ${point.numReps}` : 'sets/reps n/a'
+
+  return `${point.weightDescription ?? 'No weight'} - ${repsPart}`
+}
 
 export const ExerciseHistoryPage = (): JSX.Element => {
   const { pageNumber } = useParams()
@@ -69,6 +96,14 @@ export const ExerciseHistoryPage = (): JSX.Element => {
     return [...payload.points].reverse().slice(0, 5)
   }, [payload])
 
+  const chartMode = useMemo<'strength-weight' | 'cardio-speed'>(() => {
+    if (!payload) {
+      return 'strength-weight'
+    }
+
+    return payload.points.some((point) => isCardioPoint(point)) ? 'cardio-speed' : 'strength-weight'
+  }, [payload])
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault()
     const next = exerciseInput.trim()
@@ -115,23 +150,21 @@ export const ExerciseHistoryPage = (): JSX.Element => {
           <ExerciseProgressChart
             points={payload.points}
             exerciseDescription={payload.exerciseDescription}
-            mode="strength-weight"
+            mode={chartMode}
           />
 
           <article className="panel-block" aria-label="recent-history-details">
             <h2>Recent History Details</h2>
             <ul className="exercise-list">
               {recentEntries.map((point) => (
-                <li key={point.workoutId} className="exercise-row">
+                <li
+                  key={`${point.workoutId}:${point.workoutDate}:${point.weightDescription ?? point.speedMph ?? 'entry'}`}
+                  className="exercise-row"
+                >
                   <p>
                     <strong>{point.workoutDate}</strong>
                   </p>
-                  <p>
-                    {point.weightDescription ?? 'No weight'}
-                    {point.numSets !== null && point.numReps !== null
-                      ? ` - ${point.numSets} x ${point.numReps}`
-                      : ''}
-                  </p>
+                  <p>{formatRecentEntry(point)}</p>
                 </li>
               ))}
             </ul>

@@ -110,6 +110,34 @@ describe('ExerciseHistoryPage', () => {
     expect(await screen.findByRole('heading', { name: 'Weight Over Time' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Recent History Details' })).toBeInTheDocument()
     expect(screen.getByText('2026-06-01')).toBeInTheDocument()
+    expect(screen.getByText('135 lbs - 3 x 8')).toBeInTheDocument()
+    expect(
+      screen.getByText('Showing all logged sets as separate lines (ordered light-to-heavy per workout).'),
+    ).toBeInTheDocument()
+  })
+
+  it('renders cardio speed chart and cardio-focused details when speed metrics are present', async () => {
+    vi.mocked(api.getExerciseProgress).mockResolvedValue({
+      exerciseDescription: 'treadmill warmup',
+      points: [
+        {
+          workoutId: 17,
+          workoutDate: '2026-06-03',
+          exerciseDescription: 'treadmill warmup',
+          numSets: null,
+          numReps: null,
+          weightDescription: null,
+          durationMinutes: 10,
+          speedMph: 5.2,
+        },
+      ],
+      summary: { totalPoints: 1, firstSeenDate: '2026-06-03', lastSeenDate: '2026-06-03' },
+    })
+
+    renderPage('/training_log/1/exercise-history?exercise=treadmill%20warmup')
+
+    expect(await screen.findByRole('heading', { name: 'Speed Over Time' })).toBeInTheDocument()
+    expect(screen.getByText('5.2 mph - 10 min')).toBeInTheDocument()
   })
 
   it('submits exercise input and refetches for the new query', async () => {
