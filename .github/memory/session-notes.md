@@ -218,6 +218,32 @@ Date: 2026-06-15
 
 Date: 2026-06-30
 
+---
+
+### Session: Authenticated Exercise Progress Endpoint
+
+Date: 2026-07-07
+
+#### What Was Accomplished
+
+- Added authenticated Azure Function endpoint `GET /api/exercise-progress` for user-scoped exercise progress retrieval.
+- Implemented strict query parameter validation for required exercise description and optional `from`/`to` date range plus bounded `limit`.
+- Added stable JSON payload contract for frontend consumption, including deterministic empty-state payload.
+- Wired function registration through side-effect import in API entrypoint so route discovery works in Azure Functions v4.
+- Added dedicated TDD test suite for handler auth, validation, empty-state, filtering, limiting, and user-scoping behavior.
+
+#### Key Findings and Decisions
+
+- Finding: Repository aggregation layer from dependency issue already provided the needed user+exercise history query and types.
+- Decision: Keep endpoint response additive and stable with `{ exerciseDescription, points, summary }` so frontend integration can proceed without contract churn.
+- Decision: Use default limit 90 and guardrail range 1..365 to prevent unbounded payloads while supporting historical views.
+
+#### Outcomes
+
+- Tests: Targeted red/green cycle completed on `api/functions/exerciseProgress.test.ts`.
+- Tests: Full API suite passed (`75/75`).
+- Follow-up: Include `Fixes #9` and `Fixes #10` in PR description so both issues close automatically on merge.
+
 #### What Was Accomplished
 
 - Fixed mobile-e2e CI job: script name corrected from `dev:api` → `dev:api:func`.

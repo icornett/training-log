@@ -173,3 +173,10 @@ Add new patterns below this line as they are discovered.
 - Solution: Keep a centralized catalog per layer (`src/constants/teamCatalog.ts` for UI metadata, `api/shared/teamCatalog.ts` for API allowlist), filter UI options by selected league, and keep a stable fallback theme key (`nfl:seahawks`).
 - Example: League dropdown (`NFL|MLB|MLS|NHL|NBA`) drives filtered team options; backend `updateUserFavoriteTeam` validates via `VALID_TEAM_KEYS` from shared team catalog.
 - Related Files: src/pages/AccountSettingsPage.tsx, src/pages/AccountSettingsPage.test.tsx, src/constants/teamCatalog.ts, api/shared/teamCatalog.ts, api/shared/repository.ts, api/shared/repository.test.ts
+
+### Authenticated Read Endpoint: Query Guardrails + Stable Empty State
+- Context: New GET endpoints that return user-scoped history data for frontend charts or summaries.
+- Problem: Missing or malformed query params create inconsistent errors, and empty history can accidentally return server errors or incompatible payloads.
+- Solution: Use a handler factory with dependency injection, enforce auth first, validate all query params centrally, apply explicit range/limit guardrails, and always return a stable `200` payload shape (including empty-state summary fields).
+- Example: `GET /api/exercise-progress?exercise=bench+press&from=2026-06-01&to=2026-06-30&limit=90` returns `{ exerciseDescription, points, summary }`, where empty history yields `points: []` and `summary.firstSeenDate/lastSeenDate: null`.
+- Related Files: api/functions/exerciseProgress.ts, api/functions/exerciseProgress.test.ts, api/index.ts, api/shared/repository.ts, api/shared/types.ts
