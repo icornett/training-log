@@ -46,6 +46,24 @@ const parseWeightValue = (weightDescription: string | null): number | null => {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+const parseWeightValues = (weightDescription: string | null): number[] => {
+  if (!weightDescription) {
+    return []
+  }
+
+  const matches = [...weightDescription.matchAll(/(\d+(?:\.\d+)?)/g)]
+  const parsed = matches
+    .map((match) => Number(match[1]))
+    .filter((value) => Number.isFinite(value))
+
+  if (parsed.length > 0) {
+    return parsed
+  }
+
+  const fallback = parseWeightValue(weightDescription)
+  return fallback === null ? [] : [fallback]
+}
+
 const formatDateLabel = (isoDate: string): string => {
   const [year, month, day] = isoDate.split('-').map(Number)
   if (!year || !month || !day) {
@@ -61,19 +79,19 @@ const toStrengthPoints = (
   const groupedByWorkout = new Map<string, { workoutDate: string; weights: number[] }>()
 
   points.forEach((point) => {
-    const weight = parseWeightValue(point.weightDescription)
-    if (weight === null) {
+    const parsedWeights = parseWeightValues(point.weightDescription)
+    if (parsedWeights.length === 0) {
       return
     }
 
     const workoutKey = `${point.workoutId}:${point.workoutDate}`
     const existing = groupedByWorkout.get(workoutKey)
     if (!existing) {
-      groupedByWorkout.set(workoutKey, { workoutDate: point.workoutDate, weights: [weight] })
+      groupedByWorkout.set(workoutKey, { workoutDate: point.workoutDate, weights: parsedWeights })
       return
     }
 
-    existing.weights.push(weight)
+    existing.weights.push(...parsedWeights)
   })
 
   const sortedWorkouts = Array.from(groupedByWorkout.values()).sort((a, b) =>

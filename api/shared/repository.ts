@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs'
 import { and, count, desc, eq, inArray, isNotNull, isNull, lte, asc, sql } from 'drizzle-orm'
 
 import { db } from './db.js'
-import { auditLogs, exercises, operationDedup, users, workouts } from './schema.js'
+import { auditLogs, exerciseSets, exercises, operationDedup, users, workouts } from './schema.js'
 import { VALID_TEAM_KEYS } from './teamCatalog.js'
 import type {
   AccountExportPayload,
@@ -29,6 +29,12 @@ const normalizeExerciseRow = (
 
 const normalizeDescription = (value: string): string =>
   value.toLowerCase().replace(/\s+/g, '')
+
+export interface ExerciseSetEntryInput {
+  setIndex: number
+  reps: number | null
+  weightDescription: string | null
+}
 
 export const uniqueUsernames = async (): Promise<string[]> => {
   const rows = await db.select({ username: users.username }).from(users)
@@ -204,6 +210,7 @@ export const addWorkoutWithExercise = async (
     durationMinutes: number | null
     speedMph: number | null
     notes: string | null
+    setEntries?: ExerciseSetEntryInput[]
   },
 ): Promise<{ workoutId: number; exerciseId: number }> => {
   return db.transaction(async (tx) => {
@@ -226,6 +233,17 @@ export const addWorkoutWithExercise = async (
         notes: exercise.notes,
       })
       .returning({ id: exercises.id })
+
+    if (exercise.setEntries && exercise.setEntries.length > 0) {
+      await tx.insert(exerciseSets).values(
+        exercise.setEntries.map((entry) => ({
+          exerciseId: exerciseRow.id,
+          setIndex: entry.setIndex,
+          reps: entry.reps,
+          weightDescription: entry.weightDescription,
+        })),
+      )
+    }
 
     return { workoutId: workout.id, exerciseId: exerciseRow.id }
   })
@@ -270,12 +288,29 @@ export const addExercise = async (
   durationMinutes: number | null,
   speedMph: number | null,
   notes: string | null,
+  setEntries?: ExerciseSetEntryInput[],
 ): Promise<number> => {
-  const rows = await db
-    .insert(exercises)
-    .values({ workoutId, description, numSets, numReps, weightDescription, exerciseType, durationMinutes, speedMph, notes })
-    .returning({ id: exercises.id })
-  return rows[0].id
+  return db.transaction(async (tx) => {
+    const rows = await tx
+      .insert(exercises)
+      .values({ workoutId, description, numSets, numReps, weightDescription, exerciseType, durationMinutes, speedMph, notes })
+      .returning({ id: exercises.id })
+
+    const exerciseId = rows[0].id
+
+    if (setEntries && setEntries.length > 0) {
+      await tx.insert(exerciseSets).values(
+        setEntries.map((entry) => ({
+          exerciseId,
+          setIndex: entry.setIndex,
+          reps: entry.reps,
+          weightDescription: entry.weightDescription,
+        })),
+      )
+    }
+
+    return exerciseId
+  })
 }
 
 export const updateExercise = async (
@@ -288,11 +323,29 @@ export const updateExercise = async (
   durationMinutes: number | null,
   speedMph: number | null,
   notes: string | null,
+  setEntries?: ExerciseSetEntryInput[],
 ): Promise<void> => {
-  await db
-    .update(exercises)
-    .set({ description, numSets, numReps, weightDescription, exerciseType, durationMinutes, speedMph, notes })
-    .where(eq(exercises.id, exerciseId))
+  await db.transaction(async (tx) => {
+    await tx
+      .update(exercises)
+      .set({ description, numSets, numReps, weightDescription, exerciseType, durationMinutes, speedMph, notes })
+      .where(eq(exercises.id, exerciseId))
+
+    if (setEntries !== undefined) {
+      await tx.delete(exerciseSets).where(eq(exerciseSets.exerciseId, exerciseId))
+
+      if (setEntries.length > 0) {
+        await tx.insert(exerciseSets).values(
+          setEntries.map((entry) => ({
+            exerciseId,
+            setIndex: entry.setIndex,
+            reps: entry.reps,
+            weightDescription: entry.weightDescription,
+          })),
+        )
+      }
+    }
+  })
 }
 
 export const deleteExercise = async (exerciseId: number): Promise<void> => {
@@ -556,6 +609,7 @@ export const getExerciseProgressHistory = async (
 
   const rows = await db
     .select({
+      exerciseId: exercises.id,
       workoutId: exercises.workoutId,
       workoutDate: workouts.date,
       exerciseDescription: exercises.description,
@@ -576,14 +630,56 @@ export const getExerciseProgressHistory = async (
     )
     .orderBy(asc(workouts.date))
 
+  const exerciseIds = rows.map((row) => row.exerciseId)
+  const setRows = exerciseIds.length
+    ? await db
+        .select({
+          exerciseId: exerciseSets.exerciseId,
+          setIndex: exerciseSets.setIndex,
+          reps: exerciseSets.reps,
+          weightDescription: exerciseSets.weightDescription,
+        })
+        .from(exerciseSets)
+        .where(inArray(exerciseSets.exerciseId, exerciseIds))
+        .orderBy(asc(exerciseSets.setIndex))
+    : []
+
+  const setsByExerciseId = new Map<number, typeof setRows>()
+  for (const setRow of setRows) {
+    const list = setsByExerciseId.get(setRow.exerciseId) ?? []
+    list.push(setRow)
+    setsByExerciseId.set(setRow.exerciseId, list)
+  }
+
   // Normalize numeric fields and return as ExerciseProgressPoint
   return rows.map((row) => ({
+    ...(setsByExerciseId.get(row.exerciseId)
+      ? {
+          numSets: setsByExerciseId.get(row.exerciseId)!.length,
+          numReps: (() => {
+            const reps = setsByExerciseId
+              .get(row.exerciseId)!
+              .map((set) => set.reps)
+              .filter((value): value is number => value !== null)
+            if (reps.length === 0) return row.numReps
+            return reps.every((value) => value === reps[0]) ? reps[0] : row.numReps
+          })(),
+          weightDescription: (() => {
+            const weights = setsByExerciseId
+              .get(row.exerciseId)!
+              .map((set) => set.weightDescription)
+              .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+            return weights.length > 0 ? weights.join(', ') : row.weightDescription
+          })(),
+        }
+      : {
+          numSets: row.numSets,
+          numReps: row.numReps,
+          weightDescription: row.weightDescription,
+        }),
     workoutId: row.workoutId,
     workoutDate: row.workoutDate,
     exerciseDescription: row.exerciseDescription,
-    numSets: row.numSets,
-    numReps: row.numReps,
-    weightDescription: row.weightDescription,
     durationMinutes: row.durationMinutes !== null ? Number(row.durationMinutes) : null,
     speedMph: row.speedMph !== null ? Number(row.speedMph) : null,
   }))

@@ -88,6 +88,11 @@ export interface WorkoutUpdateInput {
 export interface ExerciseInput {
   description: string
   exerciseType: 'strength' | 'cardio'
+  setEntries?: Array<{
+    setIndex: number
+    reps: number | null
+    weightDescription: string | null
+  }>
   speedUnit?: 'mph' | 'kmh'
   numSets?: number
   numReps?: number

@@ -485,6 +485,7 @@ export const createApiClient = (deps: Partial<ApiClientDeps> = {}) => {
           exerciseId: payload.exerciseId,
           description: payload.description,
           exerciseType: payload.exerciseType,
+          setEntries: payload.setEntries,
           numSets: payload.numSets,
           numReps: payload.numReps,
           weightDescription: payload.weightDescription,
@@ -509,6 +510,7 @@ export const createApiClient = (deps: Partial<ApiClientDeps> = {}) => {
         body: JSON.stringify({
           description: payload.description,
           exerciseType: payload.exerciseType,
+                  setEntries: payload.setEntries,
           numSets: payload.numSets,
           numReps: payload.numReps,
           weightDescription: payload.weightDescription,

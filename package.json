@@ -1,7 +1,7 @@
 {
   "name": "training-log-react",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "postinstall": "npm --prefix api ci",
@@ -11,6 +11,11 @@
     "dev:swa": "swa start ./dist --api-location ./api --host 127.0.0.1 --port 4280",
     "dev:swa:proxy": "swa start ./dist --api-devserver-url http://127.0.0.1:7071 --host 127.0.0.1 --port 4280",
     "db:local:prepare": "sh ./bin/prepare-local-db.sh",
+    "db:migrate": "sh ./bin/db-migrate.sh",
+    "db:rollback": "sh ./bin/db-rollback.sh",
+    "db:migration:new": "sh ./bin/db-new-migration.sh",
+    "db:local:migrate": "DB_CONTAINER_NAME=training-log-local-db DB_USER=traininglog DB_NAME=training_log sh ./bin/db-migrate.sh",
+    "db:local:rollback": "DB_CONTAINER_NAME=training-log-local-db DB_USER=traininglog DB_NAME=training_log sh ./bin/db-rollback.sh",
     "db:localdb:stack:prepare": "npm run db:local:prepare && npm run build && npm run build:api",
     "dev:api:func": "cd api && func start --port 7071 --typescript",
     "dev:api:func:localdb": "cd api && DATABASE_URL=postgresql://traininglog:traininglog@${LOCAL_DB_HOST:-127.0.0.1}:55432/training_log?sslmode=disable func start --port 7071 --typescript",

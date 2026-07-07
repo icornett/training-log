@@ -273,6 +273,67 @@ describe("WorkoutDetailPage", () => {
     });
   });
 
+  it("submits structured set breakdown when per-set weights are entered", async () => {
+    const updatedWorkout: WorkoutDetails = {
+      ...workoutFixture,
+      exercises: [
+        ...workoutFixture.exercises,
+        {
+          id: 21,
+          description: "Incline Bench",
+          exerciseType: "strength",
+          numSets: 3,
+          numReps: 8,
+          weightDescription: "95 lbs, 85 lbs, 75 lbs",
+          durationMinutes: null,
+          speedMph: null,
+          notes: null,
+        },
+      ],
+    };
+    vi.mocked(api.createExercise).mockResolvedValue(updatedWorkout);
+
+    renderPage();
+
+    await screen.findByRole("heading", { name: "Upper Body" });
+    await userEvent.clear(screen.getByLabelText("Description"));
+    await userEvent.type(screen.getByLabelText("Description"), "Incline Bench");
+    await userEvent.clear(screen.getByLabelText("Sets"));
+    await userEvent.type(screen.getByLabelText("Sets"), "3");
+    await userEvent.clear(screen.getByLabelText("Reps"));
+    await userEvent.type(screen.getByLabelText("Reps"), "8");
+
+    await userEvent.type(screen.getByLabelText("Set 1 Weight"), "95");
+    await userEvent.type(screen.getByLabelText("Set 2 Weight"), "85");
+    await userEvent.type(screen.getByLabelText("Set 3 Weight"), "75");
+
+    await userEvent.click(screen.getByRole("button", { name: "Add Exercise" }));
+
+    await waitFor(() => {
+      expect(api.createExercise).toHaveBeenCalledWith(
+        1,
+        {
+          description: "Incline Bench",
+          exerciseType: "strength",
+          speedUnit: undefined,
+          numSets: 3,
+          numReps: 8,
+          weightDescription: "95 lbs, 85 lbs, 75 lbs",
+          durationMinutes: undefined,
+          speedMph: undefined,
+          speedKph: undefined,
+          setEntries: [
+            { setIndex: 1, reps: 8, weightDescription: "95 lbs" },
+            { setIndex: 2, reps: 8, weightDescription: "85 lbs" },
+            { setIndex: 3, reps: 8, weightDescription: "75 lbs" },
+          ],
+          notes: "",
+        },
+        expect.objectContaining({ id: 1 }),
+      );
+    });
+  });
+
   it("blocks adding a duplicate exercise description", async () => {
     renderPage();
 

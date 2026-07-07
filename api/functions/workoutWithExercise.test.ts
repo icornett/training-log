@@ -138,6 +138,44 @@ describe('createWorkoutWithExerciseHandler', () => {
     )
   })
 
+  it('passes structured setEntries through to createBoth for strength exercises', async () => {
+    const createBoth = jest.fn(async () => ({ workoutId: 1, exerciseId: 10 }))
+    const handler = createWorkoutWithExerciseHandler({ ...baseDeps, createBoth })
+
+    const response = await handler(
+      makeRequest({
+        name: 'Legs Day',
+        date: '2026-06-01',
+        exercise: {
+          description: 'Squats',
+          exerciseType: 'strength',
+          setEntries: [
+            { setIndex: 1, reps: 8, weightDescription: '205 lbs' },
+            { setIndex: 2, reps: 8, weightDescription: '195 lbs' },
+            { setIndex: 3, reps: 8, weightDescription: '185 lbs' },
+          ],
+        },
+      }),
+    )
+
+    expect(response.status).toBe(201)
+    expect(createBoth).toHaveBeenCalledWith(
+      1,
+      'Legs Day',
+      '2026-06-01',
+      expect.objectContaining({
+        setEntries: [
+          { setIndex: 1, reps: 8, weightDescription: '205 lbs' },
+          { setIndex: 2, reps: 8, weightDescription: '195 lbs' },
+          { setIndex: 3, reps: 8, weightDescription: '185 lbs' },
+        ],
+        numSets: 3,
+        numReps: 8,
+        weightDescription: '205 lbs, 195 lbs, 185 lbs',
+      }),
+    )
+  })
+
   it('returns 500 when workout cannot be fetched after creation', async () => {
     const handler = createWorkoutWithExerciseHandler({ ...baseDeps, getWorkout: async () => null })
     const response = await handler(

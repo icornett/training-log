@@ -58,6 +58,26 @@ export const exercises = pgTable('exercises', {
   notes: text('notes'),
 })
 
+export const exerciseSets = pgTable(
+  'exercise_sets',
+  {
+    id: serial('id').primaryKey(),
+    exerciseId: integer('exercise_id')
+      .notNull()
+      .references(() => exercises.id, { onDelete: 'cascade' }),
+    setIndex: integer('set_index').notNull(),
+    reps: integer('reps'),
+    weightDescription: varchar('weight_description', { length: 100 }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('ux_exercise_sets_exercise_id_set_index').on(t.exerciseId, t.setIndex),
+    index('idx_exercise_sets_exercise_id').on(t.exerciseId),
+  ],
+)
+
 export const auditLogs = pgTable('audit_logs', {
   id: serial('id').primaryKey(),
   eventType: varchar('event_type', { length: 40 }).notNull(),
@@ -91,5 +111,6 @@ export const operationDedup = pgTable(
 export type User = typeof users.$inferSelect
 export type Workout = typeof workouts.$inferSelect
 export type Exercise = typeof exercises.$inferSelect
+export type ExerciseSet = typeof exerciseSets.$inferSelect
 export type AuditLog = typeof auditLogs.$inferSelect
 export type OperationDedup = typeof operationDedup.$inferSelect

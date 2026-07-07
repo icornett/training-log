@@ -20,6 +20,25 @@ const getSyncLabel = (pendingState?: WorkoutDetails['pendingState']): string | n
   return null
 }
 
+interface StrengthSetEntryDraft {
+  weight: string
+  reps: string
+}
+
+const toPositiveIntOrNull = (value: string): number | null => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+const parseSetWeightValues = (value: string | null): string[] => {
+  if (!value) {
+    return []
+  }
+
+  const matches = [...value.matchAll(/(\d+(?:\.\d+)?)/g)]
+  return matches.map((match) => match[1])
+}
+
 export const WorkoutDetailPage = (): JSX.Element | null => {
   const navigate = useNavigate();
   const { pageNumber, workoutId } = useParams();
@@ -51,6 +70,14 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
     "mph",
   );
   const [exerciseNotes, setExerciseNotes] = useState("");
+  const [exerciseSetBreakdown, setExerciseSetBreakdown] = useState<
+    StrengthSetEntryDraft[]
+  >([
+    { weight: "", reps: "8" },
+    { weight: "", reps: "8" },
+    { weight: "", reps: "8" },
+  ]);
+  const [setBreakdownTouched, setSetBreakdownTouched] = useState(false);
   const [editingExerciseId, setEditingExerciseId] = useState<number | null>(
     null,
   );
@@ -157,6 +184,23 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
     return `${trimmed} ${unit === "kg" ? "kgs" : "lbs"}`;
   };
 
+  const toNormalizedSetBreakdown = (): Array<{
+    setIndex: number;
+    reps: number | null;
+    weightDescription: string | null;
+  }> => {
+    return exerciseSetBreakdown
+      .map((entry, index) => ({
+        setIndex: index + 1,
+        reps: toPositiveIntOrNull(entry.reps),
+        weightDescription:
+          entry.weight.trim().length > 0
+            ? normalizeStrengthWeight(entry.weight, exerciseWeightUnit)
+            : null,
+      }))
+      .filter((entry) => entry.reps !== null || entry.weightDescription !== null);
+  };
+
   const resetExerciseForm = (): void => {
     setExerciseDescription("");
     setExerciseType("strength");
@@ -164,12 +208,41 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
     setExerciseReps("8");
     setExerciseWeight("bodyweight");
     setExerciseWeightUnit("lbs");
+    setExerciseSetBreakdown([
+      { weight: "", reps: "8" },
+      { weight: "", reps: "8" },
+      { weight: "", reps: "8" },
+    ]);
+    setSetBreakdownTouched(false);
     setExerciseDuration("");
     setExerciseSpeed("");
     setExerciseSpeedUnit("mph");
     setExerciseNotes("");
     setEditingExerciseId(null);
   };
+
+  useEffect(() => {
+    if (exerciseType !== "strength") {
+      return;
+    }
+
+    const nextCount = Math.max(1, Number(exerciseSets) || 1);
+    setExerciseSetBreakdown((current) => {
+      const next = Array.from({ length: nextCount }, (_unused, index) => {
+        const existing = current[index];
+        if (existing) {
+          return existing;
+        }
+
+        return {
+          weight: "",
+          reps: exerciseReps,
+        };
+      });
+
+      return next;
+    });
+  }, [exerciseSets, exerciseReps, exerciseType]);
 
   const submitWorkout = async (
     event: FormEvent<HTMLFormElement>,
@@ -213,23 +286,58 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
       const payload = {
         description: exerciseDescription,
         exerciseType,
-        numSets: exerciseType === "strength" ? Number(exerciseSets) : undefined,
-        numReps: exerciseType === "strength" ? Number(exerciseReps) : undefined,
-        weightDescription:
-          exerciseType === "strength"
-            ? normalizeStrengthWeight(exerciseWeight, exerciseWeightUnit)
-            : undefined,
-        durationMinutes:
-          exerciseType === "cardio" ? Number(exerciseDuration) : undefined,
-        speedUnit: exerciseType === "cardio" ? exerciseSpeedUnit : undefined,
-        speedMph:
-          exerciseType === "cardio" && exerciseSpeedUnit === "mph"
-            ? Number(exerciseSpeed)
-            : undefined,
-        speedKph:
-          exerciseType === "cardio" && exerciseSpeedUnit === "kmh"
-            ? Number(exerciseSpeed)
-            : undefined,
+        ...(exerciseType === "strength"
+          ? (() => {
+              const normalizedSetBreakdown = toNormalizedSetBreakdown();
+              const hasCustomSetBreakdown = exerciseSetBreakdown.some(
+                (entry) => entry.weight.trim().length > 0,
+              );
+              const fallbackWeight = normalizeStrengthWeight(
+                exerciseWeight,
+                exerciseWeightUnit,
+              );
+              const flattenedWeights = normalizedSetBreakdown
+                .map((entry) => entry.weightDescription)
+                .filter((weight): weight is string => weight !== null);
+              const fallbackReps = Number(exerciseReps);
+
+              const repsValues = normalizedSetBreakdown
+                .map((entry) => entry.reps)
+                .filter((reps): reps is number => reps !== null);
+              const hasConsistentReps =
+                repsValues.length > 0 && repsValues.every((reps) => reps === repsValues[0]);
+
+              return {
+                numSets: Number(exerciseSets),
+                numReps:
+                  hasCustomSetBreakdown && hasConsistentReps && repsValues.length > 0
+                    ? repsValues[0]
+                    : fallbackReps,
+                weightDescription:
+                  hasCustomSetBreakdown && flattenedWeights.length > 0
+                    ? flattenedWeights.join(", ")
+                    : fallbackWeight,
+                durationMinutes: undefined,
+                speedUnit: undefined,
+                speedMph: undefined,
+                speedKph: undefined,
+                ...(hasCustomSetBreakdown && normalizedSetBreakdown.length > 0
+                  && setBreakdownTouched
+                  ? { setEntries: normalizedSetBreakdown }
+                  : {}),
+              };
+            })()
+          : {
+              numSets: undefined,
+              numReps: undefined,
+              weightDescription: undefined,
+              durationMinutes: Number(exerciseDuration),
+              speedUnit: exerciseSpeedUnit,
+              speedMph:
+                exerciseSpeedUnit === "mph" ? Number(exerciseSpeed) : undefined,
+              speedKph:
+                exerciseSpeedUnit === "kmh" ? Number(exerciseSpeed) : undefined,
+            }),
         notes: exerciseNotes || "",
       };
 
@@ -317,6 +425,17 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
     setExerciseSpeed(String(exercise.speedMph ?? ""));
     setExerciseSpeedUnit("mph");
     setExerciseNotes(exercise.notes ?? "");
+
+    if (exercise.exerciseType === "strength") {
+      const inferredSetCount = Math.max(1, exercise.numSets ?? 1);
+      const parsedWeights = parseSetWeightValues(exercise.weightDescription);
+      const parsedEntries = Array.from({ length: inferredSetCount }, (_unused, index) => ({
+        weight: parsedWeights[index] ?? "",
+        reps: String(exercise.numReps ?? 8),
+      }));
+      setExerciseSetBreakdown(parsedEntries);
+      setSetBreakdownTouched(false);
+    }
   };
 
   const handleDeleteExercise = async (exerciseId: number): Promise<void> => {
@@ -436,6 +555,50 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
                   <option value="lbs">lbs (default)</option>
                   <option value="kg">kg</option>
                 </select>
+
+                <p className="input-help-text">
+                  Set Breakdown (optional): fill per-set values to graph each set as a separate line.
+                </p>
+                {exerciseSetBreakdown.map((entry, index) => (
+                  <div key={`pending-set-${index + 1}`} className="set-entry-grid">
+                    <label htmlFor={`exercise-set-weight-${index + 1}`}>
+                      Set {index + 1} Weight
+                    </label>
+                    <input
+                      id={`exercise-set-weight-${index + 1}`}
+                      value={entry.weight}
+                      onChange={(event) => {
+                        const nextValue = event.target.value;
+                        setSetBreakdownTouched(true);
+                        setExerciseSetBreakdown((current) =>
+                          current.map((item, itemIndex) =>
+                            itemIndex === index ? { ...item, weight: nextValue } : item,
+                          ),
+                        );
+                      }}
+                      placeholder="e.g. 95"
+                    />
+
+                    <label htmlFor={`exercise-set-reps-${index + 1}`}>
+                      Set {index + 1} Reps
+                    </label>
+                    <input
+                      id={`exercise-set-reps-${index + 1}`}
+                      type="number"
+                      min="1"
+                      value={entry.reps}
+                      onChange={(event) => {
+                        const nextValue = event.target.value;
+                        setSetBreakdownTouched(true);
+                        setExerciseSetBreakdown((current) =>
+                          current.map((item, itemIndex) =>
+                            itemIndex === index ? { ...item, reps: nextValue } : item,
+                          ),
+                        );
+                      }}
+                    />
+                  </div>
+                ))}
               </>
             ) : (
               <>
@@ -701,6 +864,50 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
                   <option value="lbs">lbs (default)</option>
                   <option value="kg">kg</option>
                 </select>
+
+                <p className="input-help-text">
+                  Set Breakdown (optional): fill per-set values to graph each set as a separate line.
+                </p>
+                {exerciseSetBreakdown.map((entry, index) => (
+                  <div key={`detail-set-${index + 1}`} className="set-entry-grid">
+                    <label htmlFor={`exercise-set-weight-${index + 1}`}>
+                      Set {index + 1} Weight
+                    </label>
+                    <input
+                      id={`exercise-set-weight-${index + 1}`}
+                      value={entry.weight}
+                      onChange={(event) => {
+                        const nextValue = event.target.value;
+                        setSetBreakdownTouched(true);
+                        setExerciseSetBreakdown((current) =>
+                          current.map((item, itemIndex) =>
+                            itemIndex === index ? { ...item, weight: nextValue } : item,
+                          ),
+                        );
+                      }}
+                      placeholder="e.g. 95"
+                    />
+
+                    <label htmlFor={`exercise-set-reps-${index + 1}`}>
+                      Set {index + 1} Reps
+                    </label>
+                    <input
+                      id={`exercise-set-reps-${index + 1}`}
+                      type="number"
+                      min="1"
+                      value={entry.reps}
+                      onChange={(event) => {
+                        const nextValue = event.target.value;
+                        setSetBreakdownTouched(true);
+                        setExerciseSetBreakdown((current) =>
+                          current.map((item, itemIndex) =>
+                            itemIndex === index ? { ...item, reps: nextValue } : item,
+                          ),
+                        );
+                      }}
+                    />
+                  </div>
+                ))}
               </>
             ) : (
               <>
