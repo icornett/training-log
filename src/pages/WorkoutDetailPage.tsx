@@ -596,6 +596,13 @@ export const WorkoutDetailPage = (): JSX.Element | null => {
                 </div>
                 {isOwner ? (
                   <div className="row-actions">
+                    <Link
+                      className="ghost-button cta-link"
+                      to={`/training_log/${page}/exercise-history?exercise=${encodeURIComponent(exercise.description)}`}
+                      aria-label={`View history for ${exercise.description}`}
+                    >
+                      View History
+                    </Link>
                     <button
                       type="button"
                       className="ghost-button"

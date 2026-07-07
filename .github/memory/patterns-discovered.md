@@ -180,3 +180,17 @@ Add new patterns below this line as they are discovered.
 - Solution: Use a handler factory with dependency injection, enforce auth first, validate all query params centrally, apply explicit range/limit guardrails, and always return a stable `200` payload shape (including empty-state summary fields).
 - Example: `GET /api/exercise-progress?exercise=bench+press&from=2026-06-01&to=2026-06-30&limit=90` returns `{ exerciseDescription, points, summary }`, where empty history yields `points: []` and `summary.firstSeenDate/lastSeenDate: null`.
 - Related Files: api/functions/exerciseProgress.ts, api/functions/exerciseProgress.test.ts, api/index.ts, api/shared/repository.ts, api/shared/types.ts
+
+### Exercise Progress Visualization: Mode-Seamed Recharts Component
+- Context: First frontend charting iteration for exercise progress with future cardio support.
+- Problem: Building the strength chart inline in a page would make later cardio support a rewrite instead of an extension.
+- Solution: Create a reusable chart component with a mode seam (`strength-weight` now, `cardio-speed` placeholder), and feed it normalized API points from the page.
+- Example: `ExerciseProgressChart` renders `Weight Over Time` with `ResponsiveContainer + LineChart`, and keeps a `cardio-speed` branch for follow-up implementation.
+- Related Files: src/components/ExerciseProgressChart.tsx, src/pages/ExerciseHistoryPage.tsx, src/types/domain.ts
+
+### Workout Detail Entry Pattern: Exercise-to-History Deep Link
+- Context: Users need a quick way to jump from a workout exercise row to historical trend data for that same movement.
+- Problem: Requiring manual URL edits or retyping exercise names adds friction and reduces feature discoverability.
+- Solution: Add a per-row `View History` deep link that preserves the current page number and URL-encodes the exercise description into `/training_log/:pageNumber/exercise-history?exercise=...`.
+- Example: `to={\`/training_log/${page}/exercise-history?exercise=${encodeURIComponent(exercise.description)}\`}` on each exercise row action group.
+- Related Files: src/pages/WorkoutDetailPage.tsx, src/pages/WorkoutDetailPage.test.tsx, src/router.tsx

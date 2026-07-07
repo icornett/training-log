@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams, useParams } from 'react-router-dom'
 
+import { ExerciseProgressChart } from '../components/ExerciseProgressChart'
 import { api } from '../services/api'
 import type { ExerciseProgressPayload } from '../types/domain'
 
@@ -111,13 +112,11 @@ export const ExerciseHistoryPage = (): JSX.Element => {
 
       {!loading && !error && payload && payload.points.length > 0 ? (
         <div className="stack">
-          <article className="panel-block" aria-label="trend-visualization">
-            <h2>Trend Visualization</h2>
-            <p>
-              Chart host ready for <strong>{payload.exerciseDescription}</strong> ({payload.summary.totalPoints}{' '}
-              total entries).
-            </p>
-          </article>
+          <ExerciseProgressChart
+            points={payload.points}
+            exerciseDescription={payload.exerciseDescription}
+            mode="strength-weight"
+          />
 
           <article className="panel-block" aria-label="recent-history-details">
             <h2>Recent History Details</h2>

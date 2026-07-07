@@ -107,7 +107,7 @@ describe('ExerciseHistoryPage', () => {
 
     renderPage()
 
-    expect(await screen.findByRole('heading', { name: 'Trend Visualization' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Weight Over Time' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Recent History Details' })).toBeInTheDocument()
     expect(screen.getByText('2026-06-01')).toBeInTheDocument()
   })

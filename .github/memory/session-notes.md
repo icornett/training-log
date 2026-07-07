@@ -258,6 +258,31 @@ Date: 2026-07-07
 
 - Finding: Azure Functions Core Tools v4 must be installed globally in CI — it is not bundled in the standard Playwright Docker image.
 - Finding: `--network host` in a GitHub Actions container job breaks service container DNS when `services:` are defined.
+
+---
+
+### Session: Exercise Progress Visualization + Entry Points
+
+Date: 2026-07-07
+
+#### What Was Accomplished
+
+- Added Recharts and implemented a reusable chart component for exercise progress visualization.
+- Replaced the Exercise History page placeholder with a real strength weight-over-time chart.
+- Added per-exercise `View History` entry points on workout detail rows.
+- Added responsive chart container styling and mobile-friendly interaction defaults.
+
+#### Key Findings and Decisions
+
+- Finding: A mode-based chart API allows strength chart delivery now while preserving a clean extension seam for cardio without structural rewrite.
+- Decision: Use `ExerciseProgressChart` with `mode` (`strength-weight` implemented, `cardio-speed` placeholder) and keep parsing/formatting concerns inside the component.
+- Decision: Deep-link from workout rows using URL-encoded exercise descriptions to reduce user friction and improve discoverability.
+
+#### Outcomes
+
+- Tests: `npm run test:web -- src/pages/ExerciseHistoryPage.test.tsx src/pages/WorkoutDetailPage.test.tsx` passed.
+- Typecheck: `npm run typecheck:web` passed.
+- Follow-up: Implement cardio speed-over-time rendering in the `cardio-speed` branch of `ExerciseProgressChart`.
 - Decision: Always use service name (`postgres`) as hostname in DATABASE_URL and psql commands, not `localhost`.
 
 #### Outcomes

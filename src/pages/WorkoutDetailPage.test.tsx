@@ -561,6 +561,19 @@ describe("WorkoutDetailPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows exercise history entry points for workout exercises", async () => {
+    renderPage();
+
+    await screen.findByRole("heading", { name: "Upper Body" });
+
+    const historyLink = screen.getByRole("link", { name: "View history for Bench Press" });
+    expect(historyLink).toBeInTheDocument();
+    expect(historyLink).toHaveAttribute(
+      "href",
+      "/training_log/1/exercise-history?exercise=Bench%20Press",
+    );
+  });
+
   it("shows sync state markers for pending workout and exercises", async () => {
     vi.mocked(api.getWorkout).mockResolvedValue({
       ...workoutFixture,
