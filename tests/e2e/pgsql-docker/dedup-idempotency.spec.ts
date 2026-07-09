@@ -20,7 +20,7 @@ const addStrengthExercise = async (page: Page, exercise: StrengthExercise): Prom
   await page.getByLabel('Description').fill(exercise.description)
   await page.getByLabel('Exercise Type').selectOption('strength')
   await page.getByLabel('Sets').fill(exercise.sets)
-  await page.getByRole('spinbutton', { name: 'Reps', exact: true }).fill(exercise.reps)
+  await page.locator('#exercise-reps').fill(exercise.reps)
   await page.getByRole('textbox', { name: 'Weight', exact: true }).fill(exercise.weight)
   await page.getByRole('button', { name: 'Add Exercise' }).click()
 }

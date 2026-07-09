@@ -25,7 +25,7 @@ const addStrengthExercise = async (page: Page, exercise: StrengthExercise): Prom
   await page.getByLabel('Description').fill(exercise.description)
   await page.getByLabel('Exercise Type').selectOption('strength')
   await page.getByLabel('Sets').fill(exercise.sets)
-  await page.getByRole('spinbutton', { name: 'Reps', exact: true }).fill(exercise.reps)
+  await page.locator('#exercise-reps').fill(exercise.reps)
   await page.getByRole('textbox', { name: 'Weight', exact: true }).fill(exercise.weight)
   await page.getByRole('button', { name: 'Add Exercise' }).click()
 }
@@ -160,7 +160,7 @@ test('pgsql user can browse workouts', async ({ page }, testInfo) => {
     await page.getByLabel('Description').fill('Bench Press')
     await page.getByLabel('Exercise Type').selectOption('strength')
     await page.getByLabel('Sets').fill('5')
-    await page.getByRole('spinbutton', { name: 'Reps', exact: true }).fill('5')
+    await page.locator('#exercise-reps').fill('5')
     await page.getByRole('textbox', { name: 'Weight', exact: true }).fill('225 lbs')
     await page.getByRole('button', { name: 'Add Exercise' }).click()
     await expect(page.getByRole('heading', { name: 'Workout Controls' })).toBeVisible()

@@ -30,7 +30,7 @@ test('mobile user can complete core workout workflow', async ({ page }) => {
 
   await page.getByLabel('Description').fill('Pull Ups')
   await page.getByLabel('Sets').fill('4')
-  await page.getByRole('spinbutton', { name: 'Reps', exact: true }).fill('10')
+  await page.locator('#exercise-reps').fill('10')
   await page.getByRole('textbox', { name: 'Weight', exact: true }).fill('bodyweight')
   await page.getByRole('button', { name: 'Add Exercise' }).click()
 
@@ -39,7 +39,7 @@ test('mobile user can complete core workout workflow', async ({ page }) => {
 
   await page.getByLabel('Description').fill('Deadlift')
   await page.getByLabel('Sets').fill('3')
-  await page.getByRole('spinbutton', { name: 'Reps', exact: true }).fill('5')
+  await page.locator('#exercise-reps').fill('5')
   await page.getByRole('textbox', { name: 'Weight', exact: true }).fill('225 lbs')
   await page.getByRole('button', { name: 'Add Exercise' }).click()
   await expect(page.getByText('Exercise added.')).toBeVisible()
@@ -138,7 +138,7 @@ test('mobile user can log per-set weights and see multi-set history details', as
   await expect(page.getByRole('heading', { name: 'Upper Body' })).toBeVisible()
   await page.getByLabel('Description').fill('Incline Bench Press')
   await page.getByLabel('Sets').fill('3')
-  await page.getByRole('spinbutton', { name: 'Reps', exact: true }).fill('8')
+  await page.locator('#exercise-reps').fill('8')
   await page.getByLabel('Set 1 Weight').fill('95')
   await page.getByLabel('Set 2 Weight').fill('85')
   await page.getByLabel('Set 3 Weight').fill('75')
