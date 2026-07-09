@@ -22,8 +22,8 @@ test('seeded user can browse the real database', async ({ page }, testInfo) => {
 
   await expect(page.getByRole('heading', { name: 'Workouts' })).toBeVisible({ timeout: 10_000 })
   await expect(page.getByText(seededUsername)).toBeVisible({ timeout: 10_000 })
-  await expect(page.getByRole('link', { name: 'Upper Body' })).toBeVisible({ timeout: 10_000 })
-  await expect(page.getByRole('link', { name: 'Lower Body' })).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByRole('link', { name: 'Upper Body' }).first()).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByRole('link', { name: 'Lower Body' }).first()).toBeVisible({ timeout: 10_000 })
 
   const upperBodyCard = page.getByRole('listitem').filter({ hasText: 'Upper Body' }).first()
   await upperBodyCard.getByRole('link', { name: 'View Workout' }).click({ timeout: 30_000 })
