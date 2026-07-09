@@ -173,6 +173,22 @@ h2 {
   gap: 0.55rem;
 }
 
+.input-help-text {
+  margin: 0.25rem 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.set-entry-grid {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: 1fr;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid rgba(127, 164, 196, 0.35);
+  border-radius: 8px;
+  background: rgba(11, 20, 34, 0.45);
+}
+
 .checkbox-row {
   display: flex;
   align-items: flex-start;
@@ -364,6 +380,16 @@ button:hover {
   padding-top: 1rem;
 }
 
+.progress-chart-shell {
+  margin-top: 0.65rem;
+  width: 100%;
+  min-height: 280px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(11, 20, 34, 0.72);
+  padding: 0.35rem 0.2rem 0.2rem;
+}
+
 .privacy-content {
   line-height: 1.6;
   max-width: 70ch;
@@ -420,6 +446,10 @@ button:hover {
     flex-direction: row;
     justify-content: space-between;
     flex-wrap: wrap;
+  }
+
+  .row-actions {
+    justify-content: flex-end;
   }
 
   .pager {

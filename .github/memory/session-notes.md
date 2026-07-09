@@ -218,6 +218,32 @@ Date: 2026-06-15
 
 Date: 2026-06-30
 
+---
+
+### Session: Authenticated Exercise Progress Endpoint
+
+Date: 2026-07-07
+
+#### What Was Accomplished
+
+- Added authenticated Azure Function endpoint `GET /api/exercise-progress` for user-scoped exercise progress retrieval.
+- Implemented strict query parameter validation for required exercise description and optional `from`/`to` date range plus bounded `limit`.
+- Added stable JSON payload contract for frontend consumption, including deterministic empty-state payload.
+- Wired function registration through side-effect import in API entrypoint so route discovery works in Azure Functions v4.
+- Added dedicated TDD test suite for handler auth, validation, empty-state, filtering, limiting, and user-scoping behavior.
+
+#### Key Findings and Decisions
+
+- Finding: Repository aggregation layer from dependency issue already provided the needed user+exercise history query and types.
+- Decision: Keep endpoint response additive and stable with `{ exerciseDescription, points, summary }` so frontend integration can proceed without contract churn.
+- Decision: Use default limit 90 and guardrail range 1..365 to prevent unbounded payloads while supporting historical views.
+
+#### Outcomes
+
+- Tests: Targeted red/green cycle completed on `api/functions/exerciseProgress.test.ts`.
+- Tests: Full API suite passed (`75/75`).
+- Follow-up: Include `Fixes #9` and `Fixes #10` in PR description so both issues close automatically on merge.
+
 #### What Was Accomplished
 
 - Fixed mobile-e2e CI job: script name corrected from `dev:api` → `dev:api:func`.
@@ -232,6 +258,31 @@ Date: 2026-06-30
 
 - Finding: Azure Functions Core Tools v4 must be installed globally in CI — it is not bundled in the standard Playwright Docker image.
 - Finding: `--network host` in a GitHub Actions container job breaks service container DNS when `services:` are defined.
+
+---
+
+### Session: Exercise Progress Visualization + Entry Points
+
+Date: 2026-07-07
+
+#### What Was Accomplished
+
+- Added Recharts and implemented a reusable chart component for exercise progress visualization.
+- Replaced the Exercise History page placeholder with a real strength weight-over-time chart.
+- Added per-exercise `View History` entry points on workout detail rows.
+- Added responsive chart container styling and mobile-friendly interaction defaults.
+
+#### Key Findings and Decisions
+
+- Finding: A mode-based chart API allows strength chart delivery now while preserving a clean extension seam for cardio without structural rewrite.
+- Decision: Use `ExerciseProgressChart` with `mode` (`strength-weight` implemented, `cardio-speed` placeholder) and keep parsing/formatting concerns inside the component.
+- Decision: Deep-link from workout rows using URL-encoded exercise descriptions to reduce user friction and improve discoverability.
+
+#### Outcomes
+
+- Tests: `npm run test:web -- src/pages/ExerciseHistoryPage.test.tsx src/pages/WorkoutDetailPage.test.tsx` passed.
+- Typecheck: `npm run typecheck:web` passed.
+- Follow-up: Implement cardio speed-over-time rendering in the `cardio-speed` branch of `ExerciseProgressChart`.
 - Decision: Always use service name (`postgres`) as hostname in DATABASE_URL and psql commands, not `localhost`.
 
 #### Outcomes

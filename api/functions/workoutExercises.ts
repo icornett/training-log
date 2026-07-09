@@ -17,6 +17,11 @@ import { kphToMph } from '../shared/speed.js'
 interface CreateExerciseBody {
   description?: string
   exerciseType?: string
+  setEntries?: Array<{
+    setIndex?: number
+    reps?: number | null
+    weightDescription?: string | null
+  }>
   speedUnit?: 'mph' | 'kmh'
   numSets?: number
   numReps?: number
@@ -26,6 +31,43 @@ interface CreateExerciseBody {
   speedKph?: number
   notes?: string
   operationId?: string
+}
+
+const parseSetEntries = (
+  setEntries: CreateExerciseBody['setEntries'],
+  fallbackReps: number | null,
+): Array<{ setIndex: number; reps: number | null; weightDescription: string | null }> | undefined => {
+  if (!Array.isArray(setEntries)) {
+    return undefined
+  }
+
+  const parsed = setEntries
+    .map((entry, index) => {
+      const setIndex = Number(entry?.setIndex)
+      const repsValue = entry?.reps === null || entry?.reps === undefined ? fallbackReps : Number(entry.reps)
+      const weight = typeof entry?.weightDescription === 'string' ? entry.weightDescription.trim().toLowerCase() : null
+      if (!Number.isInteger(setIndex) || setIndex < 1) {
+        return null
+      }
+      if (repsValue !== null && (!Number.isFinite(repsValue) || repsValue < 1)) {
+        return null
+      }
+      return {
+        setIndex,
+        reps: repsValue,
+        weightDescription: weight && weight.length > 0 ? weight : null,
+      }
+    })
+    .filter((entry): entry is { setIndex: number; reps: number | null; weightDescription: string | null } => entry !== null)
+    .sort((a, b) => a.setIndex - b.setIndex)
+
+  // Reject duplicate set positions by falling back to legacy summary only.
+  const hasDuplicateIndex = new Set(parsed.map((entry) => entry.setIndex)).size !== parsed.length
+  if (hasDuplicateIndex) {
+    return undefined
+  }
+
+  return parsed
 }
 
 // Skip registration during tests to avoid Azure Functions runtime detection warning
@@ -80,9 +122,32 @@ if (process.env.NODE_ENV !== 'test') {
 
     const description = (body.description ?? '').replace(/[\p{P}\p{S}]/gu, '')
     const exerciseType = body.exerciseType ?? 'strength'
-    const numSets = body.numSets !== undefined ? Number(body.numSets) : null
-    const numReps = body.numReps !== undefined ? Number(body.numReps) : null
-    const weightDescription = body.weightDescription ? body.weightDescription.toLowerCase() : null
+    const fallbackNumReps = body.numReps !== undefined ? Number(body.numReps) : null
+    const parsedSetEntries = parseSetEntries(body.setEntries, fallbackNumReps)
+    const derivedWeightDescription =
+      parsedSetEntries && parsedSetEntries.length > 0
+        ? parsedSetEntries
+            .map((entry) => entry.weightDescription)
+            .filter((weight): weight is string => typeof weight === 'string' && weight.length > 0)
+            .join(', ')
+        : null
+    const numSets = body.numSets !== undefined ? Number(body.numSets) : parsedSetEntries?.length ?? null
+    const numReps =
+      body.numReps !== undefined
+        ? Number(body.numReps)
+        : parsedSetEntries && parsedSetEntries.length > 0
+          ? (() => {
+              const reps = parsedSetEntries
+                .map((entry) => entry.reps)
+                .filter((value): value is number => value !== null)
+              if (reps.length === 0) return null
+              return reps.every((value) => value === reps[0]) ? reps[0] : null
+            })()
+          : null
+    const weightDescription =
+      body.weightDescription !== undefined
+        ? body.weightDescription?.toLowerCase() ?? null
+        : derivedWeightDescription || null
     const durationMinutes = body.durationMinutes !== undefined ? Number(body.durationMinutes) : null
     const speedMphRaw =
       body.speedMph !== undefined
@@ -108,6 +173,7 @@ if (process.env.NODE_ENV !== 'test') {
       durationMinutes,
       speedMph,
       notes,
+      parsedSetEntries,
     )
 
     const result = {

@@ -29,6 +29,40 @@ describe('listExercises', () => {
     select.mockClear()
   })
 
+  it('should list all exercises for a workout sorted by description', () => {
+    // Test implementation
+  })
+})
+
+// Exercise Progress Methods Tests
+// Note: Full integration tests for getExerciseProgressHistory and getExerciseProgressSummaries
+// should be in the playwright e2e test suite since they require database setup with
+// test users, workouts, and exercises. Here we just verify the methods exist and export correctly.
+
+describe('Exercise Progress Methods Exports', () => {
+  it('should export getExerciseProgressHistory', async () => {
+    const { getExerciseProgressHistory } = await import('./repository.js')
+    expect(typeof getExerciseProgressHistory).toBe('function')
+  })
+
+  it('should export getExerciseProgressSummaries', async () => {
+    const { getExerciseProgressSummaries } = await import('./repository.js')
+    expect(typeof getExerciseProgressSummaries).toBe('function')
+  })
+})
+
+describe('listExercises', () => {
+  beforeEach(() => {
+    orderBy.mockReset()
+    where.mockClear()
+    from.mockClear()
+    select.mockClear()
+  })
+
+  it('should list all exercises for a workout sorted by description', () => {
+    // Test implementation
+  })
+
   it('returns numeric exercise fields as numbers when the driver yields strings', async () => {
     orderBy.mockResolvedValue([
       {

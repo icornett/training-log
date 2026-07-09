@@ -21,6 +21,11 @@ interface WorkoutWithExerciseBody {
   exercise?: {
     description?: string
     exerciseType?: string
+    setEntries?: Array<{
+      setIndex?: number
+      reps?: number | null
+      weightDescription?: string | null
+    }>
     speedUnit?: 'mph' | 'kmh'
     numSets?: number
     numReps?: number
@@ -37,10 +42,60 @@ interface ExerciseData {
   numSets: number | null
   numReps: number | null
   weightDescription: string | null
+  setEntries?: Array<{
+    setIndex: number
+    reps: number | null
+    weightDescription: string | null
+  }>
   exerciseType: string
   durationMinutes: number | null
   speedMph: number | null
   notes: string | null
+}
+
+const parseSetEntries = (
+  setEntries:
+    | Array<{
+        setIndex?: number
+        reps?: number | null
+        weightDescription?: string | null
+      }>
+    | undefined,
+  fallbackReps: number | null,
+): Array<{ setIndex: number; reps: number | null; weightDescription: string | null }> | undefined => {
+  if (!Array.isArray(setEntries)) {
+    return undefined
+  }
+
+  const parsed = setEntries
+    .map((entry) => {
+      const setIndex = Number(entry?.setIndex)
+      const repsValue = entry?.reps === null || entry?.reps === undefined ? fallbackReps : Number(entry.reps)
+      const weight = typeof entry?.weightDescription === 'string' ? entry.weightDescription.trim().toLowerCase() : null
+
+      if (!Number.isInteger(setIndex) || setIndex < 1) {
+        return null
+      }
+
+      if (repsValue !== null && (!Number.isFinite(repsValue) || repsValue < 1)) {
+        return null
+      }
+
+      return {
+        setIndex,
+        reps: repsValue,
+        weightDescription: weight && weight.length > 0 ? weight : null,
+      }
+    })
+    .filter((entry): entry is { setIndex: number; reps: number | null; weightDescription: string | null } => entry !== null)
+    .sort((a, b) => a.setIndex - b.setIndex)
+
+  const hasDuplicateIndex = new Set(parsed.map((entry) => entry.setIndex)).size !== parsed.length
+  if (hasDuplicateIndex) {
+    return undefined
+  }
+
+  return parsed
 }
 
 interface WorkoutWithExerciseDependencies {
@@ -82,9 +137,32 @@ export const createWorkoutWithExerciseHandler = (deps: WorkoutWithExerciseDepend
     const ex = body.exercise ?? {}
     const description = (ex.description ?? '').replace(/[\p{P}\p{S}]/gu, '')
     const exerciseType = ex.exerciseType ?? 'strength'
-    const numSets = ex.numSets !== undefined ? Number(ex.numSets) : null
-    const numReps = ex.numReps !== undefined ? Number(ex.numReps) : null
-    const weightDescription = ex.weightDescription ? ex.weightDescription.toLowerCase() : null
+    const fallbackNumReps = ex.numReps !== undefined ? Number(ex.numReps) : null
+    const parsedSetEntries = parseSetEntries(ex.setEntries, fallbackNumReps)
+    const derivedWeightDescription =
+      parsedSetEntries && parsedSetEntries.length > 0
+        ? parsedSetEntries
+            .map((entry) => entry.weightDescription)
+            .filter((weight): weight is string => typeof weight === 'string' && weight.length > 0)
+            .join(', ')
+        : null
+    const numSets = ex.numSets !== undefined ? Number(ex.numSets) : parsedSetEntries?.length ?? null
+    const numReps =
+      ex.numReps !== undefined
+        ? Number(ex.numReps)
+        : parsedSetEntries && parsedSetEntries.length > 0
+          ? (() => {
+              const reps = parsedSetEntries
+                .map((entry) => entry.reps)
+                .filter((value): value is number => value !== null)
+              if (reps.length === 0) return null
+              return reps.every((value) => value === reps[0]) ? reps[0] : null
+            })()
+          : null
+    const weightDescription =
+      ex.weightDescription !== undefined
+        ? ex.weightDescription?.toLowerCase() ?? null
+        : derivedWeightDescription || null
     const durationMinutes = ex.durationMinutes !== undefined ? Number(ex.durationMinutes) : null
     const speedMphRaw =
       ex.speedMph !== undefined
@@ -110,6 +188,7 @@ export const createWorkoutWithExerciseHandler = (deps: WorkoutWithExerciseDepend
       numSets,
       numReps,
       weightDescription,
+      setEntries: parsedSetEntries,
       exerciseType,
       durationMinutes,
       speedMph,

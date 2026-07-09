@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
 import { AccountSettingsPage } from './pages/AccountSettingsPage'
 import { AuthLandingPage } from './pages/AuthLandingPage'
+import { ExerciseHistoryPage } from './pages/ExerciseHistoryPage'
 import { LoginPage } from './pages/LoginPage'
 import { NewWorkoutPage } from './pages/NewWorkoutPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
       { path: 'privacy', element: <PrivacyPolicyPage /> },
       { path: 'signup', element: <SignupPage /> },
       { path: 'training_log/:pageNumber/account', element: <AccountSettingsPage /> },
+      { path: 'training_log/:pageNumber/exercise-history', element: <ExerciseHistoryPage /> },
       { path: 'training_log/:pageNumber/workouts', element: <WorkoutsPage /> },
       { path: 'training_log/:pageNumber/workouts/new', element: <NewWorkoutPage /> },
       {

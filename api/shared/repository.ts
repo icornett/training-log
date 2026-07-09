@@ -1,11 +1,13 @@
 import bcrypt from 'bcryptjs'
-import { and, count, desc, eq, inArray, isNotNull, isNull, lte } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNotNull, isNull, lte, asc, sql } from 'drizzle-orm'
 
 import { db } from './db.js'
-import { auditLogs, exercises, operationDedup, users, workouts } from './schema.js'
+import { auditLogs, exerciseSets, exercises, operationDedup, users, workouts } from './schema.js'
 import { VALID_TEAM_KEYS } from './teamCatalog.js'
 import type {
   AccountExportPayload,
+  ExerciseProgressPoint,
+  ExerciseProgressSummary,
   ExerciseRow,
   GdprAuditEvent,
   WorkoutDetails,
@@ -27,6 +29,12 @@ const normalizeExerciseRow = (
 
 const normalizeDescription = (value: string): string =>
   value.toLowerCase().replace(/\s+/g, '')
+
+export interface ExerciseSetEntryInput {
+  setIndex: number
+  reps: number | null
+  weightDescription: string | null
+}
 
 export const uniqueUsernames = async (): Promise<string[]> => {
   const rows = await db.select({ username: users.username }).from(users)
@@ -202,6 +210,7 @@ export const addWorkoutWithExercise = async (
     durationMinutes: number | null
     speedMph: number | null
     notes: string | null
+    setEntries?: ExerciseSetEntryInput[]
   },
 ): Promise<{ workoutId: number; exerciseId: number }> => {
   return db.transaction(async (tx) => {
@@ -224,6 +233,17 @@ export const addWorkoutWithExercise = async (
         notes: exercise.notes,
       })
       .returning({ id: exercises.id })
+
+    if (exercise.setEntries && exercise.setEntries.length > 0) {
+      await tx.insert(exerciseSets).values(
+        exercise.setEntries.map((entry) => ({
+          exerciseId: exerciseRow.id,
+          setIndex: entry.setIndex,
+          reps: entry.reps,
+          weightDescription: entry.weightDescription,
+        })),
+      )
+    }
 
     return { workoutId: workout.id, exerciseId: exerciseRow.id }
   })
@@ -268,12 +288,29 @@ export const addExercise = async (
   durationMinutes: number | null,
   speedMph: number | null,
   notes: string | null,
+  setEntries?: ExerciseSetEntryInput[],
 ): Promise<number> => {
-  const rows = await db
-    .insert(exercises)
-    .values({ workoutId, description, numSets, numReps, weightDescription, exerciseType, durationMinutes, speedMph, notes })
-    .returning({ id: exercises.id })
-  return rows[0].id
+  return db.transaction(async (tx) => {
+    const rows = await tx
+      .insert(exercises)
+      .values({ workoutId, description, numSets, numReps, weightDescription, exerciseType, durationMinutes, speedMph, notes })
+      .returning({ id: exercises.id })
+
+    const exerciseId = rows[0].id
+
+    if (setEntries && setEntries.length > 0) {
+      await tx.insert(exerciseSets).values(
+        setEntries.map((entry) => ({
+          exerciseId,
+          setIndex: entry.setIndex,
+          reps: entry.reps,
+          weightDescription: entry.weightDescription,
+        })),
+      )
+    }
+
+    return exerciseId
+  })
 }
 
 export const updateExercise = async (
@@ -286,11 +323,29 @@ export const updateExercise = async (
   durationMinutes: number | null,
   speedMph: number | null,
   notes: string | null,
+  setEntries?: ExerciseSetEntryInput[],
 ): Promise<void> => {
-  await db
-    .update(exercises)
-    .set({ description, numSets, numReps, weightDescription, exerciseType, durationMinutes, speedMph, notes })
-    .where(eq(exercises.id, exerciseId))
+  await db.transaction(async (tx) => {
+    await tx
+      .update(exercises)
+      .set({ description, numSets, numReps, weightDescription, exerciseType, durationMinutes, speedMph, notes })
+      .where(eq(exercises.id, exerciseId))
+
+    if (setEntries !== undefined) {
+      await tx.delete(exerciseSets).where(eq(exerciseSets.exerciseId, exerciseId))
+
+      if (setEntries.length > 0) {
+        await tx.insert(exerciseSets).values(
+          setEntries.map((entry) => ({
+            exerciseId,
+            setIndex: entry.setIndex,
+            reps: entry.reps,
+            weightDescription: entry.weightDescription,
+          })),
+        )
+      }
+    }
+  })
 }
 
 export const deleteExercise = async (exerciseId: number): Promise<void> => {
@@ -529,4 +584,155 @@ export const updateUserFavoriteTeam = async (username: string, teamKey: string):
     }
     throw error
   }
+}
+
+/**
+ * Retrieve the complete exercise progress history for a user and exercise.
+ *
+ * @param userId - The user ID
+ * @param exerciseDescription - Exercise description to match (normalized internally)
+ * @returns Array of ExerciseProgressPoint, ordered by workoutDate ascending
+ *
+ * This method:
+ * - Normalizes the exercise description for matching (lowercase, no extra whitespace)
+ * - Joins workouts and exercises to get date + metrics
+ * - Filters to only the specified user (prevents data leakage)
+ * - Orders results by workout date ascending
+ * - Preserves both strength and cardio metric fields for future compatibility
+ */
+export const getExerciseProgressHistory = async (
+  userId: number,
+  exerciseDescription: string,
+): Promise<ExerciseProgressPoint[]> => {
+  const normalizedDescription = normalizeDescription(exerciseDescription)
+  const normalizedDescriptionExpr = sql<string>`regexp_replace(lower(${exercises.description}), '\\s+', '', 'g')`
+
+  const rows = await db
+    .select({
+      exerciseId: exercises.id,
+      workoutId: exercises.workoutId,
+      workoutDate: workouts.date,
+      exerciseDescription: exercises.description,
+      numSets: exercises.numSets,
+      numReps: exercises.numReps,
+      weightDescription: exercises.weightDescription,
+      durationMinutes: exercises.durationMinutes,
+      speedMph: exercises.speedMph,
+    })
+    .from(exercises)
+    .innerJoin(workouts, eq(exercises.workoutId, workouts.id))
+    .where(
+      and(
+        eq(workouts.userId, userId),
+        // Match exercise descriptions case-insensitively while collapsing whitespace.
+        eq(normalizedDescriptionExpr, normalizedDescription),
+      ),
+    )
+    .orderBy(asc(workouts.date))
+
+  const exerciseIds = rows.map((row) => row.exerciseId)
+  const setRows = exerciseIds.length
+    ? await db
+        .select({
+          exerciseId: exerciseSets.exerciseId,
+          setIndex: exerciseSets.setIndex,
+          reps: exerciseSets.reps,
+          weightDescription: exerciseSets.weightDescription,
+        })
+        .from(exerciseSets)
+        .where(inArray(exerciseSets.exerciseId, exerciseIds))
+        .orderBy(asc(exerciseSets.setIndex))
+    : []
+
+  const setsByExerciseId = new Map<number, typeof setRows>()
+  for (const setRow of setRows) {
+    const list = setsByExerciseId.get(setRow.exerciseId) ?? []
+    list.push(setRow)
+    setsByExerciseId.set(setRow.exerciseId, list)
+  }
+
+  // Normalize numeric fields and return as ExerciseProgressPoint
+  return rows.map((row) => ({
+    ...(setsByExerciseId.get(row.exerciseId)
+      ? {
+          numSets: setsByExerciseId.get(row.exerciseId)!.length,
+          numReps: (() => {
+            const reps = setsByExerciseId
+              .get(row.exerciseId)!
+              .map((set) => set.reps)
+              .filter((value): value is number => value !== null)
+            if (reps.length === 0) return row.numReps
+            return reps.every((value) => value === reps[0]) ? reps[0] : row.numReps
+          })(),
+          weightDescription: (() => {
+            const weights = setsByExerciseId
+              .get(row.exerciseId)!
+              .map((set) => set.weightDescription)
+              .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+            return weights.length > 0 ? weights.join(', ') : row.weightDescription
+          })(),
+        }
+      : {
+          numSets: row.numSets,
+          numReps: row.numReps,
+          weightDescription: row.weightDescription,
+        }),
+    workoutId: row.workoutId,
+    workoutDate: row.workoutDate,
+    exerciseDescription: row.exerciseDescription,
+    durationMinutes: row.durationMinutes !== null ? Number(row.durationMinutes) : null,
+    speedMph: row.speedMph !== null ? Number(row.speedMph) : null,
+  }))
+}
+
+/**
+ * Retrieve a summary of all unique exercises for a user's exercise history.
+ *
+ * @param userId - The user ID
+ * @returns Array of ExerciseProgressSummary, one per unique normalized exercise
+ *
+ * This method:
+ * - Groups exercises by normalized description
+ * - Calculates first/last seen dates and occurrence count
+ * - Returns summaries suitable for exercise dropdown population
+ * - Useful for building UI to select which exercise to view progress for
+ */
+export const getExerciseProgressSummaries = async (userId: number): Promise<ExerciseProgressSummary[]> => {
+  // Get all exercises for this user, ordered by workout date ascending
+  const exerciseRecords = await db
+    .select({
+      exerciseDescription: exercises.description,
+      workoutDate: workouts.date,
+    })
+    .from(exercises)
+    .innerJoin(workouts, eq(exercises.workoutId, workouts.id))
+    .where(eq(workouts.userId, userId))
+    .orderBy(asc(workouts.date))
+
+  // Group by normalized description and compute summaries
+  const summariesMap = new Map<string, ExerciseProgressSummary>()
+
+  for (const record of exerciseRecords) {
+    const normalized = normalizeDescription(record.exerciseDescription)
+    const existing = summariesMap.get(normalized)
+
+    if (existing) {
+      // Update existing summary with latest date and increment count
+      existing.lastSeenDate = record.workoutDate
+      existing.totalOccurrences += 1
+    } else {
+      // Create new summary
+      summariesMap.set(normalized, {
+        exerciseDescription: normalized,
+        firstSeenDate: record.workoutDate,
+        lastSeenDate: record.workoutDate,
+        totalOccurrences: 1,
+      })
+    }
+  }
+
+  // Return as sorted array
+  return Array.from(summariesMap.values()).sort((a, b) =>
+    a.exerciseDescription.localeCompare(b.exerciseDescription),
+  )
 }

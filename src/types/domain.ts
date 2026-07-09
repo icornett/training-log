@@ -88,6 +88,11 @@ export interface WorkoutUpdateInput {
 export interface ExerciseInput {
   description: string
   exerciseType: 'strength' | 'cardio'
+  setEntries?: Array<{
+    setIndex: number
+    reps: number | null
+    weightDescription: string | null
+  }>
   speedUnit?: 'mph' | 'kmh'
   numSets?: number
   numReps?: number
@@ -124,4 +129,34 @@ export interface AccountExportData {
     weightDescription: string
     exercises: Exercise[]
   }>
+}
+
+export interface ExerciseProgressPoint {
+  workoutId: number
+  workoutDate: string
+  exerciseDescription: string
+  numSets: number | null
+  numReps: number | null
+  weightDescription: string | null
+  durationMinutes: number | null
+  speedMph: number | null
+}
+
+export interface ExerciseProgressSummary {
+  totalPoints: number
+  firstSeenDate: string | null
+  lastSeenDate: string | null
+}
+
+export interface ExerciseProgressPayload {
+  exerciseDescription: string
+  points: ExerciseProgressPoint[]
+  summary: ExerciseProgressSummary
+}
+
+export interface ExerciseProgressQuery {
+  exercise: string
+  from?: string
+  to?: string
+  limit?: number
 }

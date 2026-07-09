@@ -336,6 +336,7 @@ export const createSyncService = (deps: Partial<SyncServiceDeps> = {}) => {
                 body: JSON.stringify({
                   description: payload.description,
                   exerciseType: payload.exerciseType,
+                  setEntries: payload.setEntries,
                   numSets: payload.numSets,
                   numReps: payload.numReps,
                   weightDescription: payload.weightDescription,
@@ -367,6 +368,7 @@ export const createSyncService = (deps: Partial<SyncServiceDeps> = {}) => {
                 body: JSON.stringify({
                   description: payload.description,
                   exerciseType: payload.exerciseType,
+                  setEntries: payload.setEntries,
                   numSets: payload.numSets,
                   numReps: payload.numReps,
                   weightDescription: payload.weightDescription,
